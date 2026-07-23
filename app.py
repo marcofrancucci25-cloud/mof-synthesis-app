@@ -3,13 +3,14 @@ import pandas as pd
 import numpy as np
 import joblib
 import os
+import matplotlib.pyplot as plt
 from sklearn.ensemble import GradientBoostingClassifier
 from rdkit import Chem
 from rdkit.Chem import Descriptors
 
 st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="🧪", layout="wide")
 st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
-st.markdown("Strumento avanzato di supporto alle decisioni di laboratorio basato su Machine Learning (**Gradient Boosting**).")
+st.markdown("Strumento avanzato di Machine Learning per la predizione e l'ottimizzazione guidata della sintesi di MOF.")
 
 # --- PROPRIETÀ METALLI ---
 metal_props = {
@@ -31,7 +32,6 @@ metal_props = {
     'Mg': {'Z': 12, 'Electronegativity': 1.31, 'Radius_pm': 141, 'Group': 2, 'Period': 3}
 }
 
-# --- PROCESSAMENTO DATASET ---
 def process_unified_dataset(df):
     target_col = None
     possible_targets = ['Target_Esito_Classe', 'Target', 'Esito', 'Classe', 'Target_Classe', 'Esito_Classe']
@@ -117,7 +117,7 @@ def load_or_train_model():
         joblib.dump(model, pkl_file)
         return model
     else:
-        st.error(f"File '{csv_file}' non trovato! Assicurati di aver caricato il file su GitHub.")
+        st.error(f"File '{csv_file}' non trovato!")
         st.stop()
 
 try:
@@ -135,7 +135,37 @@ if hasattr(model, 'feature_importances_'):
     st.sidebar.bar_chart(importances)
 
 # --- TAB INTERFACCIA ---
-tab1, tab2 = st.tabs(["🔮 Predizione Singola Sintesi", "📂 Predizione Batch (File Excel/CSV)"])
+tab1, tab2, tab3 = st.tabs(["🔮 Predizione Singola", "📂 Predizione Batch", "⚡ Ottimizzatore Automatico"])
+
+# HELPER PER FORMATTARE FEATURES
+def build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_sel):
+    input_dict = {
+        'MW_Legante': mw, 'LogP_Legante': logp, 'HBD_Legante': hbd, 'HBA_Legante': hba,
+        'TPSA_Legante': tpsa, 'RotatableBonds_Legante': rot_bonds, 'Temperatura_num': temp,
+        'Tempo_ore_num': tempo, 'mmol legante': mmol_legante, 'mmol sale': mmol_sale,
+        'Rapporto L/M': mmol_legante / mmol_sale if mmol_sale > 0 else 1.0,
+        'Metallo_Z': metal_props[metallo_sel]['Z'],
+        'Metallo_Electronegativity': metal_props[metallo_sel]['Electronegativity'],
+        'Metallo_Radius_pm': metal_props[metallo_sel]['Radius_pm'],
+        'Metallo_Group': metal_props[metallo_sel]['Group'],
+        'Metallo_Period': metal_props[metallo_sel]['Period'],
+        'Anion_Acetato': 1 if anione_sel == 'Acetato' else 0,
+        'Anion_Cloruro': 1 if anione_sel == 'Cloruro' else 0,
+        'Anion_Nitrato': 1 if anione_sel == 'Nitrato' else 0,
+        'Anion_Altro': 1 if anione_sel == 'Altro' else 0,
+        'Solvent_DMF': 1 if 'DMF' in solvente_sel else 0,
+        'Solvent_H2O': 1 if 'H2O' in solvente_sel else 0,
+        'Solvent_MeOH': 1 if 'MeOH' in solvente_sel else 0,
+        'Solvent_EtOH': 1 if 'EtOH' in solvente_sel else 0,
+        'Solvent_CH2Cl2': 1 if 'CH2Cl2' in solvente_sel else 0,
+        'Solvent_MeCN': 1 if 'MeCN' in solvente_sel else 0,
+        'Solvent_Is_Mixture': 1 if '/' in solvente_sel else 0
+    }
+    df_f = pd.DataFrame([input_dict])
+    for col in model.feature_names_in_:
+        if col not in df_f.columns:
+            df_f[col] = 0
+    return df_f[model.feature_names_in_]
 
 # --- TAB 1: PREDIZIONE SINGOLA ---
 with tab1:
@@ -175,35 +205,7 @@ with tab1:
         if not mol:
             st.error("Inserisci uno SMILES valido prima di continuare.")
         else:
-            input_dict = {
-                'MW_Legante': mw, 'LogP_Legante': logp, 'HBD_Legante': hbd, 'HBA_Legante': hba,
-                'TPSA_Legante': tpsa, 'RotatableBonds_Legante': rot_bonds, 'Temperatura_num': temp,
-                'Tempo_ore_num': tempo, 'mmol legante': mmol_legante, 'mmol sale': mmol_sale,
-                'Rapporto L/M': mmol_legante / mmol_sale if mmol_sale > 0 else 1.0,
-                'Metallo_Z': metal_props[metallo_sel]['Z'],
-                'Metallo_Electronegativity': metal_props[metallo_sel]['Electronegativity'],
-                'Metallo_Radius_pm': metal_props[metallo_sel]['Radius_pm'],
-                'Metallo_Group': metal_props[metallo_sel]['Group'],
-                'Metallo_Period': metal_props[metallo_sel]['Period'],
-                'Anion_Acetato': 1 if anione_sel == 'Acetato' else 0,
-                'Anion_Cloruro': 1 if anione_sel == 'Cloruro' else 0,
-                'Anion_Nitrato': 1 if anione_sel == 'Nitrato' else 0,
-                'Anion_Altro': 1 if anione_sel == 'Altro' else 0,
-                'Solvent_DMF': 1 if 'DMF' in solvente_sel else 0,
-                'Solvent_H2O': 1 if 'H2O' in solvente_sel else 0,
-                'Solvent_MeOH': 1 if 'MeOH' in solvente_sel else 0,
-                'Solvent_EtOH': 1 if 'EtOH' in solvente_sel else 0,
-                'Solvent_CH2Cl2': 1 if 'CH2Cl2' in solvente_sel else 0,
-                'Solvent_MeCN': 1 if 'MeCN' in solvente_sel else 0,
-                'Solvent_Is_Mixture': 1 if '/' in solvente_sel else 0
-            }
-
-            df_features = pd.DataFrame([input_dict])
-            for col in model.feature_names_in_:
-                if col not in df_features.columns:
-                    df_features[col] = 0
-
-            df_features = df_features[model.feature_names_in_]
+            df_features = build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_sel)
             probs = model.predict_proba(df_features)[0]
             pred_class = model.predict(df_features)[0]
 
@@ -245,7 +247,6 @@ with tab2:
                 processed_batch = process_unified_dataset(input_batch)
                 X_batch = processed_batch.drop(columns=['Target_Esito_Classe'])
                 
-                # Allinea le colonne con quelle usate nell'addestramento
                 for col in model.feature_names_in_:
                     if col not in X_batch.columns:
                         X_batch[col] = 0
@@ -263,7 +264,6 @@ with tab2:
                 st.success("✅ Predizioni completate con successo!")
                 st.dataframe(results_df)
                 
-                # Download dei risultati
                 csv_download = results_df.to_csv(index=False).encode('utf-8')
                 st.download_button(
                     label="📥 Scarica Risultati in CSV",
@@ -273,3 +273,69 @@ with tab2:
                 )
         except Exception as e:
             st.error(f"Errore durante l'elaborazione del file: {e}")
+
+# --- TAB 3: OTTIMIZZATORE AUTOMATICO (INVERSE DESIGN) ---
+with tab3:
+    st.subheader("⚡ Ottimizzatore di Condizioni Sperimentali")
+    st.markdown("Inserisci i reagenti di partenza e l'IA cercherà la **combinazione ottimale di temperatura, tempo e solvente** per massimizzare la formazione dei cristalli.")
+    
+    opt_col1, opt_col2 = st.columns(2)
+    with opt_col1:
+        opt_smiles = st.text_input("SMILES Legante:", value="c1cc(C(=O)O)cc(C(=O)O)c1", key="opt_smiles")
+        opt_mol = Chem.MolFromSmiles(opt_smiles)
+    with opt_col2:
+        opt_metallo = st.selectbox("Metallo Desiderato:", list(metal_props.keys()), index=1, key="opt_met")
+        opt_anione = st.selectbox("Anione:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'], key="opt_an")
+
+    if st.button("🔍 Trova Ricetta Ottimale"):
+        if not opt_mol:
+            st.error("SMILES non valido.")
+        else:
+            opt_mw = Descriptors.MolWt(opt_mol)
+            opt_logp = Descriptors.MolLogP(opt_mol)
+            opt_hbd = Descriptors.NumHDonors(opt_mol)
+            opt_hba = Descriptors.NumHAcceptors(opt_mol)
+            opt_tpsa = Descriptors.TPSA(opt_mol)
+            opt_rot = Descriptors.NumRotatableBonds(opt_mol)
+            
+            # Generazione spazio delle condizioni di ricerca
+            temperatures = [80, 100, 120, 140, 160]
+            times = [12, 24, 48, 72]
+            solvents = ['DMF', 'DMF/H2O', 'MeOH', 'EtOH', 'CH2Cl2', 'MeCN']
+            ratios = [(0.1, 0.1), (0.2, 0.1), (0.1, 0.2)] # (mmol legante, mmol sale)
+            
+            candidates = []
+            
+            with st.spinner("Generazione e simulazione dello spazio di reazione..."):
+                for t in temperatures:
+                    for tm in times:
+                        for s in solvents:
+                            for m_leg, m_sale in ratios:
+                                feat = build_feature_row(opt_mw, opt_logp, opt_hbd, opt_hba, opt_tpsa, opt_rot, t, tm, m_leg, m_sale, opt_metallo, opt_anione, s)
+                                prob_succ = model.predict_proba(feat)[0]
+                                p_success = prob_succ[2] if len(prob_succ) > 2 else 0.0
+                                
+                                candidates.append({
+                                    'Temperatura (°C)': t,
+                                    'Tempo (Ore)': tm,
+                                    'Solvente': s,
+                                    'mmol Legante': m_leg,
+                                    'mmol Sale': m_sale,
+                                    'Rapporto L/M': m_leg / m_sale,
+                                    'Probabilità Successo (%)': round(p_success * 100, 2)
+                                })
+            
+            df_cand = pd.DataFrame(candidates).sort_values(by='Probabilità Successo (%)', ascending=False)
+            
+            st.markdown("---")
+            st.subheader("🥇 Migliori Condizioni Consigliate dall'IA")
+            
+            best = df_cand.iloc[0]
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Temperatura", f"{best['Temperatura (°C)']} °C")
+            m2.metric("Tempo", f"{best['Tempo (Ore)']} h")
+            m3.metric("Solvente", f"{best['Solvente']}")
+            m4.metric("Probabilità Max", f"{best['Probabilità Successo (%)']}%")
+            
+            st.markdown("### 📋 Classifica delle prime 5 migliori ricette:")
+            st.dataframe(df_cand.head(5))
