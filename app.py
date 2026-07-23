@@ -25,6 +25,34 @@ metal_props = {
     'Fe': {'Z': 26, 'Electronegativity': 1.83, 'Radius_pm': 126, 'Group': 8, 'Period': 4},
     'Mn': {'Z': 25, 'Electronegativity': 1.55, 'Radius_pm': 139, 'Group': 7, 'Period': 4},
     'Rh': {'Z': 45, 'Electronegativity': 2.28, 'Radius_pm': 135, 'Group': 9, 'Period': 5},
+    'Au': {'Z': 79, 'Electronegativity': 2.54, 'Radius_pm': 136, 'Groimport streamlit as st
+import pandas as pd
+import numpy as np
+import joblib
+import os
+import matplotlib.pyplot as plt
+import shap
+from sklearn.ensemble import GradientBoostingClassifier
+from rdkit import Chem
+from rdkit.Chem import Descriptors
+
+st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="🧪", layout="wide")
+st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
+st.markdown("Strumento avanzato di Machine Learning per la predizione, ottimizzazione e **spiegabilità chimica (SHAP)** della sintesi di MOF.")
+
+# --- PROPRIETÀ METALLI ---
+metal_props = {
+    'Co': {'Z': 27, 'Electronegativity': 1.88, 'Radius_pm': 126, 'Group': 9, 'Period': 4},
+    'Cu': {'Z': 29, 'Electronegativity': 1.90, 'Radius_pm': 132, 'Group': 11, 'Period': 4},
+    'Cd': {'Z': 48, 'Electronegativity': 1.69, 'Radius_pm': 144, 'Group': 12, 'Period': 5},
+    'Ag': {'Z': 47, 'Electronegativity': 1.93, 'Radius_pm': 145, 'Group': 11, 'Period': 5},
+    'Zr': {'Z': 40, 'Electronegativity': 1.33, 'Radius_pm': 160, 'Group': 4, 'Period': 5},
+    'Ni': {'Z': 28, 'Electronegativity': 1.91, 'Radius_pm': 124, 'Group': 10, 'Period': 4},
+    'Ru': {'Z': 44, 'Electronegativity': 2.20, 'Radius_pm': 134, 'Group': 8, 'Period': 5},
+    'Zn': {'Z': 30, 'Electronegativity': 1.65, 'Radius_pm': 122, 'Group': 12, 'Period': 4},
+    'Fe': {'Z': 26, 'Electronegativity': 1.83, 'Radius_pm': 126, 'Group': 8, 'Period': 4},
+    'Mn': {'Z': 25, 'Electronegativity': 1.55, 'Radius_pm': 139, 'Group': 7, 'Period': 4},
+    'Rh': {'Z': 45, 'Electronegativity': 2.28, 'Radius_pm': 135, 'Group': 9, 'Period': 5},
     'Au': {'Z': 79, 'Electronegativity': 2.54, 'Radius_pm': 136, 'Group': 11, 'Period': 6},
     'Ir': {'Z': 77, 'Electronegativity': 2.20, 'Radius_pm': 136, 'Group': 9, 'Period': 6},
     'Al': {'Z': 13, 'Electronegativity': 1.61, 'Radius_pm': 121, 'Group': 13, 'Period': 3},
@@ -127,9 +155,9 @@ except Exception as e:
     st.sidebar.error(f"Errore: {e}")
     st.stop()
 
-# --- SIDEBAR: FEATURE IMPORTANCE ---
+# --- SIDEBAR: FEATURE IMPORTANCE GLOBAL ---
 st.sidebar.markdown("---")
-st.sidebar.subheader("📊 Importanza dei Parametri")
+st.sidebar.subheader("📊 Importanza Globale Parametri")
 if hasattr(model, 'feature_importances_'):
     importances = pd.Series(model.feature_importances_, index=model.feature_names_in_).sort_values(ascending=True).tail(8)
     st.sidebar.bar_chart(importances)
@@ -137,7 +165,6 @@ if hasattr(model, 'feature_importances_'):
 # --- TAB INTERFACCIA ---
 tab1, tab2, tab3 = st.tabs(["🔮 Predizione Singola", "📂 Predizione Batch", "⚡ Ottimizzatore Automatico"])
 
-# HELPER PER FORMATTARE FEATURES
 def build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_sel):
     input_dict = {
         'MW_Legante': mw, 'LogP_Legante': logp, 'HBD_Legante': hbd, 'HBA_Legante': hba,
@@ -229,6 +256,35 @@ with tab1:
             else:
                 st.error("❌ **Insuccesso Probabile.** Si consiglia di rivedere le condizioni di reazione.")
 
+            # --- ANALISI SHAP (EXPLAINABLE AI) ---
+            st.markdown("---")
+            st.subheader("🧬 Spiegabilità Chimica Locale (Analisi SHAP)")
+            st.write("Questo grafico mostra **come ogni singola variabile ha spinto l'IA verso questa specifica decisione**:")
+            
+            try:
+                explainer = shap.TreeExplainer(model)
+                shap_values = explainer.shap_values(df_features)
+                
+                # Seleziona l'impatto SHAP sulla classe di successo (classe 2 se esistente, altrimenti l'ultima)
+                target_idx = min(2, len(shap_values) - 1) if isinstance(shap_values, list) else 0
+                
+                fig, ax = plt.subplots(figsize=(8, 3.5))
+                if isinstance(shap_values, list):
+                    s_vals = shap_values[target_idx][0]
+                else:
+                    s_vals = shap_values[0]
+
+                shap_series = pd.Series(s_vals, index=df_features.columns).sort_values(key=abs, ascending=True).tail(8)
+                
+                colors = ['#2ecc71' if v > 0 else '#e74c3c' for v in shap_series.values]
+                bars = ax.barh(shap_series.index, shap_series.values, color=colors)
+                ax.axvline(x=0, color='black', linestyle='--', linewidth=0.8)
+                ax.set_xlabel("Impatto sulla Probabilità di Successo (Valore SHAP)")
+                ax.set_title("Fattori che influenzano la decisione (Verde = Positivo, Rosso = Negativo)")
+                st.pyplot(fig)
+            except Exception as e:
+                st.info("Impossibile generare il grafico SHAP per questa configurazione.")
+
 # --- TAB 2: PREDIZIONE BATCH ---
 with tab2:
     st.subheader("Carica un file Excel o CSV con più sintesi da valutare")
@@ -298,11 +354,10 @@ with tab3:
             opt_tpsa = Descriptors.TPSA(opt_mol)
             opt_rot = Descriptors.NumRotatableBonds(opt_mol)
             
-            # Generazione spazio delle condizioni di ricerca
             temperatures = [80, 100, 120, 140, 160]
             times = [12, 24, 48, 72]
             solvents = ['DMF', 'DMF/H2O', 'MeOH', 'EtOH', 'CH2Cl2', 'MeCN']
-            ratios = [(0.1, 0.1), (0.2, 0.1), (0.1, 0.2)] # (mmol legante, mmol sale)
+            ratios = [(0.1, 0.1), (0.2, 0.1), (0.1, 0.2)]
             
             candidates = []
             
