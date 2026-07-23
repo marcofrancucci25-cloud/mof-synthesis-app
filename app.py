@@ -6,12 +6,19 @@ import os
 import requests
 import matplotlib.pyplot as plt
 
-# Try optional shap import gracefully
+# Import opzionale per SHAP (spiegabilità AI)
 try:
     import shap
     HAS_SHAP = True
 except Exception:
     HAS_SHAP = False
+
+# Import opzionale per lettura CIF tramite pymatgen
+try:
+    from pymatgen.core import Structure
+    HAS_PYMATGEN = True
+except Exception:
+    HAS_PYMATGEN = False
 
 from sklearn.ensemble import GradientBoostingClassifier
 from rdkit import Chem
@@ -66,8 +73,8 @@ COMMON_MOF_LIGANDS = {
     "c12h8o4": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",      # 2,6-NDC
     "2,6-naphthalenedicarboxylic acid": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",
     "ndc": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",
-    "c14h10o4": "O=C(O)c1ccc(/C=C/c2ccc(C(=O)O)cc2)cc1", # Stilbene dicarboxylic acid (SDA)
-    "c14h10n2o4": "O=C(O)c1ccc(/N=N/c2ccc(C(=O)O)cc2)cc1", # Azobenzene-4,4'-dicarboxylic acid (ADC)
+    "c14h10o4": "O=C(O)c1ccc(/C=C/c2ccc(C(=O)O)cc2)cc1", # SDA
+    "c14h10n2o4": "O=C(O)c1ccc(/N=N/c2ccc(C(=O)O)cc2)cc1", # ADC
     "c4h4o4": "O=C(O)/C=C/C(=O)O",                 # Acido Fumarico
     "fumaric acid": "O=C(O)/C=C/C(=O)O",
     "c4h6o4": "O=C(O)CCC(=O)O",                    # Acido Succinico
@@ -77,20 +84,20 @@ COMMON_MOF_LIGANDS = {
     "c6h10o4": "O=C(O)CCCCC(=O)O",                 # Acido Adipico
     "adipic acid": "O=C(O)CCCCC(=O)O",
 
-    # 4. POLICARBOSSILICI (3 e 4 gruppi -COOH)
+    # 4. POLICARBOSSILICI
     "c9h6o6": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",     # Acido Trimesico (BTC)
     "trimesic acid": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",
     "btc": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",
     "c27h18o6": "O=C(O)c1ccc(-c2cc(-c3ccc(C(=O)O)cc3)cc(-c3ccc(C(=O)O)cc3)c2)cc1", # BTB
     "btb": "O=C(O)c1ccc(-c2cc(-c3ccc(C(=O)O)cc3)cc(-c3ccc(C(=O)O)cc3)c2)cc1",
     "c16h10o8": "O=C(O)c1ccc(C(=O)O)c2c1c(C(=O)O)ccc2C(=O)O", # BPTC
-    "c48h28n4o8": "O=C(O)c1ccc(C2=C3C=CC(=C(c4ccc(C(=O)O)cc4)C4=N/C(=C(/c5ccc(C(=O)O)cc5)C5=CC=C2N5)C=C4)N3)cc1", # TCPP (Porfirina)
+    "c48h28n4o8": "O=C(O)c1ccc(C2=C3C=CC(=C(c4ccc(C(=O)O)cc4)C4=N/C(=C(/c5ccc(C(=O)O)cc5)C5=CC=C2N5)C=C4)N3)cc1", # TCPP
     "tcpp": "O=C(O)c1ccc(C2=C3C=CC(=C(c4ccc(C(=O)O)cc4)C4=N/C(=C(/c5ccc(C(=O)O)cc5)C5=CC=C2N5)C=C4)N3)cc1",
 
     # 5. IMIDAZOLI E AZOLI (ZIFs)
     "c3h4n2": "c1c[nH]cn1",                        # Imidazolo
     "imidazole": "c1c[nH]cn1",
-    "c4h6n2": "Cc1c[nH]cn1",                        # 2-Methylimidazole (ZIF-8)
+    "c4h6n2": "Cc1c[nH]cn1",                        # 2-Methylimidazole (2-mIM)
     "2-methylimidazole": "Cc1c[nH]cn1",
     "2-mim": "Cc1c[nH]cn1",
     "c5h8n2": "CCc1c[nH]cn1",                       # 2-Ethylimidazole
@@ -106,14 +113,14 @@ COMMON_MOF_LIGANDS = {
     "c3h4n2_pz": "c1cc[nH]n1",                      # Pirazolo
     "pyrazole": "c1cc[nH]n1",
 
-    # 6. LINKER PIRIDINICI E AZOTATI
+    # 6. LINKER PIRIDINICI
     "c10h8n2": "c1cnc(-c2ccncc2)cc1",                # 4,4'-Bipyridine
     "bipyridine": "c1cnc(-c2ccncc2)cc1",
     "4,4'-bipyridine": "c1cnc(-c2ccncc2)cc1",
     "4,4'-bipy": "c1cnc(-c2ccncc2)cc1",
-    "c12h10n2": "c1cncc(C=Cc2ccncc2)c1",            # bpe (1,2-bis(4-pyridyl)ethylene)
+    "c12h10n2": "c1cncc(C=Cc2ccncc2)c1",            # bpe
     "bpe": "c1cncc(C=Cc2ccncc2)c1",
-    "c13h14n2": "c1cncc(CCCc2ccncc2)c1",            # bpp (1,3-bis(4-pyridyl)propane)
+    "c13h14n2": "c1cncc(CCCc2ccncc2)c1",            # bpp
     "bpp": "c1cncc(CCCc2ccncc2)c1",
     "c15h11n3": "c1ccc(c(-c2ccccn2)c1)-c1ccccn1",   # Terpyridine
     "terpyridine": "c1ccc(c(-c2ccccn2)c1)-c1ccccn1",
@@ -121,19 +128,19 @@ COMMON_MOF_LIGANDS = {
     "pyrazine": "c1cnccn1"
 }
 
-# --- FUNZIONE RESOLVER UNIVERSALE (LOCALE + NIH CACTUS + PUBCHEM) ---
+# --- FUNZIONE RESOLVER UNIVERSALE ---
 def resolve_molecule_to_smiles(query):
     clean_query = query.strip().lower()
     if not clean_query:
         return None
     
-    # 1. CONTROLLO ISTANTANEO LOCALE
+    # 1. Controllo Locale Istantaneo
     if clean_query in COMMON_MOF_LIGANDS:
         return COMMON_MOF_LIGANDS[clean_query]
 
     headers = {'User-Agent': 'MOF_Predictor_App/1.0'}
 
-    # 2. RISOLUZIONE TRAMITE NIH CACTUS (Supporta Nomi Inglesi, Formule, CAS)
+    # 2. NIH Cactus Resolver
     try:
         url_nih = f"https://cactus.nci.nih.gov/chemical/structure/{requests.utils.quote(query)}/smiles"
         res = requests.get(url_nih, headers=headers, timeout=3)
@@ -144,7 +151,7 @@ def resolve_molecule_to_smiles(query):
     except Exception:
         pass
 
-    # 3. FALLBACK PUBCHEM (Nome Chimico)
+    # 3. PubChem Nome
     try:
         url_name = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{requests.utils.quote(query)}/property/IsomericSMILES/JSON"
         res = requests.get(url_name, headers=headers, timeout=3)
@@ -153,7 +160,7 @@ def resolve_molecule_to_smiles(query):
     except Exception:
         pass
 
-    # 4. FALLBACK PUBCHEM (Formula Bruta)
+    # 4. PubChem Formula
     try:
         url_formula = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/fastformula/{requests.utils.quote(query)}/property/IsomericSMILES/JSON"
         res = requests.get(url_formula, headers=headers, timeout=3)
@@ -326,11 +333,11 @@ with tab1:
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.markdown("### 1. Legante Chimico")
+        st.markdown("### 1. Legante Chimico / Cristallo")
         
         mode_legante = st.radio(
             "Modalità Input Legante:", 
-            ["SMILES", "Nome Chimico / Formula / CAS", "Carica File (.mol / .sdf)"],
+            ["SMILES", "Nome Chimico / Formula / CAS", "Carica File (.mol / .sdf / .cif)"],
             horizontal=True
         )
         
@@ -352,13 +359,42 @@ with tab1:
                     else:
                         st.error("Nessuna molecola trovata. Prova a inserire direttamente lo SMILES.")
                         
-        elif mode_legante == "Carica File (.mol / .sdf)":
-            uploaded_mol_file = st.file_uploader("Carica file .mol o .sdf", type=['mol', 'sdf'])
-            if uploaded_mol_file is not None:
-                file_bytes = uploaded_mol_file.getvalue().decode('utf-8')
-                mol = Chem.MolFromMolBlock(file_bytes)
-                if not mol:
-                    st.error("Impossibile interpretare il file strutturale.")
+        elif mode_legante == "Carica File (.mol / .sdf / .cif)":
+            uploaded_file = st.file_uploader("Carica file .mol, .sdf o .cif", type=['mol', 'sdf', 'cif'])
+            if uploaded_file is not None:
+                file_ext = uploaded_file.name.split('.')[-1].lower()
+                file_bytes = uploaded_file.getvalue().decode('utf-8', errors='ignore')
+                
+                if file_ext in ['mol', 'sdf']:
+                    mol = Chem.MolFromMolBlock(file_bytes)
+                    if not mol:
+                        st.error("Impossibile interpretare il file .mol/.sdf.")
+                        
+                elif file_ext == 'cif':
+                    if not HAS_PYMATGEN:
+                        st.error("La libreria `pymatgen` non è installata per processare i file CIF.")
+                    else:
+                        try:
+                            # Salva temporaneamente il CIF per la lettura
+                            with open("temp_upload.cif", "w", encoding="utf-8") as f:
+                                f.write(file_bytes)
+                            
+                            struct = Structure.from_file("temp_upload.cif")
+                            red_formula = struct.composition.reduced_formula
+                            vol = struct.volume
+                            density = struct.density
+                            
+                            st.info(f"📦 **CIF Caricato!** Formula: `{red_formula}` | Volume Cella: `{vol:.2f} Å³` | Densità: `{density:.2f} g/cm³`")
+                            
+                            # Tenta di estrarre lo SMILES tramite la formula ridotta
+                            found_smiles = resolve_molecule_to_smiles(red_formula)
+                            if found_smiles:
+                                mol = Chem.MolFromSmiles(found_smiles)
+                                st.success(f"Legante riconosciuto automaticamente dal CIF: `{found_smiles}`")
+                            else:
+                                st.warning("Impossibile estrarre automaticamente il legante dal CIF. Inserisci manualmente uno SMILES se necessario.")
+                        except Exception as e:
+                            st.error(f"Errore durante l'analisi del file CIF: {e}")
 
         if mol:
             mw = Descriptors.MolWt(mol)
