@@ -1,6 +1,8 @@
 streamlit
 pandas
 numpy
-joblib
-rdkit
 scikit-learn
+rdkit
+joblib
+matplotlib
+shap
