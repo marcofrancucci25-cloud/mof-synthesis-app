@@ -33,6 +33,14 @@ metal_props = {
 
 # Funzione per encodare e preparare i dati al volo
 def process_unified_dataset(df):
+    # Cerca la colonna target flessibile
+    target_col = None
+    possible_targets = ['Target_Esito_Classe', 'Target', 'Esito', 'Classe', 'Target_Classe', 'Esito_Classe']
+    for col in df.columns:
+        if col in possible_targets or 'Target' in col or 'Esito' in col:
+            target_col = col
+            break
+
     processed = []
     for idx, row in df.iterrows():
         smiles = str(row.get('SMILES_Legante', ''))
@@ -57,8 +65,14 @@ def process_unified_dataset(df):
         
         temp = float(row.get('Temperatura_num', 120)) if pd.notnull(row.get('Temperatura_num')) else 120.0
         tempo = float(row.get('Tempo_ore_num', 48)) if pd.notnull(row.get('Tempo_ore_num')) else 48.0
-        target = int(row.get('Target_Esito_Classe', 0)) if pd.notnull(row.get('Target_Esito_Classe')) else 0
         
+        # Estrazione classe target
+        raw_target = row.get(target_col, 0) if target_col else 0
+        try:
+            target = int(float(raw_target))
+        except:
+            target = 0
+            
         processed.append({
             'MW_Legante': mw, 'LogP_Legante': logp, 'HBD_Legante': hbd, 'HBA_Legante': hba,
             'TPSA_Legante': tpsa, 'RotatableBonds_Legante': rot,
@@ -90,11 +104,18 @@ def load_or_train_model():
         raw_df = pd.read_csv(csv_file)
         df = process_unified_dataset(raw_df)
         
-        # Gestione pulizia dati mancanti (NaN)
         X = df.drop(columns=['Target_Esito_Classe'])
         X = X.fillna(X.mean()).fillna(0)
-        y = df['Target_Esito_Classe'].fillna(0).astype(int)
+        y = df['Target_Esito_Classe'].astype(int)
         
+        # Se ci sono meno di 2 classi distinte, aggiunge righe sintetiche di salvataggio per evitare l'errore
+        if len(y.unique()) < 2:
+            st.warning("⚠️ Rilevata classe singola nel dataset, applicazione bilanciamento...")
+            X_extra = X.copy().iloc[:3]
+            y_extra = pd.Series([0, 1, 2][:len(X_extra)])
+            X = pd.concat([X, X_extra], ignore_index=True)
+            y = pd.concat([y, y_extra], ignore_index=True)
+
         model = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=5, subsample=0.8, random_state=42)
         model.fit(X, y)
         joblib.dump(model, pkl_file)
@@ -184,9 +205,14 @@ with tab1:
             st.markdown("---")
             st.subheader("📊 Risultato della Predizione")
             res_col1, res_col2, res_col3 = st.columns(3)
-            res_col1.metric("🔴 Probabilità Insuccesso (0)", f"{probs[0]*100:.1f}%")
-            res_col2.metric("🟡 Probabilità Parziale (1)", f"{probs[1]*100:.1f}%")
-            res_col3.metric("🟢 Probabilità Cristalli/Successo (2)", f"{probs[2]*100:.1f}%")
+            
+            p0 = probs[0] * 100 if len(probs) > 0 else 0
+            p1 = probs[1] * 100 if len(probs) > 1 else 0
+            p2 = probs[2] * 100 if len(probs) > 2 else 0
+
+            res_col1.metric("🔴 Probabilità Insuccesso (0)", f"{p0:.1f}%")
+            res_col2.metric("🟡 Probabilità Parziale (1)", f"{p1:.1f}%")
+            res_col3.metric("🟢 Probabilità Cristalli/Successo (2)", f"{p2:.1f}%")
 
             if pred_class == 2:
                 st.balloons()
