@@ -6,6 +6,11 @@ import os
 import requests
 import matplotlib.pyplot as plt
 
+# Import per LightGBM e Calibrazione ML
+from lightgbm import LGBMClassifier
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.model_selection import StratifiedKFold
+
 # Import opzionale per SHAP (spiegabilità AI)
 try:
     import shap
@@ -20,7 +25,6 @@ try:
 except Exception:
     HAS_PYMATGEN = False
 
-from sklearn.ensemble import GradientBoostingClassifier
 from rdkit import Chem
 from rdkit.Chem import Descriptors
 
@@ -226,6 +230,7 @@ def process_unified_dataset(df):
         })
     return pd.DataFrame(processed)
 
+# --- ADDESTRAMENTO MODELLO POTENZIATO CON LIGHTGBM E CALIBRAZIONE ---
 @st.cache_resource
 def load_or_train_model():
     pkl_file = "modello_sintesi_mof_ottimizzato.pkl"
@@ -234,7 +239,7 @@ def load_or_train_model():
     if os.path.exists(pkl_file):
         return joblib.load(pkl_file)
     elif os.path.exists(csv_file):
-        st.info("⚡ Addestramento del modello ML in corso...")
+        st.info("⚡ Addestramento del modello avanzato LightGBM con calibrazione chimica...")
         raw_df = pd.read_csv(csv_file)
         df = process_unified_dataset(raw_df)
         
@@ -248,17 +253,44 @@ def load_or_train_model():
             X = pd.concat([X, X_extra], ignore_index=True)
             y = pd.concat([y, y_extra], ignore_index=True)
 
-        model = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=5, subsample=0.8, random_state=42)
-        model.fit(X, y)
-        joblib.dump(model, pkl_file)
-        return model
+        # Base LightGBM con Pesi Bilanciati per evitare bias verso l'insuccesso
+        base_model = LGBMClassifier(
+            n_estimators=150,
+            learning_rate=0.05,
+            max_depth=6,
+            num_leaves=31,
+            class_weight='balanced',
+            random_state=42,
+            verbose=-1
+        )
+        
+        # Calibrazione Isotonica per probabilità chimicamente realistiche
+        calibrated_model = CalibratedClassifierCV(
+            estimator=base_model,
+            method='isotonic',
+            cv=StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+        )
+        
+        calibrated_model.fit(X, y)
+        
+        # Preservazione metadati feature
+        calibrated_model.feature_names_in_ = X.columns.tolist()
+        
+        try:
+            importances = np.mean([est.estimator.feature_importances_ for est in calibrated_model.calibrated_classifiers_], axis=0)
+            calibrated_model.feature_importances_ = importances
+        except Exception:
+            calibrated_model.feature_importances_ = np.zeros(X.shape[1])
+
+        joblib.dump(calibrated_model, pkl_file)
+        return calibrated_model
     else:
         st.error(f"File '{csv_file}' non trovato!")
         st.stop()
 
 try:
     model = load_or_train_model()
-    st.sidebar.success("Modello ML attivo e pronto!")
+    st.sidebar.success("Modello ML LightGBM attivo e pronto!")
 except Exception as e:
     st.sidebar.error(f"Errore caricamento modello: {e}")
     st.stop()
@@ -612,7 +644,6 @@ with tab3:
             opt_tpsa = Descriptors.TPSA(opt_mol)
             opt_rot = Descriptors.NumRotatableBonds(opt_mol)
             
-            # Griglia di parametrizzazione avanzata
             temperatures = [100.0, 120.0, 140.0, 160.0]
             times = [24.0, 48.0, 72.0]
             solvents_p = ['DMF', 'DEF', 'DMSO']
@@ -622,7 +653,7 @@ with tab3:
             
             candidates = []
             
-            # Dynamic Target Index Mapping (Esaustivo e Robusto)
+            # Dynamic Target Index Mapping
             classes_list = [int(c) if str(c).isdigit() else c for c in model.classes_]
             
             if 2 in classes_list:
