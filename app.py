@@ -612,29 +612,32 @@ with tab3:
                             for m_leg, m_sale in ratios:
                                 feat = build_feature_row(opt_mw, opt_logp, opt_hbd, opt_hba, opt_tpsa, opt_rot, t, tm, m_leg, m_sale, opt_metallo, opt_anione, s)
                                 prob_succ = model.predict_proba(feat)[0]
-                                p_success = prob_succ[2] if len(prob_succ) > 2 else 0.0
+                                p_success = prob_succ[2] * 100 if len(prob_succ) > 2 else 0.0
                                 
                                 candidates.append({
                                     'Temperatura (°C)': t,
-                                    'Tempo (Ore)': tm,
+                                    'Tempo (h)': tm,
                                     'Solvente': s,
                                     'mmol Legante': m_leg,
                                     'mmol Sale': m_sale,
-                                    'Rapporto L/M': m_leg / m_sale,
-                                    'Probabilità Successo (%)': round(p_success * 100, 2)
+                                    'Rapporto L/M': round(m_leg / m_sale, 2),
+                                    'Prob. Successo (%)': round(p_success, 1)
                                 })
             
-            df_cand = pd.DataFrame(candidates).sort_values(by='Probabilità Successo (%)', ascending=False)
+            opt_df = pd.DataFrame(candidates).sort_values(by='Prob. Successo (%)', ascending=False).reset_index(drop=True)
             
-            st.markdown("---")
-            st.subheader("🥇 Migliori Condizioni Consigliate dall'IA")
+            st.success("✅ Ottimizzazione completata!")
+            st.markdown("### 🏆 Migliori Condizioni Sperimentali Identificate")
             
-            best = df_cand.iloc[0]
-            m1, m2, m3, m4 = st.columns(4)
-            m1.metric("Temperatura", f"{best['Temperatura (°C)']} °C")
-            m2.metric("Tempo", f"{best['Tempo (Ore)']} h")
-            m3.metric("Solvente", f"{best['Solvente']}")
-            m4.metric("Probabilità Max", f"{best['Probabilità Successo (%)']}%")
+            best = opt_df.iloc[0]
+            st.metric("Top Probabilità di Successo (Classe 2)", f"{best['Prob. Successo (%)']}%")
             
-            st.markdown("### 📋 Classifica delle prime 5 migliori ricette:")
-            st.dataframe(df_cand.head(5))
+            st.dataframe(opt_df.head(10))
+            
+            csv_opt = opt_df.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 Scarica tutte le condizioni simulate",
+                data=csv_opt,
+                file_name="Ottimizzazione_Sintesi_MOF.csv",
+                mime="text/csv"
+            )
