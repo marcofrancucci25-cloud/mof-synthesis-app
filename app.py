@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import joblib
 import os
+import requests
 import matplotlib.pyplot as plt
 
 # Try optional shap import gracefully
@@ -19,6 +20,18 @@ from rdkit.Chem import Descriptors
 st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="🧪", layout="wide")
 st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
 st.markdown("Strumento avanzato di Machine Learning per la predizione, ottimizzazione e **spiegabilità chimica** della sintesi di MOF.")
+
+# --- FUNZIONE HELPER: DA NOME/FORMULA A SMILES (PubChem API) ---
+def get_smiles_from_pubchem(query):
+    try:
+        url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{query}/property/IsomericSMILES/JSON"
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            return data['PropertyTable']['Properties'][0]['IsomericSMILES']
+    except Exception:
+        pass
+    return None
 
 # --- PROPRIETÀ METALLI ---
 metal_props = {
@@ -181,8 +194,39 @@ with tab1:
     
     with col1:
         st.markdown("### 1. Legante Chimico")
-        smiles_input = st.text_input("SMILES del Legante:", value="c1cc(C(=O)O)cc(C(=O)O)c1")
-        mol = Chem.MolFromSmiles(smiles_input)
+        
+        mode_legante = st.radio(
+            "Modalità Input Legante:", 
+            ["SMILES", "Nome Chimico / Formula", "Carica File (.mol / .sdf)"],
+            horizontal=True
+        )
+        
+        mol = None
+        
+        if mode_legante == "SMILES":
+            smiles_input = st.text_input("SMILES del Legante:", value="c1cc(C(=O)O)cc(C(=O)O)c1")
+            if smiles_input:
+                mol = Chem.MolFromSmiles(smiles_input)
+                
+        elif mode_legante == "Nome Chimico / Formula":
+            query_input = st.text_input("Nome o Formula (es. 'Terephthalic acid' o 'C8H6O4'):", value="Terephthalic acid")
+            if query_input:
+                with st.spinner("Ricerca struttura su PubChem..."):
+                    found_smiles = get_smiles_from_pubchem(query_input)
+                    if found_smiles:
+                        mol = Chem.MolFromSmiles(found_smiles)
+                        st.caption(f"SMILES Ricavato: `{found_smiles}`")
+                    else:
+                        st.error("Nessuna molecola trovata per questa ricerca. Prova con il nome in inglese.")
+                        
+        elif mode_legante == "Carica File (.mol / .sdf)":
+            uploaded_mol_file = st.file_uploader("Carica file .mol o .sdf", type=['mol', 'sdf'])
+            if uploaded_mol_file is not None:
+                file_bytes = uploaded_mol_file.getvalue().decode('utf-8')
+                mol = Chem.MolFromMolBlock(file_bytes)
+                if not mol:
+                    st.error("Impossibile interpretare il file strutturale.")
+
         if mol:
             mw = Descriptors.MolWt(mol)
             logp = Descriptors.MolLogP(mol)
@@ -190,9 +234,10 @@ with tab1:
             hba = Descriptors.NumHAcceptors(mol)
             tpsa = Descriptors.TPSA(mol)
             rot_bonds = Descriptors.NumRotatableBonds(mol)
-            st.success(f"Molecola Riconosciuta! MW: {mw:.2f} g/mol, LogP: {logp:.2f}")
+            st.success(f"Molecola Valida! MW: {mw:.2f} g/mol, LogP: {logp:.2f}")
         else:
-            st.error("SMILES non valido.")
+            if mode_legante == "SMILES":
+                st.error("SMILES non valido.")
             mw, logp, hbd, hba, tpsa, rot_bonds = 0, 0, 0, 0, 0, 0
 
     with col2:
@@ -210,7 +255,7 @@ with tab1:
 
     if st.button("🚀 Calcola Probabilità di Successo", type="primary"):
         if not mol:
-            st.error("Inserisci uno SMILES valido prima di continuare.")
+            st.error("Inserisci una molecola valida prima di continuare.")
         else:
             df_features = build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_sel)
             probs = model.predict_proba(df_features)[0]
@@ -262,7 +307,6 @@ with tab1:
                     rendered = False
 
             if not rendered:
-                # Fallback nativo Scikit-Learn Feature Contribution
                 fig, ax = plt.subplots(figsize=(8, 3.5))
                 feats_contrib = (df_features.iloc[0] * model.feature_importances_).sort_values(ascending=True).tail(8)
                 ax.barh(feats_contrib.index, feats_contrib.values, color='#3498db')
