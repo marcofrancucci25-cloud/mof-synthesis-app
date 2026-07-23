@@ -28,7 +28,7 @@ st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="
 st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
 st.markdown("Strumento avanzato di Machine Learning per la predizione, ottimizzazione e **spiegabilità chimica** della sintesi di MOF.")
 
-# --- DIZIONARIO LOCALE ULTRA-ESTESO (LEGANTI MOF, MODULANTI E LINKER) ---
+# --- DIZIONARIO LOCALE LEGANTE MOF ---
 COMMON_MOF_LIGANDS = {
     # 1. ACIDI MONOCARBOSSILICI E MODULANTI
     "c7h6o2": "O=C(O)c1ccccc1",                     # Acido Benzoico
@@ -44,7 +44,6 @@ COMMON_MOF_LIGANDS = {
     "propionic acid": "CCC(=O)O",
     "c5h10o2": "CC(C)(C)C(=O)O",                     # Acido Pivalico
     "pivalic acid": "CC(C)(C)C(=O)O",
-    "c11h8o2": "O=C(O)c1cccc2ccccc12",              # Acido 1-Naftoico
 
     # 2. DICARBOSSILICI AROMATICI (BDC e Derivati)
     "c8h6o4": "O=C(O)c1ccc(C(=O)O)cc1",             # Acido Tereftalico (BDC)
@@ -53,82 +52,53 @@ COMMON_MOF_LIGANDS = {
     "isophthalic acid": "O=C(O)c1cccc(C(=O)O)c1",   # Acido Isoftalico
     "phthalic acid": "O=C(O)c1ccccc1C(=O)O",         # Acido Ftalico
     "c8h7no4": "O=C(O)c1ccc(C(=O)O)c(N)c1",         # BDC-NH2
-    "2-aminoterephthalic acid": "O=C(O)c1ccc(C(=O)O)c(N)c1",
     "bdc-nh2": "O=C(O)c1ccc(C(=O)O)c(N)c1",
     "c8h5no6": "O=C(O)c1ccc(C(=O)O)c([N+](=O)[O-])c1", # BDC-NO2
-    "2-nitroterephthalic acid": "O=C(O)c1ccc(C(=O)O)c([N+](=O)[O-])c1",
     "bdc-no2": "O=C(O)c1ccc(C(=O)O)c([N+](=O)[O-])c1",
     "c8h5bro4": "O=C(O)c1ccc(C(=O)O)c(Br)c1",       # BDC-Br
-    "2-bromoterephthalic acid": "O=C(O)c1ccc(C(=O)O)c(Br)c1",
     "bdc-br": "O=C(O)c1ccc(C(=O)O)c(Br)c1",
     "c8h6o5": "O=C(O)c1ccc(C(=O)O)c(O)c1",          # BDC-OH
-    "2-hydroxyterephthalic acid": "O=C(O)c1ccc(C(=O)O)c(O)c1",
     "bdc-oh": "O=C(O)c1ccc(C(=O)O)c(O)c1",
-    "c10h10o4": "CC1=C(C(=O)O)C=CC(=C1C)C(=O)O",    # BDC-(CH3)2
-    "2,5-dimethylterephthalic acid": "CC1=C(C(=O)O)C=CC(=C1C)C(=O)O",
 
     # 3. DICARBOSSILICI ESTESI E ALIFATICI
     "c12h10o4": "O=C(O)c1ccc(-c2ccc(C(=O)O)cc2)cc1", # BPDC
     "bpdc": "O=C(O)c1ccc(-c2ccc(C(=O)O)cc2)cc1",
     "c12h8o4": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",      # 2,6-NDC
-    "2,6-naphthalenedicarboxylic acid": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",
     "ndc": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",
-    "c14h10o4": "O=C(O)c1ccc(/C=C/c2ccc(C(=O)O)cc2)cc1", # SDA
-    "c14h10n2o4": "O=C(O)c1ccc(/N=N/c2ccc(C(=O)O)cc2)cc1", # ADC
     "c4h4o4": "O=C(O)/C=C/C(=O)O",                 # Acido Fumarico
     "fumaric acid": "O=C(O)/C=C/C(=O)O",
-    "c4h6o4": "O=C(O)CCC(=O)O",                    # Acido Succinico
-    "succinic acid": "O=C(O)CCC(=O)O",
-    "c5h8o4": "O=C(O)CCCC(=O)O",                   # Acido Glutarico
-    "glutaric acid": "O=C(O)CCCC(=O)O",
-    "c6h10o4": "O=C(O)CCCCC(=O)O",                 # Acido Adipico
-    "adipic acid": "O=C(O)CCCCC(=O)O",
 
     # 4. POLICARBOSSILICI
     "c9h6o6": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",     # Acido Trimesico (BTC)
-    "trimesic acid": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",
     "btc": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",
     "c27h18o6": "O=C(O)c1ccc(-c2cc(-c3ccc(C(=O)O)cc3)cc(-c3ccc(C(=O)O)cc3)c2)cc1", # BTB
     "btb": "O=C(O)c1ccc(-c2cc(-c3ccc(C(=O)O)cc3)cc(-c3ccc(C(=O)O)cc3)c2)cc1",
-    "c16h10o8": "O=C(O)c1ccc(C(=O)O)c2c1c(C(=O)O)ccc2C(=O)O", # BPTC
-    "c48h28n4o8": "O=C(O)c1ccc(C2=C3C=CC(=C(c4ccc(C(=O)O)cc4)C4=N/C(=C(/c5ccc(C(=O)O)cc5)C5=CC=C2N5)C=C4)N3)cc1", # TCPP
-    "tcpp": "O=C(O)c1ccc(C2=C3C=CC(=C(c4ccc(C(=O)O)cc4)C4=N/C(=C(/c5ccc(C(=O)O)cc5)C5=CC=C2N5)C=C4)N3)cc1",
 
-    # 5. IMIDAZOLI E AZOLI (ZIFs)
+    # 5. IMIDAZOLI E LINKER PIRIDINICI
     "c3h4n2": "c1c[nH]cn1",                        # Imidazolo
-    "imidazole": "c1c[nH]cn1",
-    "c4h6n2": "Cc1c[nH]cn1",                        # 2-Methylimidazole (2-mIM)
-    "2-methylimidazole": "Cc1c[nH]cn1",
+    "c4h6n2": "Cc1c[nH]cn1",                        # 2-mIM
     "2-mim": "Cc1c[nH]cn1",
-    "c5h8n2": "CCc1c[nH]cn1",                       # 2-Ethylimidazole
-    "2-ethylimidazole": "CCc1c[nH]cn1",
-    "c7h6n2": "c1ccc2[nH]cnc2c1",                   # Benzimidazolo
-    "benzimidazole": "c1ccc2[nH]cnc2c1",
-    "c5h4n4": "c1nc2c([nH]1)ncn2",                   # Purina
-    "purine": "c1nc2c([nH]1)ncn2",
-    "c2h3n3": "c1n[nH]cn1",                        # 1,2,4-Triazolo
-    "1,2,4-triazole": "c1n[nH]cn1",
-    "ch2n4": "c1nn[nH]n1",                         # Tetrazolo
-    "tetrazole": "c1nn[nH]n1",
-    "c3h4n2_pz": "c1cc[nH]n1",                      # Pirazolo
-    "pyrazole": "c1cc[nH]n1",
-
-    # 6. LINKER PIRIDINICI
-    "c10h8n2": "c1cnc(-c2ccncc2)cc1",                # 4,4'-Bipyridine
-    "bipyridine": "c1cnc(-c2ccncc2)cc1",
-    "4,4'-bipyridine": "c1cnc(-c2ccncc2)cc1",
-    "4,4'-bipy": "c1cnc(-c2ccncc2)cc1",
-    "c12h10n2": "c1cncc(C=Cc2ccncc2)c1",            # bpe
-    "bpe": "c1cncc(C=Cc2ccncc2)c1",
-    "c13h14n2": "c1cncc(CCCc2ccncc2)c1",            # bpp
-    "bpp": "c1cncc(CCCc2ccncc2)c1",
-    "c15h11n3": "c1ccc(c(-c2ccccn2)c1)-c1ccccn1",   # Terpyridine
-    "terpyridine": "c1ccc(c(-c2ccccn2)c1)-c1ccccn1",
-    "c4h4n2": "c1cnccn1",                          # Pirazina
-    "pyrazine": "c1cnccn1"
+    "c10h8n2": "c1cnc(-c2ccncc2)cc1",                # 4,4'-Bipy
+    "4,4'-bipy": "c1cnc(-c2ccncc2)cc1"
 }
 
-# --- PROPRIETÀ METALLI COMPLETI E MASSE ATOMICHE ---
+# --- PROPRIETÀ ADDITIVI E MODULATORI ---
+ADDITIVES_DATABASE = {
+    'Nessuno': {'type': 'None', 'MW': 0.0, 'pKa': 0.0},
+    'Acido Acetico (AcOH)': {'type': 'Acid', 'MW': 60.05, 'pKa': 4.76},
+    'Acido Formico (HCOOH)': {'type': 'Acid', 'MW': 46.03, 'pKa': 3.75},
+    'Acido Benzoico': {'type': 'Acid', 'MW': 122.12, 'pKa': 4.20},
+    'Acido Trifluoroacetico (TFA)': {'type': 'Acid', 'MW': 114.02, 'pKa': 0.23},
+    'Acido Cloridrico (HCl)': {'type': 'Acid', 'MW': 36.46, 'pKa': -6.0},
+    'Trietilammina (TEA)': {'type': 'Base', 'MW': 101.19, 'pKa': 10.75},
+    'Diisopropiletilammina (DIPEA)': {'type': 'Base', 'MW': 129.24, 'pKa': 11.0},
+    'N-Metilmorfolina': {'type': 'Base', 'MW': 101.15, 'pKa': 7.38},
+    'Piridinetilammina / Piridina': {'type': 'Base', 'MW': 79.10, 'pKa': 5.25},
+    'Acqua (H2O Modulatore)': {'type': 'Neutral', 'MW': 18.015, 'pKa': 14.0},
+    'HF (Acido Fluoridrico)': {'type': 'Acid', 'MW': 20.01, 'pKa': 3.17}
+}
+
+# --- PROPRIETÀ METALLI COMPLETI ---
 metal_props = {
     'Cu': {'Z': 29, 'Electronegativity': 1.90, 'Radius_pm': 132, 'Group': 11, 'Period': 4, 'MW': 63.55},
     'Zn': {'Z': 30, 'Electronegativity': 1.65, 'Radius_pm': 122, 'Group': 12, 'Period': 4, 'MW': 65.38},
@@ -139,24 +109,15 @@ metal_props = {
     'Mn': {'Z': 25, 'Electronegativity': 1.55, 'Radius_pm': 139, 'Group': 7, 'Period': 4, 'MW': 54.94},
     'Cr': {'Z': 24, 'Electronegativity': 1.66, 'Radius_pm': 128, 'Group': 6, 'Period': 4, 'MW': 51.99},
     'Ti': {'Z': 22, 'Electronegativity': 1.54, 'Radius_pm': 147, 'Group': 4, 'Period': 4, 'MW': 47.87},
-    'V':  {'Z': 23, 'Electronegativity': 1.63, 'Radius_pm': 134, 'Group': 5, 'Period': 4, 'MW': 50.94},
-    'Cd': {'Z': 48, 'Electronegativity': 1.69, 'Radius_pm': 144, 'Group': 12, 'Period': 5, 'MW': 112.41},
-    'Ag': {'Z': 47, 'Electronegativity': 1.93, 'Radius_pm': 145, 'Group': 11, 'Period': 5, 'MW': 107.87},
-    'Pd': {'Z': 46, 'Electronegativity': 2.20, 'Radius_pm': 137, 'Group': 10, 'Period': 5, 'MW': 106.42},
     'Al': {'Z': 13, 'Electronegativity': 1.61, 'Radius_pm': 121, 'Group': 13, 'Period': 3, 'MW': 26.98},
-    'Ga': {'Z': 31, 'Electronegativity': 1.81, 'Radius_pm': 122, 'Group': 13, 'Period': 4, 'MW': 69.72},
-    'In': {'Z': 49, 'Electronegativity': 1.78, 'Radius_pm': 144, 'Group': 13, 'Period': 5, 'MW': 114.82},
     'Mg': {'Z': 12, 'Electronegativity': 1.31, 'Radius_pm': 141, 'Group': 2, 'Period': 3, 'MW': 24.31},
-    'Ca': {'Z': 20, 'Electronegativity': 1.00, 'Radius_pm': 174, 'Group': 2, 'Period': 4, 'MW': 40.08},
-    'Ce': {'Z': 58, 'Electronegativity': 1.12, 'Radius_pm': 181, 'Group': 3, 'Period': 6, 'MW': 140.12},
-    'Eu': {'Z': 63, 'Electronegativity': 1.20, 'Radius_pm': 180, 'Group': 3, 'Period': 6, 'MW': 151.96},
-    'Tb': {'Z': 65, 'Electronegativity': 1.20, 'Radius_pm': 178, 'Group': 3, 'Period': 6, 'MW': 158.93}
+    'Ce': {'Z': 58, 'Electronegativity': 1.12, 'Radius_pm': 181, 'Group': 3, 'Period': 6, 'MW': 140.12}
 }
 
 anion_mw = {
-    'Nitrato': 62.00 * 2,   # NO3- x2
-    'Acetato': 59.04 * 2,   # OAc- x2
-    'Cloruro': 35.45 * 2,   # Cl- x2
+    'Nitrato': 62.00 * 2,
+    'Acetato': 59.04 * 2,
+    'Cloruro': 35.45 * 2,
     'Altro': 60.00
 }
 
@@ -170,7 +131,6 @@ def resolve_molecule_to_smiles(query):
         return COMMON_MOF_LIGANDS[clean_query]
 
     headers = {'User-Agent': 'MOF_Predictor_App/1.0'}
-
     try:
         url_nih = f"https://cactus.nci.nih.gov/chemical/structure/{requests.utils.quote(query)}/smiles"
         res = requests.get(url_nih, headers=headers, timeout=3)
@@ -193,9 +153,9 @@ def resolve_molecule_to_smiles(query):
 
 def process_unified_dataset(df):
     target_col = None
-    possible_targets = ['Target_Esito_Classe', 'Target', 'Esito', 'Classe', 'Target_Classe', 'Esito_Classe']
+    possible_targets = ['Target_Esito_Classe', 'Target', 'Esito', 'Classe']
     for col in df.columns:
-        if col in possible_targets or 'Target' in col or 'Esito' in col:
+        if col in possible_targets or 'Target' in col:
             target_col = col
             break
 
@@ -218,8 +178,12 @@ def process_unified_dataset(df):
         m_sale = float(row.get('mmol sale', 0.1)) if pd.notnull(row.get('mmol sale')) else 0.1
         ratio = m_leg / m_sale if m_sale > 0 else 1.0
         
-        solv = str(row.get('Solvente', 'DMF'))
-        anion = str(row.get('Anione_Tipo', 'Nitrato'))
+        solv_p = str(row.get('Solvente', 'DMF'))
+        cosolv = str(row.get('CoSolvente', 'Nessuno'))
+        cosolv_pct = float(row.get('CoSolvente_Pct', 0.0)) if pd.notnull(row.get('CoSolvente_Pct')) else 0.0
+        
+        add_type = str(row.get('Additivo_Tipo', 'None'))
+        add_eq = float(row.get('Additivo_Eq', 0.0)) if pd.notnull(row.get('Additivo_Eq')) else 0.0
         
         temp = float(row.get('Temperatura_num', 120)) if pd.notnull(row.get('Temperatura_num')) else 120.0
         tempo = float(row.get('Tempo_ore_num', 48)) if pd.notnull(row.get('Tempo_ore_num')) else 48.0
@@ -237,14 +201,17 @@ def process_unified_dataset(df):
             'mmol legante': m_leg, 'mmol sale': m_sale, 'Rapporto L/M': ratio,
             'Metallo_Z': m_info['Z'], 'Metallo_Electronegativity': m_info['Electronegativity'],
             'Metallo_Radius_pm': m_info['Radius_pm'], 'Metallo_Group': m_info['Group'], 'Metallo_Period': m_info['Period'],
-            'Anion_Acetato': 1 if 'Acetato' in anion else 0,
-            'Anion_Cloruro': 1 if 'Cloruro' in anion else 0,
-            'Anion_Nitrato': 1 if 'Nitrato' in anion else 0,
-            'Anion_Altro': 1 if not any(x in anion for x in ['Acetato','Cloruro','Nitrato']) else 0,
-            'Solvent_DMF': 1 if 'DMF' in solv else 0, 'Solvent_H2O': 1 if 'H2O' in solv else 0,
-            'Solvent_MeOH': 1 if 'MeOH' in solv else 0, 'Solvent_EtOH': 1 if 'EtOH' in solv else 0,
-            'Solvent_CH2Cl2': 1 if 'CH2Cl2' in solv else 0, 'Solvent_MeCN': 1 if 'MeCN' in solv else 0,
-            'Solvent_Is_Mixture': 1 if '/' in solv else 0,
+            'CoSolvent_Pct': cosolv_pct,
+            'Additive_Eq': add_eq,
+            'Additive_Is_Acid': 1 if add_type == 'Acid' else 0,
+            'Additive_Is_Base': 1 if add_type == 'Base' else 0,
+            'Additive_Is_Neutral': 1 if add_type == 'Neutral' else 0,
+            'Solvent_DMF': 1 if 'DMF' in solv_p or 'DMF' in cosolv else 0,
+            'Solvent_H2O': 1 if 'H2O' in solv_p or 'H2O' in cosolv else 0,
+            'Solvent_MeOH': 1 if 'MeOH' in solv_p or 'MeOH' in cosolv else 0,
+            'Solvent_EtOH': 1 if 'EtOH' in solv_p or 'EtOH' in cosolv else 0,
+            'Solvent_DEF': 1 if 'DEF' in solv_p or 'DEF' in cosolv else 0,
+            'Solvent_MeCN': 1 if 'MeCN' in solv_p or 'MeCN' in cosolv else 0,
             'Target_Esito_Classe': target
         })
     return pd.DataFrame(processed)
@@ -286,7 +253,7 @@ except Exception as e:
     st.sidebar.error(f"Errore: {e}")
     st.stop()
 
-# --- SIDEBAR: FEATURE IMPORTANCE GLOBAL ---
+# --- SIDEBAR: FEATURE IMPORTANCE ---
 st.sidebar.markdown("---")
 st.sidebar.subheader("📊 Importanza Globale Parametri")
 if hasattr(model, 'feature_importances_'):
@@ -296,7 +263,10 @@ if hasattr(model, 'feature_importances_'):
 # --- TAB INTERFACCIA ---
 tab1, tab2, tab3 = st.tabs(["🔮 Predizione Singola", "📂 Predizione Batch", "⚡ Ottimizzatore Automatico"])
 
-def build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_sel):
+def build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_p, cosolvente, cosolv_pct, additivo_sel, add_eq):
+    add_info = ADDITIVES_DATABASE.get(additivo_sel, ADDITIVES_DATABASE['Nessuno'])
+    add_type = add_info['type']
+    
     input_dict = {
         'MW_Legante': mw, 'LogP_Legante': logp, 'HBD_Legante': hbd, 'HBA_Legante': hba,
         'TPSA_Legante': tpsa, 'RotatableBonds_Legante': rot_bonds, 'Temperatura_num': temp,
@@ -311,13 +281,17 @@ def build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_leg
         'Anion_Cloruro': 1 if anione_sel == 'Cloruro' else 0,
         'Anion_Nitrato': 1 if anione_sel == 'Nitrato' else 0,
         'Anion_Altro': 1 if anione_sel == 'Altro' else 0,
-        'Solvent_DMF': 1 if 'DMF' in solvente_sel else 0,
-        'Solvent_H2O': 1 if 'H2O' in solvente_sel else 0,
-        'Solvent_MeOH': 1 if 'MeOH' in solvente_sel else 0,
-        'Solvent_EtOH': 1 if 'EtOH' in solvente_sel else 0,
-        'Solvent_CH2Cl2': 1 if 'CH2Cl2' in solvente_sel else 0,
-        'Solvent_MeCN': 1 if 'MeCN' in solvente_sel else 0,
-        'Solvent_Is_Mixture': 1 if '/' in solvente_sel else 0
+        'CoSolvent_Pct': cosolv_pct,
+        'Additive_Eq': add_eq,
+        'Additive_Is_Acid': 1 if add_type == 'Acid' else 0,
+        'Additive_Is_Base': 1 if add_type == 'Base' else 0,
+        'Additive_Is_Neutral': 1 if add_type == 'Neutral' else 0,
+        'Solvent_DMF': 1 if 'DMF' in solvente_p or 'DMF' in cosolvente else 0,
+        'Solvent_H2O': 1 if 'H2O' in solvente_p or 'H2O' in cosolvente else 0,
+        'Solvent_MeOH': 1 if 'MeOH' in solvente_p or 'MeOH' in cosolvente else 0,
+        'Solvent_EtOH': 1 if 'EtOH' in solvente_p or 'EtOH' in cosolvente else 0,
+        'Solvent_DEF': 1 if 'DEF' in solvente_p or 'DEF' in cosolvente else 0,
+        'Solvent_MeCN': 1 if 'MeCN' in solvente_p or 'MeCN' in cosolvente else 0,
     }
     df_f = pd.DataFrame([input_dict])
     for col in model.feature_names_in_:
@@ -385,9 +359,8 @@ with tab1:
             rot_bonds = Descriptors.NumRotatableBonds(mol)
             st.success(f"Molecola Valida! MW: {mw:.2f} g/mol")
         else:
-            mw, logp, hbd, hba, tpsa, rot_bonds = 166.13, 1.32, 2, 4, 74.6, 2 # Default fallback se vuoto
+            mw, logp, hbd, hba, tpsa, rot_bonds = 166.13, 1.32, 2, 4, 74.6, 2
 
-        # SELEZIONE QUANTITÀ LEGANTE (mmol vs mg)
         input_mode_leg = st.radio("Inserisci Legante come:", ["MilliMoli (mmol)", "Massa (mg)"], key="rad_leg", horizontal=True)
         if input_mode_leg == "MilliMoli (mmol)":
             mmol_legante = st.number_input("mmol Legante:", min_value=0.001, max_value=20.0, value=0.10, step=0.01)
@@ -425,7 +398,6 @@ with tab1:
         
         st.caption(f"🧪 **Massa Molare Sale Idrato:** `{total_salt_mw:.2f} g/mol`")
 
-        # SELEZIONE QUANTITÀ SALE (mmol vs mg)
         input_mode_sale = st.radio("Inserisci Sale come:", ["MilliMoli (mmol)", "Massa (mg)"], key="rad_sale", horizontal=True)
         if input_mode_sale == "MilliMoli (mmol)":
             mmol_sale = st.number_input("mmol Sale Metallico:", min_value=0.001, max_value=20.0, value=0.10, step=0.01)
@@ -437,16 +409,47 @@ with tab1:
             st.caption(f"⚖️ Corrispondono a **{mmol_sale:.3f} mmol** di {metallo_sel}.")
 
     with col3:
-        st.markdown("### 3. Condizioni della Reazione")
-        solvente_sel = st.selectbox("Solvente:", ['DMF', 'DMF/H2O', 'MeOH', 'EtOH', 'CH2Cl2', 'MeCN', 'Altro'])
+        st.markdown("### 3. Miscela Solvente & Modulatori")
+        
+        # SOLVENTE E CO-SOLVENTE
+        solvente_p = st.selectbox("Solvente Principale:", ['DMF', 'DEF', 'DMSO', 'MeCN', 'H2O', 'MeOH', 'EtOH'])
+        co_solvente = st.selectbox("Co-Solvente (Opzionale):", ['Nessuno', 'H2O', 'MeOH', 'EtOH', 'CH2Cl2', 'DEF'])
+        
+        cosolv_pct = 0.0
+        if co_solvente != 'Nessuno':
+            cosolv_pct = st.slider("% Volume Co-solvente (% v/v):", min_value=5.0, max_value=90.0, value=20.0, step=5.0)
+
         temp = st.number_input("Temperatura (°C):", min_value=20.0, max_value=250.0, value=120.0, step=5.0)
         tempo = st.number_input("Tempo di Reazione (Ore):", min_value=1.0, max_value=168.0, value=48.0, step=6.0)
+
+        # ADDITIVI / MODULATORI
+        st.markdown("---")
+        use_add = st.checkbox("➕ Aggiungi Additivo / Modulatore (Base/Acido)")
+        
+        additivo_sel = 'Nessuno'
+        add_eq = 0.0
+        if use_add:
+            additivo_sel = st.selectbox("Seleziona Additivo:", list(ADDITIVES_DATABASE.keys())[1:])
+            add_mode = st.radio("Inserisci quantità additivo come:", ["Equivalenti (vs Legante)", "mmol Additivo"], horizontal=True)
+            
+            if add_mode == "Equivalenti (vs Legante)":
+                add_eq = st.number_input("Equivalenti rispetto al Legante:", min_value=0.1, max_value=100.0, value=2.0, step=0.5)
+                add_mmol = add_eq * mmol_legante
+                st.caption(f"🧪 Corrispondono a **{add_mmol:.3f} mmol** di additivo.")
+            else:
+                add_mmol = st.number_input("mmol Additivo:", min_value=0.001, max_value=50.0, value=0.20, step=0.05)
+                add_eq = add_mmol / mmol_legante if mmol_legante > 0 else 0.0
+                st.caption(f"🧪 Corrispondono a **{add_eq:.2f} eq.** rispetto al Legante.")
 
     if st.button("🚀 Calcola Probabilità di Successo", type="primary"):
         if not mol:
             st.error("Inserisci una molecola valida prima di continuare.")
         else:
-            df_features = build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_sel)
+            df_features = build_feature_row(
+                mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, 
+                mmol_legante, mmol_sale, metallo_sel, anione_sel, 
+                solvente_p, co_solvente, cosolv_pct, additivo_sel, add_eq
+            )
             probs = model.predict_proba(df_features)[0]
             pred_class = model.predict(df_features)[0]
 
@@ -470,7 +473,7 @@ with tab1:
             else:
                 st.error("❌ **Insuccesso Probabile.** Si consiglia di rivedere le condizioni di reazione.")
 
-            # SPIEGABILITÀ CHIMICA CON GRAFICO
+            # SPIEGABILITÀ CHIMICA
             st.markdown("---")
             st.subheader("🧬 Spiegabilità Chimica della Predizione")
             
@@ -550,8 +553,8 @@ with tab2:
 
 # --- TAB 3: OTTIMIZZATORE AUTOMATICO ---
 with tab3:
-    st.subheader("⚡ Ottimizzatore di Condizioni Sperimentali")
-    st.markdown("Inserisci i reagenti di partenza e l'IA cercherà la **combinazione ottimale di temperatura, tempo e solvente** per massimizzare la formazione dei cristalli.")
+    st.subheader("⚡ Ottimizzatore di Condizioni Sperimentali con Modulatori")
+    st.markdown("L'IA cercherà la **combinazione ottimale di temperatura, co-solventi e modulatori (acidi/basi)** per massimizzare la cristalizzazione del MOF.")
     
     opt_col1, opt_col2 = st.columns(2)
     with opt_col1:
@@ -573,31 +576,36 @@ with tab3:
             opt_tpsa = Descriptors.TPSA(opt_mol)
             opt_rot = Descriptors.NumRotatableBonds(opt_mol)
             
-            temperatures = [80, 100, 120, 140, 160]
-            times = [12, 24, 48, 72]
-            solvents = ['DMF', 'DMF/H2O', 'MeOH', 'EtOH', 'CH2Cl2', 'MeCN']
-            ratios = [(0.1, 0.1), (0.2, 0.1), (0.1, 0.2)]
+            temperatures = [100, 120, 140]
+            times = [24, 48]
+            solvents_p = ['DMF', 'DEF']
+            cosolvents = [('Nessuno', 0.0), ('H2O', 10.0), ('MeOH', 20.0)]
+            additives = [('Nessuno', 0.0), ('Acido Acetico (AcOH)', 2.0), ('Trietilammina (TEA)', 1.0)]
             
             candidates = []
             
-            with st.spinner("Generazione e simulazione dello spazio di reazione..."):
+            with st.spinner("Generazione e simulazione dello spazio di reazione con modulatori..."):
                 for t in temperatures:
                     for tm in times:
-                        for s in solvents:
-                            for m_leg, m_sale in ratios:
-                                feat = build_feature_row(opt_mw, opt_logp, opt_hbd, opt_hba, opt_tpsa, opt_rot, t, tm, m_leg, m_sale, opt_metallo, opt_anione, s)
-                                prob_succ = model.predict_proba(feat)[0]
-                                p_success = prob_succ[2] * 100 if len(prob_succ) > 2 else 0.0
-                                
-                                candidates.append({
-                                    'Temperatura (°C)': t,
-                                    'Tempo (h)': tm,
-                                    'Solvente': s,
-                                    'mmol Legante': m_leg,
-                                    'mmol Sale': m_sale,
-                                    'Rapporto L/M': round(m_leg / m_sale, 2),
-                                    'Prob. Successo (%)': round(p_success, 1)
-                                })
+                        for sp in solvents_p:
+                            for cs, cs_pct in cosolvents:
+                                for add_name, add_eq in additives:
+                                    feat = build_feature_row(
+                                        opt_mw, opt_logp, opt_hbd, opt_hba, opt_tpsa, opt_rot, 
+                                        t, tm, 0.1, 0.1, opt_metallo, opt_anione, 
+                                        sp, cs, cs_pct, add_name, add_eq
+                                    )
+                                    prob_succ = model.predict_proba(feat)[0]
+                                    p_success = prob_succ[2] * 100 if len(prob_succ) > 2 else 0.0
+                                    
+                                    candidates.append({
+                                        'Temperatura (°C)': t,
+                                        'Tempo (h)': tm,
+                                        'Solvente P.': sp,
+                                        'Co-Solvente': f"{cs} ({cs_pct}%)" if cs != 'Nessuno' else 'Nessuno',
+                                        'Additivo / Modulatore': f"{add_name} ({add_eq} eq)" if add_name != 'Nessuno' else 'Nessuno',
+                                        'Prob. Successo (%)': round(p_success, 1)
+                                    })
             
             opt_df = pd.DataFrame(candidates).sort_values(by='Prob. Successo (%)', ascending=False).reset_index(drop=True)
             
