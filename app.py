@@ -21,16 +21,49 @@ st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="
 st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
 st.markdown("Strumento avanzato di Machine Learning per la predizione, ottimizzazione e **spiegabilità chimica** della sintesi di MOF.")
 
-# --- FUNZIONE HELPER: DA NOME/FORMULA A SMILES (PubChem API) ---
+# --- FUNZIONE HELPER AVANZATA: DA NOME O FORMULA A SMILES (PubChem API) ---
 def get_smiles_from_pubchem(query):
+    query = query.strip()
+    if not query:
+        return None
+    
+    # 1. Tentativo come NOME CHIMICO
     try:
-        url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{query}/property/IsomericSMILES/JSON"
-        response = requests.get(url, timeout=5)
-        if response.status_code == 200:
-            data = response.json()
+        url_name = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{query}/property/IsomericSMILES,Title/JSON"
+        res = requests.get(url_name, timeout=5)
+        if res.status_code == 200:
+            data = res.json()
             return data['PropertyTable']['Properties'][0]['IsomericSMILES']
     except Exception:
         pass
+
+    # 2. Tentativo come FORMULA BRUTA (es. C8H6O4)
+    try:
+        url_formula = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/fastformula/{query}/property/IsomericSMILES/JSON"
+        res = requests.get(url_formula, timeout=5)
+        if res.status_code == 200:
+            data = res.json()
+            props = data['PropertyTable']['Properties']
+            if props:
+                return props[0]['IsomericSMILES']  # Prende il primo isomero trovato
+    except Exception:
+        pass
+
+    # 3. Fallback: Autocomplete / Search per Nomi Complessi o Sinonimi
+    try:
+        url_search = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/autocomplete/descriptor/{query}/JSON"
+        res = requests.get(url_search, timeout=5)
+        if res.status_code == 200:
+            suggestions = res.json().get('dictionary_terms', {}).get('compound', [])
+            if suggestions:
+                best_match = suggestions[0]
+                url_best = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{best_match}/property/IsomericSMILES/JSON"
+                res_best = requests.get(url_best, timeout=5)
+                if res_best.status_code == 200:
+                    return res_best.json()['PropertyTable']['Properties'][0]['IsomericSMILES']
+    except Exception:
+        pass
+
     return None
 
 # --- PROPRIETÀ METALLI ---
@@ -217,7 +250,7 @@ with tab1:
                         mol = Chem.MolFromSmiles(found_smiles)
                         st.caption(f"SMILES Ricavato: `{found_smiles}`")
                     else:
-                        st.error("Nessuna molecola trovata per questa ricerca. Prova con il nome in inglese.")
+                        st.error("Nessuna molecola trovata. Prova con il nome inglese o controlla la formula.")
                         
         elif mode_legante == "Carica File (.mol / .sdf)":
             uploaded_mol_file = st.file_uploader("Carica file .mol o .sdf", type=['mol', 'sdf'])
