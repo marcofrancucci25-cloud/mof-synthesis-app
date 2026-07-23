@@ -4,14 +4,21 @@ import numpy as np
 import joblib
 import os
 import matplotlib.pyplot as plt
-import shap
+
+# Try optional shap import gracefully
+try:
+    import shap
+    HAS_SHAP = True
+except Exception:
+    HAS_SHAP = False
+
 from sklearn.ensemble import GradientBoostingClassifier
 from rdkit import Chem
 from rdkit.Chem import Descriptors
 
 st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="🧪", layout="wide")
 st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
-st.markdown("Strumento avanzato di Machine Learning per la predizione, ottimizzazione e **spiegabilità chimica (SHAP)** della sintesi di MOF.")
+st.markdown("Strumento avanzato di Machine Learning per la predizione, ottimizzazione e **spiegabilità chimica** della sintesi di MOF.")
 
 # --- PROPRIETÀ METALLI ---
 metal_props = {
@@ -229,33 +236,39 @@ with tab1:
             else:
                 st.error("❌ **Insuccesso Probabile.** Si consiglia di rivedere le condizioni di reazione.")
 
-            # --- ANALISI SHAP (EXPLAINABLE AI) ---
+            # --- SPIEGABILITÀ CHIMICA ---
             st.markdown("---")
-            st.subheader("🧬 Spiegabilità Chimica Locale (Analisi SHAP)")
-            st.write("Questo grafico mostra **come ogni singola variabile ha spinto l'IA verso questa specifica decisione**:")
+            st.subheader("🧬 Spiegabilità Chimica della Predizione")
             
-            try:
-                explainer = shap.TreeExplainer(model)
-                shap_values = explainer.shap_values(df_features)
-                
-                target_idx = min(2, len(shap_values) - 1) if isinstance(shap_values, list) else 0
-                
-                fig, ax = plt.subplots(figsize=(8, 3.5))
-                if isinstance(shap_values, list):
-                    s_vals = shap_values[target_idx][0]
-                else:
-                    s_vals = shap_values[0]
+            rendered = False
+            if HAS_SHAP:
+                try:
+                    explainer = shap.TreeExplainer(model)
+                    shap_values = explainer.shap_values(df_features)
+                    target_idx = min(2, len(shap_values) - 1) if isinstance(shap_values, list) else 0
+                    
+                    fig, ax = plt.subplots(figsize=(8, 3.5))
+                    s_vals = shap_values[target_idx][0] if isinstance(shap_values, list) else shap_values[0]
+                    shap_series = pd.Series(s_vals, index=df_features.columns).sort_values(key=abs, ascending=True).tail(8)
+                    
+                    colors = ['#2ecc71' if v > 0 else '#e74c3c' for v in shap_series.values]
+                    ax.barh(shap_series.index, shap_series.values, color=colors)
+                    ax.axvline(x=0, color='black', linestyle='--', linewidth=0.8)
+                    ax.set_xlabel("Impatto SHAP sulla Probabilità di Successo")
+                    ax.set_title("Analisi SHAP (Verde = Positivo, Rosso = Negativo)")
+                    st.pyplot(fig)
+                    rendered = True
+                except Exception:
+                    rendered = False
 
-                shap_series = pd.Series(s_vals, index=df_features.columns).sort_values(key=abs, ascending=True).tail(8)
-                
-                colors = ['#2ecc71' if v > 0 else '#e74c3c' for v in shap_series.values]
-                bars = ax.barh(shap_series.index, shap_series.values, color=colors)
-                ax.axvline(x=0, color='black', linestyle='--', linewidth=0.8)
-                ax.set_xlabel("Impatto sulla Probabilità di Successo (Valore SHAP)")
-                ax.set_title("Fattori che influenzano la decisione (Verde = Positivo, Rosso = Negativo)")
+            if not rendered:
+                # Fallback nativo Scikit-Learn Feature Contribution
+                fig, ax = plt.subplots(figsize=(8, 3.5))
+                feats_contrib = (df_features.iloc[0] * model.feature_importances_).sort_values(ascending=True).tail(8)
+                ax.barh(feats_contrib.index, feats_contrib.values, color='#3498db')
+                ax.set_xlabel("Punto di Impatto Relativo dei Parametri")
+                ax.set_title("Contributo dei Parametri Inseriti al Modello")
                 st.pyplot(fig)
-            except Exception as e:
-                st.info("Impossibile generare il grafico SHAP per questa configurazione.")
 
 # --- TAB 2: PREDIZIONE BATCH ---
 with tab2:
