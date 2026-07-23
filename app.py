@@ -173,24 +173,66 @@ def resolve_molecule_to_smiles(query):
 
     return None
 
-# --- PROPRIETÀ METALLI ---
+# --- PROPRIETÀ METALLI COMPLETI ---
 metal_props = {
-    'Co': {'Z': 27, 'Electronegativity': 1.88, 'Radius_pm': 126, 'Group': 9, 'Period': 4},
+    # Metalli di Transizione principali per MOF
     'Cu': {'Z': 29, 'Electronegativity': 1.90, 'Radius_pm': 132, 'Group': 11, 'Period': 4},
+    'Zn': {'Z': 30, 'Electronegativity': 1.65, 'Radius_pm': 122, 'Group': 12, 'Period': 4},
+    'Zr': {'Z': 40, 'Electronegativity': 1.33, 'Radius_pm': 160, 'Group': 4, 'Period': 5},
+    'Fe': {'Z': 26, 'Electronegativity': 1.83, 'Radius_pm': 126, 'Group': 8, 'Period': 4},
+    'Co': {'Z': 27, 'Electronegativity': 1.88, 'Radius_pm': 126, 'Group': 9, 'Period': 4},
+    'Ni': {'Z': 28, 'Electronegativity': 1.91, 'Radius_pm': 124, 'Group': 10, 'Period': 4},
+    'Mn': {'Z': 25, 'Electronegativity': 1.55, 'Radius_pm': 139, 'Group': 7, 'Period': 4},
+    'Cr': {'Z': 24, 'Electronegativity': 1.66, 'Radius_pm': 128, 'Group': 6, 'Period': 4},
+    'Ti': {'Z': 22, 'Electronegativity': 1.54, 'Radius_pm': 147, 'Group': 4, 'Period': 4},
+    'V':  {'Z': 23, 'Electronegativity': 1.63, 'Radius_pm': 134, 'Group': 5, 'Period': 4},
     'Cd': {'Z': 48, 'Electronegativity': 1.69, 'Radius_pm': 144, 'Group': 12, 'Period': 5},
     'Ag': {'Z': 47, 'Electronegativity': 1.93, 'Radius_pm': 145, 'Group': 11, 'Period': 5},
-    'Zr': {'Z': 40, 'Electronegativity': 1.33, 'Radius_pm': 160, 'Group': 4, 'Period': 5},
-    'Ni': {'Z': 28, 'Electronegativity': 1.91, 'Radius_pm': 124, 'Group': 10, 'Period': 4},
+    'Pd': {'Z': 46, 'Electronegativity': 2.20, 'Radius_pm': 137, 'Group': 10, 'Period': 5},
+    'Pt': {'Z': 78, 'Electronegativity': 2.28, 'Radius_pm': 138, 'Group': 10, 'Period': 6},
     'Ru': {'Z': 44, 'Electronegativity': 2.20, 'Radius_pm': 134, 'Group': 8, 'Period': 5},
-    'Zn': {'Z': 30, 'Electronegativity': 1.65, 'Radius_pm': 122, 'Group': 12, 'Period': 4},
-    'Fe': {'Z': 26, 'Electronegativity': 1.83, 'Radius_pm': 126, 'Group': 8, 'Period': 4},
-    'Mn': {'Z': 25, 'Electronegativity': 1.55, 'Radius_pm': 139, 'Group': 7, 'Period': 4},
     'Rh': {'Z': 45, 'Electronegativity': 2.28, 'Radius_pm': 135, 'Group': 9, 'Period': 5},
-    'Au': {'Z': 79, 'Electronegativity': 2.54, 'Radius_pm': 136, 'Group': 11, 'Period': 6},
     'Ir': {'Z': 77, 'Electronegativity': 2.20, 'Radius_pm': 136, 'Group': 9, 'Period': 6},
+    'Au': {'Z': 79, 'Electronegativity': 2.54, 'Radius_pm': 136, 'Group': 11, 'Period': 6},
+    'Hf': {'Z': 72, 'Electronegativity': 1.30, 'Radius_pm': 159, 'Group': 4, 'Period': 6},
+    'Sc': {'Z': 21, 'Electronegativity': 1.36, 'Radius_pm': 162, 'Group': 3, 'Period': 4},
+    'Y':  {'Z': 39, 'Electronegativity': 1.22, 'Radius_pm': 180, 'Group': 3, 'Period': 5},
+    'Mo': {'Z': 42, 'Electronegativity': 2.16, 'Radius_pm': 139, 'Group': 6, 'Period': 5},
+    'W':  {'Z': 74, 'Electronegativity': 2.36, 'Radius_pm': 139, 'Group': 6, 'Period': 6},
+    'Re': {'Z': 75, 'Electronegativity': 1.90, 'Radius_pm': 137, 'Group': 7, 'Period': 6},
+
+    # Metalli del blocco p e alcalino-terrosi / alcalini
     'Al': {'Z': 13, 'Electronegativity': 1.61, 'Radius_pm': 121, 'Group': 13, 'Period': 3},
-    'Ti': {'Z': 22, 'Electronegativity': 1.54, 'Radius_pm': 147, 'Group': 4, 'Period': 4},
-    'Mg': {'Z': 12, 'Electronegativity': 1.31, 'Radius_pm': 141, 'Group': 2, 'Period': 3}
+    'Ga': {'Z': 31, 'Electronegativity': 1.81, 'Radius_pm': 122, 'Group': 13, 'Period': 4},
+    'In': {'Z': 49, 'Electronegativity': 1.78, 'Radius_pm': 144, 'Group': 13, 'Period': 5},
+    'Sn': {'Z': 50, 'Electronegativity': 1.96, 'Radius_pm': 140, 'Group': 14, 'Period': 5},
+    'Pb': {'Z': 82, 'Electronegativity': 2.33, 'Radius_pm': 175, 'Group': 14, 'Period': 6},
+    'Bi': {'Z': 83, 'Electronegativity': 2.02, 'Radius_pm': 156, 'Group': 15, 'Period': 6},
+    'Mg': {'Z': 12, 'Electronegativity': 1.31, 'Radius_pm': 141, 'Group': 2, 'Period': 3},
+    'Ca': {'Z': 20, 'Electronegativity': 1.00, 'Radius_pm': 174, 'Group': 2, 'Period': 4},
+    'Sr': {'Z': 38, 'Electronegativity': 0.95, 'Radius_pm': 192, 'Group': 2, 'Period': 5},
+    'Ba': {'Z': 56, 'Electronegativity': 0.89, 'Radius_pm': 198, 'Group': 2, 'Period': 6},
+    'Li': {'Z': 3,  'Electronegativity': 0.98, 'Radius_pm': 128, 'Group': 1, 'Period': 2},
+    'Na': {'Z': 11, 'Electronegativity': 0.93, 'Radius_pm': 166, 'Group': 1, 'Period': 3},
+    'K':  {'Z': 19, 'Electronegativity': 0.82, 'Radius_pm': 203, 'Group': 1, 'Period': 4},
+
+    # Lantanidi e Attinidi (Ln-MOFs)
+    'La': {'Z': 57, 'Electronegativity': 1.10, 'Radius_pm': 187, 'Group': 3, 'Period': 6},
+    'Ce': {'Z': 58, 'Electronegativity': 1.12, 'Radius_pm': 181, 'Group': 3, 'Period': 6},
+    'Pr': {'Z': 59, 'Electronegativity': 1.13, 'Radius_pm': 182, 'Group': 3, 'Period': 6},
+    'Nd': {'Z': 60, 'Electronegativity': 1.14, 'Radius_pm': 181, 'Group': 3, 'Period': 6},
+    'Sm': {'Z': 62, 'Electronegativity': 1.17, 'Radius_pm': 180, 'Group': 3, 'Period': 6},
+    'Eu': {'Z': 63, 'Electronegativity': 1.20, 'Radius_pm': 180, 'Group': 3, 'Period': 6},
+    'Gd': {'Z': 64, 'Electronegativity': 1.20, 'Radius_pm': 180, 'Group': 3, 'Period': 6},
+    'Tb': {'Z': 65, 'Electronegativity': 1.20, 'Radius_pm': 178, 'Group': 3, 'Period': 6},
+    'Dy': {'Z': 66, 'Electronegativity': 1.22, 'Radius_pm': 178, 'Group': 3, 'Period': 6},
+    'Ho': {'Z': 67, 'Electronegativity': 1.23, 'Radius_pm': 176, 'Group': 3, 'Period': 6},
+    'Er': {'Z': 68, 'Electronegativity': 1.24, 'Radius_pm': 176, 'Group': 3, 'Period': 6},
+    'Tm': {'Z': 69, 'Electronegativity': 1.25, 'Radius_pm': 174, 'Group': 3, 'Period': 6},
+    'Yb': {'Z': 70, 'Electronegativity': 1.10, 'Radius_pm': 174, 'Group': 3, 'Period': 6},
+    'Lu': {'Z': 71, 'Electronegativity': 1.27, 'Radius_pm': 174, 'Group': 3, 'Period': 6},
+    'Th': {'Z': 90, 'Electronegativity': 1.30, 'Radius_pm': 179, 'Group': 3, 'Period': 7},
+    'U':  {'Z': 92, 'Electronegativity': 1.38, 'Radius_pm': 156, 'Group': 3, 'Period': 7}
 }
 
 def process_unified_dataset(df):
@@ -375,7 +417,6 @@ with tab1:
                         st.error("La libreria `pymatgen` non è installata per processare i file CIF.")
                     else:
                         try:
-                            # Salva temporaneamente il CIF per la lettura
                             with open("temp_upload.cif", "w", encoding="utf-8") as f:
                                 f.write(file_bytes)
                             
@@ -386,7 +427,6 @@ with tab1:
                             
                             st.info(f"📦 **CIF Caricato!** Formula: `{red_formula}` | Volume Cella: `{vol:.2f} Å³` | Densità: `{density:.2f} g/cm³`")
                             
-                            # Tenta di estrarre lo SMILES tramite la formula ridotta
                             found_smiles = resolve_molecule_to_smiles(red_formula)
                             if found_smiles:
                                 mol = Chem.MolFromSmiles(found_smiles)
@@ -411,7 +451,12 @@ with tab1:
 
     with col2:
         st.markdown("### 2. Precursore Metallico")
-        metallo_sel = st.selectbox("Metallo:", list(metal_props.keys()), index=1)
+        metal_list = sorted(list(metal_props.keys()))
+        metallo_sel = st.selectbox("Metallo:", metal_list, index=metal_list.index('Cu') if 'Cu' in metal_list else 0)
+        
+        m_data = metal_props[metallo_sel]
+        st.caption(f"ℹ️ **{metallo_sel}**: Z={m_data['Z']}, Elettronegatività={m_data['Electronegativity']}, R_cov={m_data['Radius_pm']} pm")
+        
         anione_sel = st.selectbox("Anione / Precursore:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'])
         
     with col3:
@@ -538,7 +583,8 @@ with tab3:
         opt_smiles = st.text_input("SMILES Legante:", value="c1cc(C(=O)O)cc(C(=O)O)c1", key="opt_smiles")
         opt_mol = Chem.MolFromSmiles(opt_smiles)
     with opt_col2:
-        opt_metallo = st.selectbox("Metallo Desiderato:", list(metal_props.keys()), index=1, key="opt_met")
+        metal_list_opt = sorted(list(metal_props.keys()))
+        opt_metallo = st.selectbox("Metallo Desiderato:", metal_list_opt, index=metal_list_opt.index('Cu') if 'Cu' in metal_list_opt else 0, key="opt_met")
         opt_anione = st.selectbox("Anione:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'], key="opt_an")
 
     if st.button("🔍 Trova Ricetta Ottimale"):
