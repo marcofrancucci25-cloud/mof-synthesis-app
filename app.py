@@ -173,6 +173,7 @@ def process_unified_dataset(df):
         
         met = str(row.get('Metallo', 'Cu'))
         m_info = metal_props.get(met, metal_props['Cu'])
+        anione_sel = str(row.get('Anione', 'Nitrato'))
         
         m_leg = float(row.get('mmol legante', 0.1)) if pd.notnull(row.get('mmol legante')) else 0.1
         m_sale = float(row.get('mmol sale', 0.1)) if pd.notnull(row.get('mmol sale')) else 0.1
@@ -199,15 +200,19 @@ def process_unified_dataset(df):
             target = 0
             
         processed.append({
-            'MW_Legante': mw, 'LogP_Legante': logp, 'HBD_Legante': hbd, 'HBA_Legante': hba,
-            'TPSA_Legante': tpsa, 'RotatableBonds_Legante': rot,
-            'Temperatura_num': temp, 'Tempo_ore_num': tempo,
-            'mmol legante': m_leg, 'mmol sale': m_sale, 'Rapporto L/M': ratio,
+            'MW_Legante': float(mw), 'LogP_Legante': float(logp), 'HBD_Legante': float(hbd), 'HBA_Legante': float(hba),
+            'TPSA_Legante': float(tpsa), 'RotatableBonds_Legante': float(rot),
+            'Temperatura_num': float(temp), 'Tempo_ore_num': float(tempo),
+            'mmol legante': float(m_leg), 'mmol sale': float(m_sale), 'Rapporto L/M': float(ratio),
             'Metallo_Z': m_info['Z'], 'Metallo_Electronegativity': m_info['Electronegativity'],
             'Metallo_Radius_pm': m_info['Radius_pm'], 'Metallo_Group': m_info['Group'], 'Metallo_Period': m_info['Period'],
-            'mL_Solvente_P': ml_solv_p, 'mL_CoSolvente': ml_cosolv, 'Total_Volume_mL': total_vol,
-            'CoSolvent_Pct': cosolv_pct,
-            'Additive_Eq': add_eq,
+            'Anion_Acetato': 1 if anione_sel == 'Acetato' else 0,
+            'Anion_Cloruro': 1 if anione_sel == 'Cloruro' else 0,
+            'Anion_Nitrato': 1 if anione_sel == 'Nitrato' else 0,
+            'Anion_Altro': 1 if anione_sel == 'Altro' else 0,
+            'mL_Solvente_P': float(ml_solv_p), 'mL_CoSolvente': float(ml_cosolv), 'Total_Volume_mL': float(total_vol),
+            'CoSolvent_Pct': float(cosolv_pct),
+            'Additive_Eq': float(add_eq),
             'Additive_Is_Acid': 1 if add_type == 'Acid' else 0,
             'Additive_Is_Base': 1 if add_type == 'Base' else 0,
             'Additive_Is_Neutral': 1 if add_type == 'Neutral' else 0,
@@ -272,14 +277,21 @@ def build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_leg
     add_info = ADDITIVES_DATABASE.get(additivo_sel, ADDITIVES_DATABASE['Nessuno'])
     add_type = add_info['type']
     
-    total_vol = ml_solv_p + ml_cosolv
-    cosolv_pct = (ml_cosolv / total_vol * 100) if total_vol > 0 else 0.0
+    total_vol = float(ml_solv_p) + float(ml_cosolv)
+    cosolv_pct = (float(ml_cosolv) / total_vol * 100.0) if total_vol > 0 else 0.0
     
     input_dict = {
-        'MW_Legante': mw, 'LogP_Legante': logp, 'HBD_Legante': hbd, 'HBA_Legante': hba,
-        'TPSA_Legante': tpsa, 'RotatableBonds_Legante': rot_bonds, 'Temperatura_num': temp,
-        'Tempo_ore_num': tempo, 'mmol legante': mmol_legante, 'mmol sale': mmol_sale,
-        'Rapporto L/M': mmol_legante / mmol_sale if mmol_sale > 0 else 1.0,
+        'MW_Legante': float(mw),
+        'LogP_Legante': float(logp),
+        'HBD_Legante': float(hbd),
+        'HBA_Legante': float(hba),
+        'TPSA_Legante': float(tpsa),
+        'RotatableBonds_Legante': float(rot_bonds),
+        'Temperatura_num': float(temp),
+        'Tempo_ore_num': float(tempo),
+        'mmol legante': float(mmol_legante),
+        'mmol sale': float(mmol_sale),
+        'Rapporto L/M': float(mmol_legante) / float(mmol_sale) if float(mmol_sale) > 0 else 1.0,
         'Metallo_Z': metal_props[metallo_sel]['Z'],
         'Metallo_Electronegativity': metal_props[metallo_sel]['Electronegativity'],
         'Metallo_Radius_pm': metal_props[metallo_sel]['Radius_pm'],
@@ -289,11 +301,11 @@ def build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_leg
         'Anion_Cloruro': 1 if anione_sel == 'Cloruro' else 0,
         'Anion_Nitrato': 1 if anione_sel == 'Nitrato' else 0,
         'Anion_Altro': 1 if anione_sel == 'Altro' else 0,
-        'mL_Solvente_P': ml_solv_p,
-        'mL_CoSolvente': ml_cosolv,
-        'Total_Volume_mL': total_vol,
-        'CoSolvent_Pct': cosolv_pct,
-        'Additive_Eq': add_eq,
+        'mL_Solvente_P': float(ml_solv_p),
+        'mL_CoSolvente': float(ml_cosolv),
+        'Total_Volume_mL': float(total_vol),
+        'CoSolvent_Pct': float(cosolv_pct),
+        'Additive_Eq': float(add_eq),
         'Additive_Is_Acid': 1 if add_type == 'Acid' else 0,
         'Additive_Is_Base': 1 if add_type == 'Base' else 0,
         'Additive_Is_Neutral': 1 if add_type == 'Neutral' else 0,
@@ -304,10 +316,13 @@ def build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_leg
         'Solvent_DEF': 1 if 'DEF' in solvente_p or 'DEF' in cosolvente else 0,
         'Solvent_MeCN': 1 if 'MeCN' in solvente_p or 'MeCN' in cosolvente else 0,
     }
+    
     df_f = pd.DataFrame([input_dict])
+    
     for col in model.feature_names_in_:
         if col not in df_f.columns:
-            df_f[col] = 0
+            df_f[col] = 0.0
+            
     return df_f[model.feature_names_in_]
 
 # --- TAB 1: PREDIZIONE SINGOLA ---
@@ -422,7 +437,6 @@ with tab1:
     with col3:
         st.markdown("### 3. Miscela Solvente (mL) & Modulatori")
         
-        # SOLVENTE E CO-SOLVENTE CON VOLUMI IN mL
         solvente_p = st.selectbox("Solvente Principale:", ['DMF', 'DEF', 'DMSO', 'MeCN', 'H2O', 'MeOH', 'EtOH'])
         ml_solv_p = st.number_input(f"mL di {solvente_p}:", min_value=0.1, max_value=200.0, value=10.0, step=0.5)
         
@@ -439,7 +453,6 @@ with tab1:
         temp = st.number_input("Temperatura (°C):", min_value=20.0, max_value=250.0, value=120.0, step=5.0)
         tempo = st.number_input("Tempo di Reazione (Ore):", min_value=1.0, max_value=168.0, value=48.0, step=6.0)
 
-        # ADDITIVI / MODULATORI
         st.markdown("---")
         use_add = st.checkbox("➕ Aggiungi Additivo / Modulatore (Base/Acido)")
         
@@ -474,9 +487,10 @@ with tab1:
             st.subheader("📊 Risultato della Predizione")
             res_col1, res_col2, res_col3 = st.columns(3)
             
-            p0 = probs[0] * 100 if len(probs) > 0 else 0
-            p1 = probs[1] * 100 if len(probs) > 1 else 0
-            p2 = probs[2] * 100 if len(probs) > 2 else 0
+            classes_map = {cls: idx for idx, cls in enumerate(model.classes_)}
+            p0 = probs[classes_map[0]] * 100 if 0 in classes_map else 0
+            p1 = probs[classes_map[1]] * 100 if 1 in classes_map else 0
+            p2 = probs[classes_map[2]] * 100 if 2 in classes_map else 0
 
             res_col1.metric("🔴 Insuccesso (0)", f"{p0:.1f}%")
             res_col2.metric("🟡 Parziale (1)", f"{p1:.1f}%")
@@ -499,7 +513,7 @@ with tab1:
                 try:
                     explainer = shap.TreeExplainer(model)
                     shap_values = explainer.shap_values(df_features)
-                    target_idx = min(2, len(shap_values) - 1) if isinstance(shap_values, list) else 0
+                    target_idx = classes_map.get(2, len(shap_values) - 1) if isinstance(shap_values, list) else 0
                     
                     fig, ax = plt.subplots(figsize=(8, 3.5))
                     s_vals = shap_values[target_idx][0] if isinstance(shap_values, list) else shap_values[0]
@@ -543,17 +557,22 @@ with tab2:
                 
                 for col in model.feature_names_in_:
                     if col not in X_batch.columns:
-                        X_batch[col] = 0
+                        X_batch[col] = 0.0
                 X_batch = X_batch[model.feature_names_in_]
                 
                 preds = model.predict(X_batch)
                 probs = model.predict_proba(X_batch)
                 
+                classes_list = list(model.classes_)
+                idx0 = classes_list.index(0) if 0 in classes_list else None
+                idx1 = classes_list.index(1) if 1 in classes_list else None
+                idx2 = classes_list.index(2) if 2 in classes_list else None
+                
                 results_df = input_batch.copy()
                 results_df['Predizione_Classe'] = preds
-                results_df['Prob_Insuccesso_%'] = (probs[:, 0] * 100).round(1) if probs.shape[1] > 0 else 0
-                results_df['Prob_Parziale_%'] = (probs[:, 1] * 100).round(1) if probs.shape[1] > 1 else 0
-                results_df['Prob_Successo_%'] = (probs[:, 2] * 100).round(1) if probs.shape[1] > 2 else 0
+                results_df['Prob_Insuccesso_%'] = (probs[:, idx0] * 100).round(1) if idx0 is not None else 0.0
+                results_df['Prob_Parziale_%'] = (probs[:, idx1] * 100).round(1) if idx1 is not None else 0.0
+                results_df['Prob_Successo_%'] = (probs[:, idx2] * 100).round(1) if idx2 is not None else 0.0
                 
                 st.success("✅ Predizioni completate con successo!")
                 st.dataframe(results_df)
@@ -593,16 +612,21 @@ with tab3:
             opt_tpsa = Descriptors.TPSA(opt_mol)
             opt_rot = Descriptors.NumRotatableBonds(opt_mol)
             
-            temperatures = [100, 120, 140]
-            times = [24, 48]
-            solvents_p = ['DMF', 'DEF']
+            # Griglia di parametrizzazione avanzata
+            temperatures = [100.0, 120.0, 140.0, 160.0]
+            times = [24.0, 48.0, 72.0]
+            solvents_p = ['DMF', 'DEF', 'DMSO']
             volumes_p = [5.0, 10.0]
             cosolvents = [('Nessuno', 0.0), ('H2O', 1.0), ('MeOH', 2.0)]
             additives = [('Nessuno', 0.0), ('Acido Acetico (AcOH)', 2.0), ('Trietilammina (TEA)', 1.0)]
             
             candidates = []
             
-            with st.spinner("Generazione e simulazione dello spazio di reazione con modulatori e volumi..."):
+            # Dynamic Target Index Mapping
+            classes_list = list(model.classes_)
+            target_class_idx = classes_list.index(2) if 2 in classes_list else len(classes_list) - 1
+            
+            with st.spinner("Simulazione dello spazio di reazione in corso..."):
                 for t in temperatures:
                     for tm in times:
                         for sp in solvents_p:
@@ -614,8 +638,9 @@ with tab3:
                                             t, tm, 0.1, 0.1, opt_metallo, opt_anione, 
                                             sp, ml_sp, cs, ml_cs, add_name, add_eq
                                         )
+                                        
                                         prob_succ = model.predict_proba(feat)[0]
-                                        p_success = prob_succ[2] * 100 if len(prob_succ) > 2 else 0.0
+                                        p_success = prob_succ[target_class_idx] * 100.0
                                         
                                         candidates.append({
                                             'Temperatura (°C)': t,
@@ -633,9 +658,8 @@ with tab3:
             st.markdown("### 🏆 Migliori Condizioni Sperimentali Identificate")
             
             best = opt_df.iloc[0]
-            st.metric("Top Probabilità di Successo (Classe 2)", f"{best['Prob. Successo (%)']}%")
-            
-            st.dataframe(opt_df.head(10))
+            st.metric("Top Probabilità di Successo", f"{best['Prob. Successo (%)']}%")
+            st.dataframe(opt_df.head(15))
             
             csv_opt = opt_df.to_csv(index=False).encode('utf-8')
             st.download_button(
