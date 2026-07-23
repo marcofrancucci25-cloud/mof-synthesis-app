@@ -234,7 +234,7 @@ def load_or_train_model():
     if os.path.exists(pkl_file):
         return joblib.load(pkl_file)
     elif os.path.exists(csv_file):
-        st.info("⚡ Generazione e analisi automatica del dataset in corso...")
+        st.info("⚡ Addestramento del modello ML in corso...")
         raw_df = pd.read_csv(csv_file)
         df = process_unified_dataset(raw_df)
         
@@ -260,7 +260,7 @@ try:
     model = load_or_train_model()
     st.sidebar.success("Modello ML attivo e pronto!")
 except Exception as e:
-    st.sidebar.error(f"Errore: {e}")
+    st.sidebar.error(f"Errore caricamento modello: {e}")
     st.stop()
 
 # --- SIDEBAR: FEATURE IMPORTANCE ---
@@ -488,9 +488,9 @@ with tab1:
             res_col1, res_col2, res_col3 = st.columns(3)
             
             classes_map = {cls: idx for idx, cls in enumerate(model.classes_)}
-            p0 = probs[classes_map[0]] * 100 if 0 in classes_map else 0
-            p1 = probs[classes_map[1]] * 100 if 1 in classes_map else 0
-            p2 = probs[classes_map[2]] * 100 if 2 in classes_map else 0
+            p0 = probs[classes_map[0]] * 100 if 0 in classes_map else 0.0
+            p1 = probs[classes_map[1]] * 100 if 1 in classes_map else 0.0
+            p2 = probs[classes_map[2]] * 100 if 2 in classes_map else 0.0
 
             res_col1.metric("🔴 Insuccesso (0)", f"{p0:.1f}%")
             res_col2.metric("🟡 Parziale (1)", f"{p1:.1f}%")
@@ -622,10 +622,16 @@ with tab3:
             
             candidates = []
             
-            # Dynamic Target Index Mapping
-            classes_list = list(model.classes_)
-            target_class_idx = classes_list.index(2) if 2 in classes_list else len(classes_list) - 1
+            # Dynamic Target Index Mapping (Esaustivo e Robusto)
+            classes_list = [int(c) if str(c).isdigit() else c for c in model.classes_]
             
+            if 2 in classes_list:
+                target_class_idx = classes_list.index(2)
+            elif 1 in classes_list:
+                target_class_idx = classes_list.index(1)
+            else:
+                target_class_idx = len(classes_list) - 1
+
             with st.spinner("Simulazione dello spazio di reazione in corso..."):
                 for t in temperatures:
                     for tm in times:
@@ -639,8 +645,8 @@ with tab3:
                                             sp, ml_sp, cs, ml_cs, add_name, add_eq
                                         )
                                         
-                                        prob_succ = model.predict_proba(feat)[0]
-                                        p_success = prob_succ[target_class_idx] * 100.0
+                                        prob_array = model.predict_proba(feat)[0]
+                                        p_success = float(prob_array[target_class_idx]) * 100.0
                                         
                                         candidates.append({
                                             'Temperatura (°C)': t,
