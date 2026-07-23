@@ -4,33 +4,6 @@ import numpy as np
 import joblib
 import os
 import matplotlib.pyplot as plt
-from sklearn.ensemble import GradientBoostingClassifier
-from rdkit import Chem
-from rdkit.Chem import Descriptors
-
-st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="🧪", layout="wide")
-st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
-st.markdown("Strumento avanzato di Machine Learning per la predizione e l'ottimizzazione guidata della sintesi di MOF.")
-
-# --- PROPRIETÀ METALLI ---
-metal_props = {
-    'Co': {'Z': 27, 'Electronegativity': 1.88, 'Radius_pm': 126, 'Group': 9, 'Period': 4},
-    'Cu': {'Z': 29, 'Electronegativity': 1.90, 'Radius_pm': 132, 'Group': 11, 'Period': 4},
-    'Cd': {'Z': 48, 'Electronegativity': 1.69, 'Radius_pm': 144, 'Group': 12, 'Period': 5},
-    'Ag': {'Z': 47, 'Electronegativity': 1.93, 'Radius_pm': 145, 'Group': 11, 'Period': 5},
-    'Zr': {'Z': 40, 'Electronegativity': 1.33, 'Radius_pm': 160, 'Group': 4, 'Period': 5},
-    'Ni': {'Z': 28, 'Electronegativity': 1.91, 'Radius_pm': 124, 'Group': 10, 'Period': 4},
-    'Ru': {'Z': 44, 'Electronegativity': 2.20, 'Radius_pm': 134, 'Group': 8, 'Period': 5},
-    'Zn': {'Z': 30, 'Electronegativity': 1.65, 'Radius_pm': 122, 'Group': 12, 'Period': 4},
-    'Fe': {'Z': 26, 'Electronegativity': 1.83, 'Radius_pm': 126, 'Group': 8, 'Period': 4},
-    'Mn': {'Z': 25, 'Electronegativity': 1.55, 'Radius_pm': 139, 'Group': 7, 'Period': 4},
-    'Rh': {'Z': 45, 'Electronegativity': 2.28, 'Radius_pm': 135, 'Group': 9, 'Period': 5},
-    'Au': {'Z': 79, 'Electronegativity': 2.54, 'Radius_pm': 136, 'Groimport streamlit as st
-import pandas as pd
-import numpy as np
-import joblib
-import os
-import matplotlib.pyplot as plt
 import shap
 from sklearn.ensemble import GradientBoostingClassifier
 from rdkit import Chem
@@ -265,7 +238,6 @@ with tab1:
                 explainer = shap.TreeExplainer(model)
                 shap_values = explainer.shap_values(df_features)
                 
-                # Seleziona l'impatto SHAP sulla classe di successo (classe 2 se esistente, altrimenti l'ultima)
                 target_idx = min(2, len(shap_values) - 1) if isinstance(shap_values, list) else 0
                 
                 fig, ax = plt.subplots(figsize=(8, 3.5))
