@@ -21,36 +21,104 @@ st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="
 st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
 st.markdown("Strumento avanzato di Machine Learning per la predizione, ottimizzazione e **spiegabilità chimica** della sintesi di MOF.")
 
-# --- DIZIONARIO LOCALE AMPLIATO (MOLECULE, LEGANATI E MODULANTI) ---
+# --- DIZIONARIO LOCALE ULTRA-ESTESO (LEGANTI MOF, MODULANTI E LINKER) ---
 COMMON_MOF_LIGANDS = {
-    # Acidi Monocarbossilici / Modulanti
+    # 1. ACIDI MONOCARBOSSILICI E MODULANTI
     "c7h6o2": "O=C(O)c1ccccc1",                     # Acido Benzoico
     "benzoic acid": "O=C(O)c1ccccc1",
     "c2h4o2": "CC(=O)O",                             # Acido Acetico
     "acetic acid": "CC(=O)O",
     "c1h2o2": "O=CO",                               # Acido Formico
     "formic acid": "O=CO",
-    
-    # Acidi Dicarbossilici e Tricarbossilici (Linker MOF classici)
+    "c2hf3o2": "O=C(O)C(F)(F)F",                    # Acido Trifluoroacetico (TFA)
+    "trifluoroacetic acid": "O=C(O)C(F)(F)F",
+    "tfa": "O=C(O)C(F)(F)F",
+    "c3h6o2": "CCC(=O)O",                            # Acido Propionico
+    "propionic acid": "CCC(=O)O",
+    "c5h10o2": "CC(C)(C)C(=O)O",                     # Acido Pivalico
+    "pivalic acid": "CC(C)(C)C(=O)O",
+    "c11h8o2": "O=C(O)c1cccc2ccccc12",              # Acido 1-Naftoico
+
+    # 2. DICARBOSSILICI AROMATICI (BDC e Derivati)
     "c8h6o4": "O=C(O)c1ccc(C(=O)O)cc1",             # Acido Tereftalico (BDC)
     "terephthalic acid": "O=C(O)c1ccc(C(=O)O)cc1",
     "bdc": "O=C(O)c1ccc(C(=O)O)cc1",
+    "isophthalic acid": "O=C(O)c1cccc(C(=O)O)c1",   # Acido Isoftalico
+    "phthalic acid": "O=C(O)c1ccccc1C(=O)O",         # Acido Ftalico
+    "c8h7no4": "O=C(O)c1ccc(C(=O)O)c(N)c1",         # BDC-NH2
+    "2-aminoterephthalic acid": "O=C(O)c1ccc(C(=O)O)c(N)c1",
+    "bdc-nh2": "O=C(O)c1ccc(C(=O)O)c(N)c1",
+    "c8h5no6": "O=C(O)c1ccc(C(=O)O)c([N+](=O)[O-])c1", # BDC-NO2
+    "2-nitroterephthalic acid": "O=C(O)c1ccc(C(=O)O)c([N+](=O)[O-])c1",
+    "bdc-no2": "O=C(O)c1ccc(C(=O)O)c([N+](=O)[O-])c1",
+    "c8h5bro4": "O=C(O)c1ccc(C(=O)O)c(Br)c1",       # BDC-Br
+    "2-bromoterephthalic acid": "O=C(O)c1ccc(C(=O)O)c(Br)c1",
+    "bdc-br": "O=C(O)c1ccc(C(=O)O)c(Br)c1",
+    "c8h6o5": "O=C(O)c1ccc(C(=O)O)c(O)c1",          # BDC-OH
+    "2-hydroxyterephthalic acid": "O=C(O)c1ccc(C(=O)O)c(O)c1",
+    "bdc-oh": "O=C(O)c1ccc(C(=O)O)c(O)c1",
+    "c10h10o4": "CC1=C(C(=O)O)C=CC(=C1C)C(=O)O",    # BDC-(CH3)2
+    "2,5-dimethylterephthalic acid": "CC1=C(C(=O)O)C=CC(=C1C)C(=O)O",
+
+    # 3. DICARBOSSILICI ESTESI E ALIFATICI
+    "c12h10o4": "O=C(O)c1ccc(-c2ccc(C(=O)O)cc2)cc1", # BPDC
+    "bpdc": "O=C(O)c1ccc(-c2ccc(C(=O)O)cc2)cc1",
+    "c12h8o4": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",      # 2,6-NDC
+    "2,6-naphthalenedicarboxylic acid": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",
+    "ndc": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",
+    "c14h10o4": "O=C(O)c1ccc(/C=C/c2ccc(C(=O)O)cc2)cc1", # Stilbene dicarboxylic acid (SDA)
+    "c14h10n2o4": "O=C(O)c1ccc(/N=N/c2ccc(C(=O)O)cc2)cc1", # Azobenzene-4,4'-dicarboxylic acid (ADC)
+    "c4h4o4": "O=C(O)/C=C/C(=O)O",                 # Acido Fumarico
+    "fumaric acid": "O=C(O)/C=C/C(=O)O",
+    "c4h6o4": "O=C(O)CCC(=O)O",                    # Acido Succinico
+    "succinic acid": "O=C(O)CCC(=O)O",
+    "c5h8o4": "O=C(O)CCCC(=O)O",                   # Acido Glutarico
+    "glutaric acid": "O=C(O)CCCC(=O)O",
+    "c6h10o4": "O=C(O)CCCCC(=O)O",                 # Acido Adipico
+    "adipic acid": "O=C(O)CCCCC(=O)O",
+
+    # 4. POLICARBOSSILICI (3 e 4 gruppi -COOH)
     "c9h6o6": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",     # Acido Trimesico (BTC)
     "trimesic acid": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",
     "btc": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",
-    "c4h4o4": "O=C(O)/C=C/C(=O)O",                 # Acido Fumarico
-    "fumaric acid": "O=C(O)/C=C/C(=O)O",
+    "c27h18o6": "O=C(O)c1ccc(-c2cc(-c3ccc(C(=O)O)cc3)cc(-c3ccc(C(=O)O)cc3)c2)cc1", # BTB
+    "btb": "O=C(O)c1ccc(-c2cc(-c3ccc(C(=O)O)cc3)cc(-c3ccc(C(=O)O)cc3)c2)cc1",
+    "c16h10o8": "O=C(O)c1ccc(C(=O)O)c2c1c(C(=O)O)ccc2C(=O)O", # BPTC
+    "c48h28n4o8": "O=C(O)c1ccc(C2=C3C=CC(=C(c4ccc(C(=O)O)cc4)C4=N/C(=C(/c5ccc(C(=O)O)cc5)C5=CC=C2N5)C=C4)N3)cc1", # TCPP (Porfirina)
+    "tcpp": "O=C(O)c1ccc(C2=C3C=CC(=C(c4ccc(C(=O)O)cc4)C4=N/C(=C(/c5ccc(C(=O)O)cc5)C5=CC=C2N5)C=C4)N3)cc1",
+
+    # 5. IMIDAZOLI E AZOLI (ZIFs)
+    "c3h4n2": "c1c[nH]cn1",                        # Imidazolo
+    "imidazole": "c1c[nH]cn1",
+    "c4h6n2": "Cc1c[nH]cn1",                        # 2-Methylimidazole (ZIF-8)
+    "2-methylimidazole": "Cc1c[nH]cn1",
+    "2-mim": "Cc1c[nH]cn1",
+    "c5h8n2": "CCc1c[nH]cn1",                       # 2-Ethylimidazole
+    "2-ethylimidazole": "CCc1c[nH]cn1",
+    "c7h6n2": "c1ccc2[nH]cnc2c1",                   # Benzimidazolo
+    "benzimidazole": "c1ccc2[nH]cnc2c1",
+    "c5h4n4": "c1nc2c([nH]1)ncn2",                   # Purina
+    "purine": "c1nc2c([nH]1)ncn2",
+    "c2h3n3": "c1n[nH]cn1",                        # 1,2,4-Triazolo
+    "1,2,4-triazole": "c1n[nH]cn1",
+    "ch2n4": "c1nn[nH]n1",                         # Tetrazolo
+    "tetrazole": "c1nn[nH]n1",
+    "c3h4n2_pz": "c1cc[nH]n1",                      # Pirazolo
+    "pyrazole": "c1cc[nH]n1",
+
+    # 6. LINKER PIRIDINICI E AZOTATI
     "c10h8n2": "c1cnc(-c2ccncc2)cc1",                # 4,4'-Bipyridine
     "bipyridine": "c1cnc(-c2ccncc2)cc1",
     "4,4'-bipyridine": "c1cnc(-c2ccncc2)cc1",
-    "c12h10o4": "O=C(O)c1ccc(-c2ccc(C(=O)O)cc2)cc1", # BPDC
-    "bpdc": "O=C(O)c1ccc(-c2ccc(C(=O)O)cc2)cc1",
-    "c8h7no4": "O=C(O)c1ccc(C(=O)O)c(N)c1",         # 2-Aminoterephthalic acid
-    "2-aminoterephthalic acid": "O=C(O)c1ccc(C(=O)O)c(N)c1",
-    "c3h4n2": "c1c[nH]cn1",                        # Imidazolo (ZIF)
-    "imidazole": "c1c[nH]cn1",
-    "c4h6n2": "Cc1c[nH]cn1",                        # 2-Methylimidazole (ZIF-8)
-    "2-methylimidazole": "Cc1c[nH]cn1"
+    "4,4'-bipy": "c1cnc(-c2ccncc2)cc1",
+    "c12h10n2": "c1cncc(C=Cc2ccncc2)c1",            # bpe (1,2-bis(4-pyridyl)ethylene)
+    "bpe": "c1cncc(C=Cc2ccncc2)c1",
+    "c13h14n2": "c1cncc(CCCc2ccncc2)c1",            # bpp (1,3-bis(4-pyridyl)propane)
+    "bpp": "c1cncc(CCCc2ccncc2)c1",
+    "c15h11n3": "c1ccc(c(-c2ccccn2)c1)-c1ccccn1",   # Terpyridine
+    "terpyridine": "c1ccc(c(-c2ccccn2)c1)-c1ccccn1",
+    "c4h4n2": "c1cnccn1",                          # Pirazina
+    "pyrazine": "c1cnccn1"
 }
 
 # --- FUNZIONE RESOLVER UNIVERSALE (LOCALE + NIH CACTUS + PUBCHEM) ---
@@ -274,7 +342,7 @@ with tab1:
                 mol = Chem.MolFromSmiles(smiles_input)
                 
         elif mode_legante == "Nome Chimico / Formula / CAS":
-            query_input = st.text_input("Nome, Formula o CAS (es. 'Benzoic acid', 'C7H6O2', '65-85-0'):", value="Benzoic acid")
+            query_input = st.text_input("Nome, Formula o CAS (es. 'Benzoic acid', 'BDC', '65-85-0'):", value="Benzoic acid")
             if query_input:
                 with st.spinner("Ricerca molecola nei database chimici..."):
                     found_smiles = resolve_molecule_to_smiles(query_input)
