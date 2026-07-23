@@ -21,9 +21,17 @@ st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="
 st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
 st.markdown("Strumento avanzato di Machine Learning per la predizione, ottimizzazione e **spiegabilità chimica** della sintesi di MOF.")
 
-# --- DIZIONARIO LOCALE DEI LEGANTI PIÙ COMUNI NEI MOF ---
+# --- DIZIONARIO LOCALE AMPLIATO (MOLECULE, LEGANATI E MODULANTI) ---
 COMMON_MOF_LIGANDS = {
-    # Formule e Nomi Chimici mappati direttamente a SMILES
+    # Acidi Monocarbossilici / Modulanti
+    "c7h6o2": "O=C(O)c1ccccc1",                     # Acido Benzoico
+    "benzoic acid": "O=C(O)c1ccccc1",
+    "c2h4o2": "CC(=O)O",                             # Acido Acetico
+    "acetic acid": "CC(=O)O",
+    "c1h2o2": "O=CO",                               # Acido Formico
+    "formic acid": "O=CO",
+    
+    # Acidi Dicarbossilici e Tricarbossilici (Linker MOF classici)
     "c8h6o4": "O=C(O)c1ccc(C(=O)O)cc1",             # Acido Tereftalico (BDC)
     "terephthalic acid": "O=C(O)c1ccc(C(=O)O)cc1",
     "bdc": "O=C(O)c1ccc(C(=O)O)cc1",
@@ -41,23 +49,34 @@ COMMON_MOF_LIGANDS = {
     "2-aminoterephthalic acid": "O=C(O)c1ccc(C(=O)O)c(N)c1",
     "c3h4n2": "c1c[nH]cn1",                        # Imidazolo (ZIF)
     "imidazole": "c1c[nH]cn1",
-    "c4h6n2": "Cc1c[nH]cn1"                         # 2-Methylimidazole (ZIF-8)
+    "c4h6n2": "Cc1c[nH]cn1",                        # 2-Methylimidazole (ZIF-8)
+    "2-methylimidazole": "Cc1c[nH]cn1"
 }
 
-# --- FUNZIONE HELPER IBRIDA: LOCALE + PUBCHEM API ---
-def get_smiles_from_pubchem(query):
+# --- FUNZIONE RESOLVER UNIVERSALE (LOCALE + NIH CACTUS + PUBCHEM) ---
+def resolve_molecule_to_smiles(query):
     clean_query = query.strip().lower()
     if not clean_query:
         return None
     
-    # 1. CONTROLLO ISTANTANEO NEL DIZIONARIO LOCALE
+    # 1. CONTROLLO ISTANTANEO LOCALE
     if clean_query in COMMON_MOF_LIGANDS:
         return COMMON_MOF_LIGANDS[clean_query]
 
-    # 2. TENTATIVO ONLINE SU PUBCHEM CON USER-AGENT CUSTOM
     headers = {'User-Agent': 'MOF_Predictor_App/1.0'}
-    
-    # Ricerca per Nome
+
+    # 2. RISOLUZIONE TRAMITE NIH CACTUS (Supporta Nomi Inglesi, Formule, CAS)
+    try:
+        url_nih = f"https://cactus.nci.nih.gov/chemical/structure/{requests.utils.quote(query)}/smiles"
+        res = requests.get(url_nih, headers=headers, timeout=3)
+        if res.status_code == 200 and res.text and "Page not found" not in res.text:
+            smiles_candidate = res.text.strip()
+            if Chem.MolFromSmiles(smiles_candidate):
+                return smiles_candidate
+    except Exception:
+        pass
+
+    # 3. FALLBACK PUBCHEM (Nome Chimico)
     try:
         url_name = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{requests.utils.quote(query)}/property/IsomericSMILES/JSON"
         res = requests.get(url_name, headers=headers, timeout=3)
@@ -66,7 +85,7 @@ def get_smiles_from_pubchem(query):
     except Exception:
         pass
 
-    # Ricerca per Formula Bruta
+    # 4. FALLBACK PUBCHEM (Formula Bruta)
     try:
         url_formula = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/fastformula/{requests.utils.quote(query)}/property/IsomericSMILES/JSON"
         res = requests.get(url_formula, headers=headers, timeout=3)
@@ -243,7 +262,7 @@ with tab1:
         
         mode_legante = st.radio(
             "Modalità Input Legante:", 
-            ["SMILES", "Nome Chimico / Formula", "Carica File (.mol / .sdf)"],
+            ["SMILES", "Nome Chimico / Formula / CAS", "Carica File (.mol / .sdf)"],
             horizontal=True
         )
         
@@ -254,16 +273,16 @@ with tab1:
             if smiles_input:
                 mol = Chem.MolFromSmiles(smiles_input)
                 
-        elif mode_legante == "Nome Chimico / Formula":
-            query_input = st.text_input("Nome o Formula (es. 'Terephthalic acid', 'BDC' o 'C8H6O4'):", value="C8H6O4")
+        elif mode_legante == "Nome Chimico / Formula / CAS":
+            query_input = st.text_input("Nome, Formula o CAS (es. 'Benzoic acid', 'C7H6O2', '65-85-0'):", value="Benzoic acid")
             if query_input:
-                with st.spinner("Ricerca e verifica struttura in corso..."):
-                    found_smiles = get_smiles_from_pubchem(query_input)
+                with st.spinner("Ricerca molecola nei database chimici..."):
+                    found_smiles = resolve_molecule_to_smiles(query_input)
                     if found_smiles:
                         mol = Chem.MolFromSmiles(found_smiles)
                         st.caption(f"SMILES Identificato: `{found_smiles}`")
                     else:
-                        st.error("Nessuna molecola trovata. Prova a inserire lo SMILES direttamente.")
+                        st.error("Nessuna molecola trovata. Prova a inserire direttamente lo SMILES.")
                         
         elif mode_legante == "Carica File (.mol / .sdf)":
             uploaded_mol_file = st.file_uploader("Carica file .mol o .sdf", type=['mol', 'sdf'])
@@ -405,7 +424,7 @@ with tab2:
         except Exception as e:
             st.error(f"Errore durante l'elaborazione del file: {e}")
 
-# --- TAB 3: OTTIMIZZATORE AUTOMATICO (INVERSE DESIGN) ---
+# --- TAB 3: OTTIMIZZATORE AUTOMATICO ---
 with tab3:
     st.subheader("⚡ Ottimizzatore di Condizioni Sperimentali")
     st.markdown("Inserisci i reagenti di partenza e l'IA cercherà la **combinazione ottimale di temperatura, tempo e solvente** per massimizzare la formazione dei cristalli.")
