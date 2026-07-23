@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import streamlit as st
+import joblib
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -85,25 +86,19 @@ def generate_synthetic_mof_dataset():
     phs = np.random.uniform(1.0, 11.0, n_samples)
     stirring_speeds = np.random.choice([0, 200, 500, 800], size=n_samples)
     
-    # Metalli e Leganti
     metals = np.random.choice(['Zr', 'Cu', 'Zn', 'Fe', 'Al', 'UiO-Metal'], size=n_samples)
     solvents = np.random.choice(['DMF', 'DEF', 'H2O', 'Ethanol', 'DMF/H2O'], size=n_samples)
     
-    # Regola sintetica per determinare l'esito (0: Amorfo, 1: Miscela, 2: Cristallino)
     esiti = []
     for i in range(n_samples):
         score = 0.0
-        # Finestra di temperatura ideale tra 100 e 160 °C
         if 100 <= temperatures[i] <= 160:
             score += 2.5
-        # Modulatore bilanciato
         if 5 <= modulator_eqs[i] <= 30:
             score += 2.0
-        # Ratio metallo/legante vicino a 1:1
         ratio = metal_concs[i] / (ligand_concs[i] + 1e-5)
         if 0.8 <= ratio <= 1.2:
             score += 2.0
-        # pH acido favorevole per la maggior parte dei MOF
         if 2.0 <= phs[i] <= 5.0:
             score += 1.5
             
@@ -111,11 +106,11 @@ def generate_synthetic_mof_dataset():
         final_score = score + noise
         
         if final_score > 5.5:
-            esiti.append(2)  # Cristallino
+            esiti.append(2)
         elif final_score > 3.0:
-            esiti.append(1)  # Miscela/Parziale
+            esiti.append(1)
         else:
-            esiti.append(0)  # Amorfo
+            esiti.append(0)
             
     df_gen = pd.DataFrame({
         'Temperatura_C': np.round(temperatures, 1),
@@ -139,7 +134,6 @@ def process_unified_dataset(raw_df):
     df = raw_df.copy()
     df.columns = df.columns.str.strip()
     
-    # Identificazione colonna Target
     target_col = None
     possible_targets = ['Target_Esito_Classe', 'Esito', 'Outcome', 'Synthesis_Success', 'Result', 'Target']
     for col in possible_targets:
@@ -152,6 +146,9 @@ def process_unified_dataset(raw_df):
         
     df = df.rename(columns={target_col: 'Target_Esito_Classe'})
     
+    # Rimuovi eventuali righe dove il target è nullo/NaN
+    df = df.dropna(subset=['Target_Esito_Classe'])
+    
     # Feature Engineering Chimico-Fisico
     if 'Conc_Metallo_M' in df.columns and 'Conc_Legante_M' in df.columns:
         df['Rapporto_Metallo_Legante'] = df['Conc_Metallo_M'] / (df['Conc_Legante_M'] + 1e-5)
@@ -159,7 +156,6 @@ def process_unified_dataset(raw_df):
     if 'Temperatura_C' in df.columns and 'Tempo_h' in df.columns:
         df['Energia_Termica_Effettiva'] = df['Temperatura_C'] * np.log1p(df['Tempo_h'])
         
-    # Separazione e Encoding
     feature_cols = [c for c in df.columns if c != 'Target_Esito_Classe']
     encoded_df = pd.get_dummies(df[feature_cols], drop_first=True)
     encoded_df['Target_Esito_Classe'] = df['Target_Esito_Classe']
@@ -178,8 +174,8 @@ def load_or_train_model():
         try:
             saved_data = joblib.load(pkl_file)
             if isinstance(saved_data, dict):
-                return saved_data['model'], saved_data['features'], saved_data.get('metrics', {})
-            return saved_data, getattr(saved_data, 'feature_names_in_', []), {}
+                return saved_data['model'], saved_data['features'], saved_data.get('metrics', {}), saved_data.get('importances', [])
+            return saved_data, getattr(saved_data, 'feature_names_in_', []), {}, getattr(saved_data, 'feature_importances_', [])
         except Exception:
             pass
             
@@ -193,7 +189,12 @@ def load_or_train_model():
     
     X = df.drop(columns=['Target_Esito_Classe'])
     X = X.fillna(X.mean()).fillna(0)
-    y = df['Target_Esito_Classe'].astype(int)
+    
+    # PULIZIA SICURA TARGET (Conversione priva di errori NaN)
+    y_raw = pd.to_numeric(df['Target_Esito_Classe'], errors='coerce')
+    valid_mask = y_raw.notna()
+    X = X[valid_mask]
+    y = y_raw[valid_mask].astype(int)
     
     # Gestione di sicurezza per classi con campioni insufficienti (< 3)
     counts = y.value_counts()
@@ -201,9 +202,10 @@ def load_or_train_model():
         if count < 3:
             needed = 3 - count
             rows_to_dup = X[y == cls]
-            for _ in range(needed):
-                X = pd.concat([X, rows_to_dup.iloc[[0]]], ignore_index=True)
-                y = pd.concat([y, pd.Series([cls])], ignore_index=True)
+            if len(rows_to_dup) > 0:
+                for _ in range(needed):
+                    X = pd.concat([X, rows_to_dup.iloc[[0]]], ignore_index=True)
+                    y = pd.concat([y, pd.Series([cls])], ignore_index=True)
 
     # Modello di Base LightGBM
     base_model = LGBMClassifier(
@@ -228,7 +230,6 @@ def load_or_train_model():
     
     calibrated_model.fit(X, y)
     
-    # Calcolo importanza delle feature media sui fold
     feature_names = X.columns.tolist()
     try:
         importances = np.mean([est.estimator.feature_importances_ for est in calibrated_model.calibrated_classifiers_], axis=0)
@@ -252,17 +253,7 @@ def load_or_train_model():
     return calibrated_model, feature_names, metrics, importances
 
 # Caricamento Modello
-model_data = load_or_train_model()
-if isinstance(model_data, tuple):
-    model = model_data[0]
-    features = model_data[1]
-    metrics = model_data[2]
-    feature_importances = model_data[3] if len(model_data) > 3 else np.zeros(len(features))
-else:
-    model = model_data
-    features = getattr(model, 'feature_names_in_', [])
-    metrics = {}
-    feature_importances = getattr(model, 'feature_importances_', np.zeros(len(features)))
+model, features, metrics, feature_importances = load_or_train_model()
 
 # ==========================================
 # 5. SIDEBAR: INPUT PARAMETRI REAZIONE
@@ -288,9 +279,8 @@ def user_input_features():
     solvent = st.sidebar.selectbox("Solvente Principale", ["DMF", "DEF", "H2O", "Ethanol", "DMF/H2O"])
     
     st.sidebar.subheader("🧬 Struttura Molecolare Legante")
-    smiles_input = st.sidebar.text_input("SMILES Legante", "c1cc(C(=O)O)cc(C(=O)O)c1") # Acido Tereftalico (BDC)
+    smiles_input = st.sidebar.text_input("SMILES Legante", "c1cc(C(=O)O)cc(C(=O)O)c1")
 
-    # Costruzione del dizionario di input mappato sulle feature attese dal modello
     for f in features:
         f_lower = f.lower()
         if 'temp' in f_lower and 'energia' not in f_lower:
@@ -326,7 +316,6 @@ input_df, smiles_str, current_temp, current_mod, current_m_conc, current_l_conc,
 # 6. FUNZIONI DI CALCOLO E DESCRITTORI MOLECOLARI
 # ==========================================
 def calculate_molecular_descriptors(smiles):
-    """Calcola i descrittori fisico-chimici principali della molecola dal codice SMILES."""
     if not RDKIT_AVAILABLE or not smiles:
         return None
     try:
@@ -367,7 +356,6 @@ with tab1:
     class_names = {0: "Amorfo / Precipitato", 1: "Parziale / Miscela", 2: "Cristallino (Successo)"}
     colors = {0: "#EF4444", 1: "#F59E0B", 2: "#10B981"}
     
-    # Visualizzazione metriche in colonne
     col1, col2, col3 = st.columns(3)
     cols = [col1, col2, col3]
     
@@ -380,7 +368,6 @@ with tab1:
 
     st.markdown("---")
     
-    # Grafico di probabilità a torta / donut
     col_chart, col_explain = st.columns([1, 1])
     
     with col_chart:
@@ -499,7 +486,6 @@ with tab3:
             colorbar=dict(title='Prob. Cristallinità')
         ))
         
-        # Punto di sintesi selezionato
         fig_contour.add_trace(go.Scatter(
             x=[current_mod],
             y=[current_temp],
@@ -531,7 +517,6 @@ with tab4:
             best_prob = -1.0
             best_params = None
             
-            # Grid Search veloce
             temps_test = np.linspace(80, 180, 10)
             mods_test = np.linspace(5, 40, 10)
             phs_test = np.linspace(2.0, 6.0, 5)
