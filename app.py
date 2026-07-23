@@ -2,28 +2,49 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
+import os
+from sklearn.ensemble import GradientBoostingClassifier
 from rdkit import Chem
 from rdkit.Chem import Descriptors
 
-# Configurazione pagina Streamlit
 st.set_page_config(page_title="MOF Synthesis Predictor", page_icon="🧪", layout="wide")
-
 st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
 st.markdown("Strumento di supporto alle decisioni di laboratorio basato su Machine Learning (Gradient Boosting).")
 
-# Caricamento Modello
+# Caricamento o addestramento automatico del modello
 @st.cache_resource
-def load_model():
-    return joblib.load("modello_sintesi_mof_ottimizzato.pkl")
+def load_or_train_model():
+    pkl_file = "modello_sintesi_mof_ottimizzato.pkl"
+    csv_file = "Dataset_Sintesi_ML_Encoded.csv"
+    
+    if os.path.exists(pkl_file):
+        return joblib.load(pkl_file)
+    elif os.path.exists(csv_file):
+        st.info("⚡ Generazione e ottimizzazione del modello in corso dal dataset...")
+        df = pd.read_csv(csv_file)
+        drop_cols = ['ID', 'Sorgente_Database', 'Metallo', 'Sale metallico', 'Legante standard', 
+                     'SMILES_Legante', 'Solvente', 'Solvente_Clean', 'Stato XRD', 
+                     'Esito/Osservazioni', 'Anione_Tipo', 'Target_Esito_Classe']
+        features = [c for c in df.columns if c not in drop_cols]
+        X = df[features].fillna(df[features].mean())
+        y = df['Target_Esito_Classe'].astype(int)
+        
+        model = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=5, subsample=0.8, random_state=42)
+        model.fit(X, y)
+        joblib.dump(model, pkl_file)
+        return model
+    else:
+        st.error(f"Errore: Nessun file modello '{pkl_file}' o dataset '{csv_file}' trovato nel repository!")
+        st.stop()
 
 try:
-    model = load_model()
-    st.sidebar.success("Modello ML caricato con successo!")
+    model = load_or_train_model()
+    st.sidebar.success("Modello ML attivo e pronto!")
 except Exception as e:
-    st.sidebar.error("Errore nel caricamento del file 'modello_sintesi_mof_ottimizzato.pkl'. Assicurati che sia nella stessa cartella.")
+    st.sidebar.error(f"Errore: {e}")
     st.stop()
 
-# Dizionario proprieta metalli
+# Proprietà metalli
 metal_props = {
     'Co': {'Z': 27, 'Electronegativity': 1.88, 'Radius_pm': 126, 'Group': 9, 'Period': 4},
     'Cu': {'Z': 29, 'Electronegativity': 1.90, 'Radius_pm': 132, 'Group': 11, 'Period': 4},
@@ -43,19 +64,15 @@ metal_props = {
     'Mg': {'Z': 12, 'Electronegativity': 1.31, 'Radius_pm': 141, 'Group': 2, 'Period': 3}
 }
 
-# Layout a schede
 tab1, tab2 = st.tabs(["🔮 Predizione Singola Sintesi", "📂 Predizione da File Excel"])
 
 with tab1:
     st.subheader("Inserisci i parametri della reazione")
-    
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown("### 1. Legante Chimico")
         smiles_input = st.text_input("SMILES del Legante:", value="c1cc(C(=O)O)cc(C(=O)O)c1")
-        
-        # Calcolo descrittori molecolari
         mol = Chem.MolFromSmiles(smiles_input)
         if mol:
             mw = Descriptors.MolWt(mol)
@@ -71,7 +88,7 @@ with tab1:
 
     with col2:
         st.markdown("### 2. Precursore Metallico")
-        metallo_sel = st.selectbox("Metallo:", list(metal_props.keys()), index=1) # Cu default
+        metallo_sel = st.selectbox("Metallo:", list(metal_props.keys()), index=1)
         anione_sel = st.selectbox("Anione / Precursore:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'])
         
     with col3:
@@ -86,18 +103,10 @@ with tab1:
         if not mol:
             st.error("Inserisci uno SMILES valido prima di continuare.")
         else:
-            # Costruzione del vettore di input
             input_dict = {
-                'MW_Legante': mw,
-                'LogP_Legante': logp,
-                'HBD_Legante': hbd,
-                'HBA_Legante': hba,
-                'TPSA_Legante': tpsa,
-                'RotatableBonds_Legante': rot_bonds,
-                'Temperatura_num': temp,
-                'Tempo_ore_num': tempo,
-                'mmol legante': mmol_legante,
-                'mmol sale': mmol_sale,
+                'MW_Legante': mw, 'LogP_Legante': logp, 'HBD_Legante': hbd, 'HBA_Legante': hba,
+                'TPSA_Legante': tpsa, 'RotatableBonds_Legante': rot_bonds, 'Temperatura_num': temp,
+                'Tempo_ore_num': tempo, 'mmol legante': mmol_legante, 'mmol sale': mmol_sale,
                 'Rapporto L/M': mmol_legante / mmol_sale if mmol_sale > 0 else 1.0,
                 'Metallo_Z': metal_props[metallo_sel]['Z'],
                 'Metallo_Electronegativity': metal_props[metallo_sel]['Electronegativity'],
@@ -117,21 +126,17 @@ with tab1:
                 'Solvent_Is_Mixture': 1 if '/' in solvente_sel else 0
             }
 
-            # Assicuriamo che tutte le colonne del modello siano presenti
             df_features = pd.DataFrame([input_dict])
             for col in model.feature_names_in_:
                 if col not in df_features.columns:
                     df_features[col] = 0
 
             df_features = df_features[model.feature_names_in_]
-
-            # Predizione
             probs = model.predict_proba(df_features)[0]
             pred_class = model.predict(df_features)[0]
 
             st.markdown("---")
             st.subheader("📊 Risultato della Predizione")
-
             res_col1, res_col2, res_col3 = st.columns(3)
             res_col1.metric("🔴 Probabilità Insuccesso (0)", f"{probs[0]*100:.1f}%")
             res_col2.metric("🟡 Probabilità Parziale (1)", f"{probs[1]*100:.1f}%")
@@ -139,14 +144,12 @@ with tab1:
 
             if pred_class == 2:
                 st.balloons()
-                st.success("✨ **Sintesi Promettente!** Il modello stima un'alta probabilità di successo per la formazione di monocristalli o fase cristallina pulita.")
+                st.success("✨ **Sintesi Promettente!** Alta probabilità di formazione di monocristalli/fase pulita.")
             elif pred_class == 1:
-                st.warning("⚠️ **Risultato Parziale Atteso.** La reazione potrebbe portare a un precipitato amorfo o miscela. Prova ad aumentare il tempo o regolare il rapporto L/M.")
+                st.warning("⚠️ **Risultato Parziale Atteso.** Possibile prodotto amorfo o miscela.")
             else:
-                st.error("❌ **Insuccesso Probabile.** Condizioni sfavorevoli. Si consiglia di rivedere il solvente, la temperatura o le moli di legante.")
+                st.error("❌ **Insuccesso Probabile.** Si consiglia di rivedere le condizioni di reazione.")
 
 with tab2:
     st.subheader("Carica un file Excel con più sintesi da testare")
     uploaded_file = st.file_uploader("Carica File .xlsx o .csv", type=['xlsx', 'csv'])
-    if uploaded_file:
-        st.info("Funzionalità di batch screening pronta per l'elaborazione dei tuoi file!")
