@@ -180,7 +180,11 @@ def process_unified_dataset(df):
         
         solv_p = str(row.get('Solvente', 'DMF'))
         cosolv = str(row.get('CoSolvente', 'Nessuno'))
-        cosolv_pct = float(row.get('CoSolvente_Pct', 0.0)) if pd.notnull(row.get('CoSolvente_Pct')) else 0.0
+        
+        ml_solv_p = float(row.get('mL_Solvente_P', 10.0)) if pd.notnull(row.get('mL_Solvente_P')) else 10.0
+        ml_cosolv = float(row.get('mL_CoSolvente', 0.0)) if pd.notnull(row.get('mL_CoSolvente')) else 0.0
+        total_vol = ml_solv_p + ml_cosolv
+        cosolv_pct = (ml_cosolv / total_vol * 100) if total_vol > 0 else 0.0
         
         add_type = str(row.get('Additivo_Tipo', 'None'))
         add_eq = float(row.get('Additivo_Eq', 0.0)) if pd.notnull(row.get('Additivo_Eq')) else 0.0
@@ -201,6 +205,7 @@ def process_unified_dataset(df):
             'mmol legante': m_leg, 'mmol sale': m_sale, 'Rapporto L/M': ratio,
             'Metallo_Z': m_info['Z'], 'Metallo_Electronegativity': m_info['Electronegativity'],
             'Metallo_Radius_pm': m_info['Radius_pm'], 'Metallo_Group': m_info['Group'], 'Metallo_Period': m_info['Period'],
+            'mL_Solvente_P': ml_solv_p, 'mL_CoSolvente': ml_cosolv, 'Total_Volume_mL': total_vol,
             'CoSolvent_Pct': cosolv_pct,
             'Additive_Eq': add_eq,
             'Additive_Is_Acid': 1 if add_type == 'Acid' else 0,
@@ -263,9 +268,12 @@ if hasattr(model, 'feature_importances_'):
 # --- TAB INTERFACCIA ---
 tab1, tab2, tab3 = st.tabs(["🔮 Predizione Singola", "📂 Predizione Batch", "⚡ Ottimizzatore Automatico"])
 
-def build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_p, cosolvente, cosolv_pct, additivo_sel, add_eq):
+def build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_p, ml_solv_p, cosolvente, ml_cosolv, additivo_sel, add_eq):
     add_info = ADDITIVES_DATABASE.get(additivo_sel, ADDITIVES_DATABASE['Nessuno'])
     add_type = add_info['type']
+    
+    total_vol = ml_solv_p + ml_cosolv
+    cosolv_pct = (ml_cosolv / total_vol * 100) if total_vol > 0 else 0.0
     
     input_dict = {
         'MW_Legante': mw, 'LogP_Legante': logp, 'HBD_Legante': hbd, 'HBA_Legante': hba,
@@ -281,6 +289,9 @@ def build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_leg
         'Anion_Cloruro': 1 if anione_sel == 'Cloruro' else 0,
         'Anion_Nitrato': 1 if anione_sel == 'Nitrato' else 0,
         'Anion_Altro': 1 if anione_sel == 'Altro' else 0,
+        'mL_Solvente_P': ml_solv_p,
+        'mL_CoSolvente': ml_cosolv,
+        'Total_Volume_mL': total_vol,
         'CoSolvent_Pct': cosolv_pct,
         'Additive_Eq': add_eq,
         'Additive_Is_Acid': 1 if add_type == 'Acid' else 0,
@@ -409,15 +420,21 @@ with tab1:
             st.caption(f"⚖️ Corrispondono a **{mmol_sale:.3f} mmol** di {metallo_sel}.")
 
     with col3:
-        st.markdown("### 3. Miscela Solvente & Modulatori")
+        st.markdown("### 3. Miscela Solvente (mL) & Modulatori")
         
-        # SOLVENTE E CO-SOLVENTE
+        # SOLVENTE E CO-SOLVENTE CON VOLUMI IN mL
         solvente_p = st.selectbox("Solvente Principale:", ['DMF', 'DEF', 'DMSO', 'MeCN', 'H2O', 'MeOH', 'EtOH'])
+        ml_solv_p = st.number_input(f"mL di {solvente_p}:", min_value=0.1, max_value=200.0, value=10.0, step=0.5)
+        
         co_solvente = st.selectbox("Co-Solvente (Opzionale):", ['Nessuno', 'H2O', 'MeOH', 'EtOH', 'CH2Cl2', 'DEF'])
         
-        cosolv_pct = 0.0
+        ml_cosolv = 0.0
         if co_solvente != 'Nessuno':
-            cosolv_pct = st.slider("% Volume Co-solvente (% v/v):", min_value=5.0, max_value=90.0, value=20.0, step=5.0)
+            ml_cosolv = st.number_input(f"mL di Co-solvente ({co_solvente}):", min_value=0.1, max_value=200.0, value=2.0, step=0.5)
+
+        tot_vol = ml_solv_p + ml_cosolv
+        cosolv_pct = (ml_cosolv / tot_vol * 100) if tot_vol > 0 else 0.0
+        st.caption(f"🧪 **Volume Totale Miscela:** `{tot_vol:.1f} mL` | **Co-solvente:** `{cosolv_pct:.1f}% v/v`")
 
         temp = st.number_input("Temperatura (°C):", min_value=20.0, max_value=250.0, value=120.0, step=5.0)
         tempo = st.number_input("Tempo di Reazione (Ore):", min_value=1.0, max_value=168.0, value=48.0, step=6.0)
@@ -448,7 +465,7 @@ with tab1:
             df_features = build_feature_row(
                 mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, 
                 mmol_legante, mmol_sale, metallo_sel, anione_sel, 
-                solvente_p, co_solvente, cosolv_pct, additivo_sel, add_eq
+                solvente_p, ml_solv_p, co_solvente, ml_cosolv, additivo_sel, add_eq
             )
             probs = model.predict_proba(df_features)[0]
             pred_class = model.predict(df_features)[0]
@@ -553,8 +570,8 @@ with tab2:
 
 # --- TAB 3: OTTIMIZZATORE AUTOMATICO ---
 with tab3:
-    st.subheader("⚡ Ottimizzatore di Condizioni Sperimentali con Modulatori")
-    st.markdown("L'IA cercherà la **combinazione ottimale di temperatura, co-solventi e modulatori (acidi/basi)** per massimizzare la cristalizzazione del MOF.")
+    st.subheader("⚡ Ottimizzatore di Condizioni Sperimentali con Modulatori e Volumi")
+    st.markdown("L'IA cercherà la **combinazione ottimale di temperatura, volumi di solventi (mL) e modulatori** per massimizzare la cristalizzazione del MOF.")
     
     opt_col1, opt_col2 = st.columns(2)
     with opt_col1:
@@ -579,33 +596,36 @@ with tab3:
             temperatures = [100, 120, 140]
             times = [24, 48]
             solvents_p = ['DMF', 'DEF']
-            cosolvents = [('Nessuno', 0.0), ('H2O', 10.0), ('MeOH', 20.0)]
+            volumes_p = [5.0, 10.0]
+            cosolvents = [('Nessuno', 0.0), ('H2O', 1.0), ('MeOH', 2.0)]
             additives = [('Nessuno', 0.0), ('Acido Acetico (AcOH)', 2.0), ('Trietilammina (TEA)', 1.0)]
             
             candidates = []
             
-            with st.spinner("Generazione e simulazione dello spazio di reazione con modulatori..."):
+            with st.spinner("Generazione e simulazione dello spazio di reazione con modulatori e volumi..."):
                 for t in temperatures:
                     for tm in times:
                         for sp in solvents_p:
-                            for cs, cs_pct in cosolvents:
-                                for add_name, add_eq in additives:
-                                    feat = build_feature_row(
-                                        opt_mw, opt_logp, opt_hbd, opt_hba, opt_tpsa, opt_rot, 
-                                        t, tm, 0.1, 0.1, opt_metallo, opt_anione, 
-                                        sp, cs, cs_pct, add_name, add_eq
-                                    )
-                                    prob_succ = model.predict_proba(feat)[0]
-                                    p_success = prob_succ[2] * 100 if len(prob_succ) > 2 else 0.0
-                                    
-                                    candidates.append({
-                                        'Temperatura (°C)': t,
-                                        'Tempo (h)': tm,
-                                        'Solvente P.': sp,
-                                        'Co-Solvente': f"{cs} ({cs_pct}%)" if cs != 'Nessuno' else 'Nessuno',
-                                        'Additivo / Modulatore': f"{add_name} ({add_eq} eq)" if add_name != 'Nessuno' else 'Nessuno',
-                                        'Prob. Successo (%)': round(p_success, 1)
-                                    })
+                            for ml_sp in volumes_p:
+                                for cs, ml_cs in cosolvents:
+                                    for add_name, add_eq in additives:
+                                        feat = build_feature_row(
+                                            opt_mw, opt_logp, opt_hbd, opt_hba, opt_tpsa, opt_rot, 
+                                            t, tm, 0.1, 0.1, opt_metallo, opt_anione, 
+                                            sp, ml_sp, cs, ml_cs, add_name, add_eq
+                                        )
+                                        prob_succ = model.predict_proba(feat)[0]
+                                        p_success = prob_succ[2] * 100 if len(prob_succ) > 2 else 0.0
+                                        
+                                        candidates.append({
+                                            'Temperatura (°C)': t,
+                                            'Tempo (h)': tm,
+                                            'Solvente P. (mL)': f"{sp} ({ml_sp} mL)",
+                                            'Co-Solvente (mL)': f"{cs} ({ml_cs} mL)" if cs != 'Nessuno' else 'Nessuno',
+                                            'Vol. Totale (mL)': ml_sp + ml_cs,
+                                            'Additivo / Modulatore': f"{add_name} ({add_eq} eq)" if add_name != 'Nessuno' else 'Nessuno',
+                                            'Prob. Successo (%)': round(p_success, 1)
+                                        })
             
             opt_df = pd.DataFrame(candidates).sort_values(by='Prob. Successo (%)', ascending=False).reset_index(drop=True)
             
