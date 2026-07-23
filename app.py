@@ -20,6 +20,14 @@ try:
 except Exception:
     HAS_PYMATGEN = False
 
+# Import opzionale per Optuna (Tuning Iperparametri)
+try:
+    import optuna
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+    HAS_OPTUNA = True
+except Exception:
+    HAS_OPTUNA = False
+
 from lightgbm import LGBMClassifier
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import StratifiedKFold
@@ -31,9 +39,23 @@ st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="
 st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
 st.markdown("Strumento avanzato di Machine Learning per la predizione, ottimizzazione e **spiegabilità chimica** della sintesi di MOF.")
 
+# --- DATABASE SOLVENTI CON PARAMETRI FISICO-CHIMICI ---
+# Alpha = Acidità legame idrogeno, Beta = Basicità legame idrogeno, Pi* = Polarizzabilità (Kamlet-Taft)
+# Dielectric = Costante dielettrica (ε), Boiling_Pt = Punto di ebollizione (°C)
+SOLVENT_PROPERTIES = {
+    'DMF':  {'alpha': 0.00, 'beta': 0.69, 'pi_star': 0.88, 'dielectric': 36.7, 'boiling_pt': 153.0},
+    'DEF':  {'alpha': 0.00, 'beta': 0.69, 'pi_star': 0.88, 'dielectric': 32.1, 'boiling_pt': 177.0},
+    'DMSO': {'alpha': 0.00, 'beta': 0.76, 'pi_star': 1.00, 'dielectric': 46.7, 'boiling_pt': 189.0},
+    'MeCN': {'alpha': 0.19, 'beta': 0.31, 'pi_star': 0.75, 'dielectric': 37.5, 'boiling_pt': 82.0},
+    'H2O':  {'alpha': 1.17, 'beta': 0.18, 'pi_star': 1.09, 'dielectric': 80.1, 'boiling_pt': 100.0},
+    'MeOH': {'alpha': 0.93, 'beta': 0.62, 'pi_star': 0.60, 'dielectric': 32.7, 'boiling_pt': 64.7},
+    'EtOH': {'alpha': 0.83, 'beta': 0.77, 'pi_star': 0.54, 'dielectric': 24.5, 'boiling_pt': 78.3},
+    'CH2Cl2': {'alpha': 0.13, 'beta': 0.10, 'pi_star': 0.82, 'dielectric': 8.9, 'boiling_pt': 39.6},
+    'Nessuno': {'alpha': 0.00, 'beta': 0.00, 'pi_star': 0.00, 'dielectric': 0.0, 'boiling_pt': 0.0}
+}
+
 # --- DIZIONARIO LOCALE LEGANTE MOF ---
 COMMON_MOF_LIGANDS = {
-    # 1. ACIDI MONOCARBOSSILICI E MODULANTI
     "c7h6o2": "O=C(O)c1ccccc1",                     # Acido Benzoico
     "benzoic acid": "O=C(O)c1ccccc1",
     "c2h4o2": "CC(=O)O",                             # Acido Acetico
@@ -47,8 +69,6 @@ COMMON_MOF_LIGANDS = {
     "propionic acid": "CCC(=O)O",
     "c5h10o2": "CC(C)(C)C(=O)O",                     # Acido Pivalico
     "pivalic acid": "CC(C)(C)C(=O)O",
-
-    # 2. DICARBOSSILICI AROMATICI (BDC e Derivati)
     "c8h6o4": "O=C(O)c1ccc(C(=O)O)cc1",             # Acido Tereftalico (BDC)
     "terephthalic acid": "O=C(O)c1ccc(C(=O)O)cc1",
     "bdc": "O=C(O)c1ccc(C(=O)O)cc1",
@@ -62,22 +82,16 @@ COMMON_MOF_LIGANDS = {
     "bdc-br": "O=C(O)c1ccc(C(=O)O)c(Br)c1",
     "c8h6o5": "O=C(O)c1ccc(C(=O)O)c(O)c1",          # BDC-OH
     "bdc-oh": "O=C(O)c1ccc(C(=O)O)c(O)c1",
-
-    # 3. DICARBOSSILICI ESTESI E ALIFATICI
     "c12h10o4": "O=C(O)c1ccc(-c2ccc(C(=O)O)cc2)cc1", # BPDC
     "bpdc": "O=C(O)c1ccc(-c2ccc(C(=O)O)cc2)cc1",
     "c12h8o4": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",      # 2,6-NDC
     "ndc": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",
     "c4h4o4": "O=C(O)/C=C/C(=O)O",                 # Acido Fumarico
     "fumaric acid": "O=C(O)/C=C/C(=O)O",
-
-    # 4. POLICARBOSSILICI
     "c9h6o6": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",     # Acido Trimesico (BTC)
     "btc": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",
     "c27h18o6": "O=C(O)c1ccc(-c2cc(-c3ccc(C(=O)O)cc3)cc(-c3ccc(C(=O)O)cc3)c2)cc1", # BTB
     "btb": "O=C(O)c1ccc(-c2cc(-c3ccc(C(=O)O)cc3)cc(-c3ccc(C(=O)O)cc3)c2)cc1",
-
-    # 5. IMIDAZOLI E LINKER PIRIDINICI
     "c3h4n2": "c1c[nH]cn1",                        # Imidazolo
     "c4h6n2": "Cc1c[nH]cn1",                        # 2-mIM
     "2-mim": "Cc1c[nH]cn1",
@@ -124,7 +138,6 @@ anion_mw = {
     'Altro': 60.00
 }
 
-# --- FUNZIONE RESOLVER UNIVERSALE ---
 def resolve_molecule_to_smiles(query):
     clean_query = query.strip().lower()
     if not clean_query:
@@ -153,6 +166,26 @@ def resolve_molecule_to_smiles(query):
         pass
 
     return None
+
+def calculate_solvent_mix_properties(solv_p, ml_p, cosolv, ml_cosolv):
+    prop_p = SOLVENT_PROPERTIES.get(solv_p, SOLVENT_PROPERTIES['DMF'])
+    prop_co = SOLVENT_PROPERTIES.get(cosolv, SOLVENT_PROPERTIES['Nessuno'])
+    
+    tot_vol = ml_p + ml_cosolv
+    if tot_vol <= 0:
+        return prop_p
+        
+    f_p = ml_p / tot_vol
+    f_co = ml_cosolv / tot_vol
+    
+    # Media ponderata delle proprietà chimico-fisiche della miscela
+    return {
+        'mix_alpha': (prop_p['alpha'] * f_p) + (prop_co['alpha'] * f_co),
+        'mix_beta': (prop_p['beta'] * f_p) + (prop_co['beta'] * f_co),
+        'mix_pi_star': (prop_p['pi_star'] * f_p) + (prop_co['pi_star'] * f_co),
+        'mix_dielectric': (prop_p['dielectric'] * f_p) + (prop_co['dielectric'] * f_co),
+        'mix_boiling_pt': (prop_p['boiling_pt'] * f_p) + (prop_co['boiling_pt'] * f_co)
+    }
 
 def process_unified_dataset(df):
     target_col = None
@@ -190,6 +223,9 @@ def process_unified_dataset(df):
         total_vol = ml_solv_p + ml_cosolv
         cosolv_pct = (ml_cosolv / total_vol * 100) if total_vol > 0 else 0.0
         
+        # Calcolo descrittori avanzati per i solventi
+        mix_props = calculate_solvent_mix_properties(solv_p, ml_solv_p, cosolv, ml_cosolv)
+        
         add_type = str(row.get('Additivo_Tipo', 'None'))
         add_eq = float(row.get('Additivo_Eq', 0.0)) if pd.notnull(row.get('Additivo_Eq')) else 0.0
         
@@ -215,21 +251,54 @@ def process_unified_dataset(df):
             'Anion_Altro': 1 if anione_sel == 'Altro' else 0,
             'mL_Solvente_P': float(ml_solv_p), 'mL_CoSolvente': float(ml_cosolv), 'Total_Volume_mL': float(total_vol),
             'CoSolvent_Pct': float(cosolv_pct),
+            # Inserimento Proprietà Fisico-Chimiche della Miscela Solvente
+            'Solvent_Mix_Alpha': mix_props['mix_alpha'],
+            'Solvent_Mix_Beta': mix_props['mix_beta'],
+            'Solvent_Mix_PiStar': mix_props['mix_pi_star'],
+            'Solvent_Mix_Dielectric': mix_props['mix_dielectric'],
+            'Solvent_Mix_BoilingPt': mix_props['mix_boiling_pt'],
             'Additive_Eq': float(add_eq),
             'Additive_Is_Acid': 1 if add_type == 'Acid' else 0,
             'Additive_Is_Base': 1 if add_type == 'Base' else 0,
             'Additive_Is_Neutral': 1 if add_type == 'Neutral' else 0,
-            'Solvent_DMF': 1 if 'DMF' in solv_p or 'DMF' in cosolv else 0,
-            'Solvent_H2O': 1 if 'H2O' in solv_p or 'H2O' in cosolv else 0,
-            'Solvent_MeOH': 1 if 'MeOH' in solv_p or 'MeOH' in cosolv else 0,
-            'Solvent_EtOH': 1 if 'EtOH' in solv_p or 'EtOH' in cosolv else 0,
-            'Solvent_DEF': 1 if 'DEF' in solv_p or 'DEF' in cosolv else 0,
-            'Solvent_MeCN': 1 if 'MeCN' in solv_p or 'MeCN' in cosolv else 0,
             'Target_Esito_Classe': target
         })
     return pd.DataFrame(processed)
 
-# --- CARICAMENTO O ADDESTRAMENTO MODELLO LIGHTGBM BLINDATO ---
+# --- HYPERPARAMETER TUNING CON OPTUNA ---
+def optimize_lgbm_optuna(X, y):
+    def objective(trial):
+        params = {
+            'n_estimators': trial.suggest_int('n_estimators', 50, 300),
+            'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.1, log=True),
+            'max_depth': trial.suggest_int('max_depth', 3, 10),
+            'num_leaves': trial.suggest_int('num_leaves', 15, 63),
+            'subsample': trial.suggest_float('subsample', 0.6, 1.0),
+            'colsample_bytree': trial.suggest_float('colsample_bytree', 0.6, 1.0),
+            'class_weight': 'balanced',
+            'random_state': 42,
+            'verbose': -1
+        }
+        skf = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+        scores = []
+        for train_idx, val_idx in skf.split(X, y):
+            X_tr, X_va = X.iloc[train_idx], X.iloc[val_idx]
+            y_tr, y_va = y.iloc[train_idx], y.iloc[val_idx]
+            clf = LGBMClassifier(**params)
+            clf.fit(X_tr, y_tr)
+            preds = clf.predict(X_va)
+            scores.append(accuracy_score(y_va, preds))
+        return np.mean(scores)
+
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=15)
+    best_params = study.best_params
+    best_params['class_weight'] = 'balanced'
+    best_params['random_state'] = 42
+    best_params['verbose'] = -1
+    return LGBMClassifier(**best_params)
+
+# --- CARICAMENTO O ADDESTRAMENTO MODELLO ---
 @st.cache_resource
 def load_or_train_model():
     pkl_file = "modello_sintesi_mof_ottimizzato.pkl"
@@ -240,7 +309,6 @@ def load_or_train_model():
             saved_data = joblib.load(pkl_file)
             if isinstance(saved_data, dict):
                 return saved_data['model'], saved_data['features'], saved_data.get('metrics', {}), saved_data.get('importances', [])
-            return saved_data, getattr(saved_data, 'feature_names_in_', []), {}, getattr(saved_data, 'feature_importances_', [])
         except Exception:
             pass
             
@@ -256,12 +324,11 @@ def load_or_train_model():
     y_series = pd.to_numeric(df['Target_Esito_Classe'], errors='coerce')
     valid_mask = y_series.notna()
     
-    # Allineamento indici per prevenire ValueError
     X = X[valid_mask].copy().reset_index(drop=True)
     y = y_series[valid_mask].astype(int).copy().reset_index(drop=True)
     X = X.apply(pd.to_numeric, errors='coerce').fillna(0.0)
     
-    # Bilanciamento classi con pochissimi campioni
+    # Bilanciamento classi minime
     counts = y.value_counts()
     for cls, count in counts.items():
         if count < 3:
@@ -274,15 +341,14 @@ def load_or_train_model():
 
     feature_names = X.columns.tolist()
     
-    base_model = LGBMClassifier(
-        n_estimators=180,
-        learning_rate=0.04,
-        max_depth=6,
-        num_leaves=31,
-        class_weight='balanced',
-        random_state=42,
-        verbose=-1
-    )
+    # Selezione tra Optuna Tuning o Modello Base
+    if HAS_OPTUNA:
+        base_model = optimize_lgbm_optuna(X, y)
+    else:
+        base_model = LGBMClassifier(
+            n_estimators=180, learning_rate=0.04, max_depth=6, 
+            num_leaves=31, class_weight='balanced', random_state=42, verbose=-1
+        )
     
     min_class_samples = y.value_counts().min()
     unique_classes = y.nunique()
@@ -290,8 +356,7 @@ def load_or_train_model():
     if min_class_samples >= 2 and unique_classes > 1:
         cv_splits = min(3, max(2, min_class_samples))
         final_model = CalibratedClassifierCV(
-            estimator=base_model,
-            method='sigmoid',
+            estimator=base_model, method='sigmoid',
             cv=StratifiedKFold(n_splits=cv_splits, shuffle=True, random_state=42)
         )
         try:
@@ -324,7 +389,7 @@ def load_or_train_model():
 
 try:
     model, feature_names, metrics, importances = load_or_train_model()
-    st.sidebar.success("Modello ML attivo e pronto!")
+    st.sidebar.success("Modello ML Ottimizzato (Optuna + Kamlet-Taft) Attivo!")
 except Exception as e:
     st.sidebar.error(f"Errore caricamento modello: {e}")
     st.stop()
@@ -345,6 +410,7 @@ def build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_leg
     
     total_vol = float(ml_solv_p) + float(ml_cosolv)
     cosolv_pct = (float(ml_cosolv) / total_vol * 100.0) if total_vol > 0 else 0.0
+    mix_props = calculate_solvent_mix_properties(solvente_p, float(ml_solv_p), cosolvente, float(ml_cosolv))
     
     input_dict = {
         'MW_Legante': float(mw),
@@ -371,16 +437,15 @@ def build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_leg
         'mL_CoSolvente': float(ml_cosolv),
         'Total_Volume_mL': float(total_vol),
         'CoSolvent_Pct': float(cosolv_pct),
+        'Solvent_Mix_Alpha': mix_props['mix_alpha'],
+        'Solvent_Mix_Beta': mix_props['mix_beta'],
+        'Solvent_Mix_PiStar': mix_props['mix_pi_star'],
+        'Solvent_Mix_Dielectric': mix_props['mix_dielectric'],
+        'Solvent_Mix_BoilingPt': mix_props['mix_boiling_pt'],
         'Additive_Eq': float(add_eq),
         'Additive_Is_Acid': 1 if add_type == 'Acid' else 0,
         'Additive_Is_Base': 1 if add_type == 'Base' else 0,
         'Additive_Is_Neutral': 1 if add_type == 'Neutral' else 0,
-        'Solvent_DMF': 1 if 'DMF' in solvente_p or 'DMF' in cosolvente else 0,
-        'Solvent_H2O': 1 if 'H2O' in solvente_p or 'H2O' in cosolvente else 0,
-        'Solvent_MeOH': 1 if 'MeOH' in solvente_p or 'MeOH' in cosolvente else 0,
-        'Solvent_EtOH': 1 if 'EtOH' in solvente_p or 'EtOH' in cosolvente else 0,
-        'Solvent_DEF': 1 if 'DEF' in solvente_p or 'DEF' in cosolvente else 0,
-        'Solvent_MeCN': 1 if 'MeCN' in solvente_p or 'MeCN' in cosolvente else 0,
     }
     
     df_f = pd.DataFrame([input_dict])
@@ -570,7 +635,6 @@ with tab1:
             else:
                 st.error("❌ **Insuccesso Probabile.** Si consiglia di rivedere le condizioni di reazione.")
 
-            # SPIEGABILITÀ CHIMICA
             st.markdown("---")
             st.subheader("🧬 Spiegabilità Chimica della Predizione")
             
