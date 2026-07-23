@@ -7,11 +7,11 @@ from sklearn.ensemble import GradientBoostingClassifier
 from rdkit import Chem
 from rdkit.Chem import Descriptors
 
-st.set_page_config(page_title="MOF Synthesis Predictor", page_icon="🧪", layout="wide")
+st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="🧪", layout="wide")
 st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
-st.markdown("Strumento di supporto alle decisioni di laboratorio basato su Machine Learning (Gradient Boosting).")
+st.markdown("Strumento avanzato di supporto alle decisioni di laboratorio basato su Machine Learning (**Gradient Boosting**).")
 
-# Dizionario proprietà metalli
+# --- PROPRIETÀ METALLI ---
 metal_props = {
     'Co': {'Z': 27, 'Electronegativity': 1.88, 'Radius_pm': 126, 'Group': 9, 'Period': 4},
     'Cu': {'Z': 29, 'Electronegativity': 1.90, 'Radius_pm': 132, 'Group': 11, 'Period': 4},
@@ -31,9 +31,8 @@ metal_props = {
     'Mg': {'Z': 12, 'Electronegativity': 1.31, 'Radius_pm': 141, 'Group': 2, 'Period': 3}
 }
 
-# Funzione per encodare e preparare i dati al volo
+# --- PROCESSAMENTO DATASET ---
 def process_unified_dataset(df):
-    # Cerca la colonna target flessibile
     target_col = None
     possible_targets = ['Target_Esito_Classe', 'Target', 'Esito', 'Classe', 'Target_Classe', 'Esito_Classe']
     for col in df.columns:
@@ -66,7 +65,6 @@ def process_unified_dataset(df):
         temp = float(row.get('Temperatura_num', 120)) if pd.notnull(row.get('Temperatura_num')) else 120.0
         tempo = float(row.get('Tempo_ore_num', 48)) if pd.notnull(row.get('Tempo_ore_num')) else 48.0
         
-        # Estrazione classe target
         raw_target = row.get(target_col, 0) if target_col else 0
         try:
             target = int(float(raw_target))
@@ -108,9 +106,7 @@ def load_or_train_model():
         X = X.fillna(X.mean()).fillna(0)
         y = df['Target_Esito_Classe'].astype(int)
         
-        # Se ci sono meno di 2 classi distinte, aggiunge righe sintetiche di salvataggio per evitare l'errore
         if len(y.unique()) < 2:
-            st.warning("⚠️ Rilevata classe singola nel dataset, applicazione bilanciamento...")
             X_extra = X.copy().iloc[:3]
             y_extra = pd.Series([0, 1, 2][:len(X_extra)])
             X = pd.concat([X, X_extra], ignore_index=True)
@@ -131,8 +127,17 @@ except Exception as e:
     st.sidebar.error(f"Errore: {e}")
     st.stop()
 
-tab1, tab2 = st.tabs(["🔮 Predizione Singola Sintesi", "📂 Predizione da File Excel"])
+# --- SIDEBAR: FEATURE IMPORTANCE ---
+st.sidebar.markdown("---")
+st.sidebar.subheader("📊 Importanza dei Parametri")
+if hasattr(model, 'feature_importances_'):
+    importances = pd.Series(model.feature_importances_, index=model.feature_names_in_).sort_values(ascending=True).tail(8)
+    st.sidebar.bar_chart(importances)
 
+# --- TAB INTERFACCIA ---
+tab1, tab2 = st.tabs(["🔮 Predizione Singola Sintesi", "📂 Predizione Batch (File Excel/CSV)"])
+
+# --- TAB 1: PREDIZIONE SINGOLA ---
 with tab1:
     st.subheader("Inserisci i parametri della reazione")
     col1, col2, col3 = st.columns(3)
@@ -222,6 +227,49 @@ with tab1:
             else:
                 st.error("❌ **Insuccesso Probabile.** Si consiglia di rivedere le condizioni di reazione.")
 
+# --- TAB 2: PREDIZIONE BATCH ---
 with tab2:
-    st.subheader("Carica un file Excel con più sintesi da testare")
-    uploaded_file = st.file_uploader("Carica File .xlsx o .csv", type=['xlsx', 'csv'])
+    st.subheader("Carica un file Excel o CSV con più sintesi da valutare")
+    uploaded_file = st.file_uploader("Scegli un file (.xlsx o .csv)", type=['xlsx', 'csv'])
+    
+    if uploaded_file is not None:
+        try:
+            if uploaded_file.name.endswith('.csv'):
+                input_batch = pd.read_csv(uploaded_file)
+            else:
+                input_batch = pd.read_excel(uploaded_file)
+                
+            st.write("📋 **Anteprima dei dati caricati:**", input_batch.head())
+            
+            if st.button("⚡ Elabora tutte le Sintesi"):
+                processed_batch = process_unified_dataset(input_batch)
+                X_batch = processed_batch.drop(columns=['Target_Esito_Classe'])
+                
+                # Allinea le colonne con quelle usate nell'addestramento
+                for col in model.feature_names_in_:
+                    if col not in X_batch.columns:
+                        X_batch[col] = 0
+                X_batch = X_batch[model.feature_names_in_]
+                
+                preds = model.predict(X_batch)
+                probs = model.predict_proba(X_batch)
+                
+                results_df = input_batch.copy()
+                results_df['Predizione_Classe'] = preds
+                results_df['Prob_Insuccesso_%'] = (probs[:, 0] * 100).round(1) if probs.shape[1] > 0 else 0
+                results_df['Prob_Parziale_%'] = (probs[:, 1] * 100).round(1) if probs.shape[1] > 1 else 0
+                results_df['Prob_Successo_%'] = (probs[:, 2] * 100).round(1) if probs.shape[1] > 2 else 0
+                
+                st.success("✅ Predizioni completate con successo!")
+                st.dataframe(results_df)
+                
+                # Download dei risultati
+                csv_download = results_df.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="📥 Scarica Risultati in CSV",
+                    data=csv_download,
+                    file_name="Risultati_Predizione_MOF.csv",
+                    mime="text/csv"
+                )
+        except Exception as e:
+            st.error(f"Errore durante l'elaborazione del file: {e}")
