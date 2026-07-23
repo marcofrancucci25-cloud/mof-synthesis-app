@@ -1,571 +1,707 @@
-import os
-import io
-import warnings
-import numpy as np
-import pandas as pd
 import streamlit as st
+import pandas as pd
+import numpy as np
 import joblib
-import plotly.express as px
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+import os
+import requests
+import matplotlib.pyplot as plt
 
-from sklearn.model_selection import StratifiedKFold
-from sklearn.calibration import CalibratedClassifierCV
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-from sklearn.preprocessing import StandardScaler
+# Import per LightGBM e Calibrazione ML
 from lightgbm import LGBMClassifier
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.model_selection import StratifiedKFold
 
-# --- IMPORTAZIONI CHIMICHE OPZIONALI (RDKit) ---
+# Import opzionale per SHAP (spiegabilità AI)
 try:
-    from rdkit import Chem
-    from rdkit.Chem import Draw, Descriptors, AllChem
-    RDKIT_AVAILABLE = True
-except ImportError:
-    RDKIT_AVAILABLE = False
+    import shap
+    HAS_SHAP = True
+except Exception:
+    HAS_SHAP = False
 
-# --- IMPORTAZIONI VISUALIZZAZIONE 3D OPZIONALI (py3Dmol / stmol) ---
+# Import opzionale per lettura CIF tramite pymatgen
 try:
-    import py3Dmol
-    from stmol import showmol
-    PY3DMOL_AVAILABLE = True
-except ImportError:
-    PY3DMOL_AVAILABLE = False
+    from pymatgen.core import Structure
+    HAS_PYMATGEN = True
+except Exception:
+    HAS_PYMATGEN = False
 
-# Ignora warning non critici
-warnings.filterwarnings('ignore')
+from rdkit import Chem
+from rdkit.Chem import Descriptors
 
-# ==========================================
-# 1. CONFIGURAZIONE PAGINA STREAMLIT
-# ==========================================
-st.set_page_config(
-    page_title="MOF Synthesis AI Predictor & Optimizer",
-    page_icon="🧪",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="🧪", layout="wide")
+st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
+st.markdown("Strumento avanzato di Machine Learning per la predizione, ottimizzazione e **spiegabilità chimica** della sintesi di MOF.")
 
-# Custom CSS per migliorare l'estetica dell'interfaccia
-st.markdown("""
-    <style>
-    .main-header {
-        font-size: 2.2rem;
-        font-weight: 700;
-        color: #1E3A8A;
-        margin-bottom: 0.2rem;
-    }
-    .sub-header {
-        font-size: 1.1rem;
-        color: #4B5563;
-        margin-bottom: 1.5rem;
-    }
-    .metric-card {
-        background-color: #F3F4F6;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border-left: 4px solid #3B82F6;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# --- DIZIONARIO LOCALE LEGANTE MOF ---
+COMMON_MOF_LIGANDS = {
+    # 1. ACIDI MONOCARBOSSILICI E MODULANTI
+    "c7h6o2": "O=C(O)c1ccccc1",                     # Acido Benzoico
+    "benzoic acid": "O=C(O)c1ccccc1",
+    "c2h4o2": "CC(=O)O",                             # Acido Acetico
+    "acetic acid": "CC(=O)O",
+    "c1h2o2": "O=CO",                               # Acido Formico
+    "formic acid": "O=CO",
+    "c2hf3o2": "O=C(O)C(F)(F)F",                    # Acido Trifluoroacetico (TFA)
+    "trifluoroacetic acid": "O=C(O)C(F)(F)F",
+    "tfa": "O=C(O)C(F)(F)F",
+    "c3h6o2": "CCC(=O)O",                            # Acido Propionico
+    "propionic acid": "CCC(=O)O",
+    "c5h10o2": "CC(C)(C)C(=O)O",                     # Acido Pivalico
+    "pivalic acid": "CC(C)(C)C(=O)O",
 
-st.markdown('<div class="main-header">🧪 MOF Synthesis AI Predictor & Optimizer</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Piattaforma avanzata di Machine Learning per la predizione, ottimizzazione e spiegabilità chimica della sintesi di Metal-Organic Frameworks.</div>', unsafe_allow_html=True)
+    # 2. DICARBOSSILICI AROMATICI (BDC e Derivati)
+    "c8h6o4": "O=C(O)c1ccc(C(=O)O)cc1",             # Acido Tereftalico (BDC)
+    "terephthalic acid": "O=C(O)c1ccc(C(=O)O)cc1",
+    "bdc": "O=C(O)c1ccc(C(=O)O)cc1",
+    "isophthalic acid": "O=C(O)c1cccc(C(=O)O)c1",   # Acido Isoftalico
+    "phthalic acid": "O=C(O)c1ccccc1C(=O)O",         # Acido Ftalico
+    "c8h7no4": "O=C(O)c1ccc(C(=O)O)c(N)c1",         # BDC-NH2
+    "bdc-nh2": "O=C(O)c1ccc(C(=O)O)c(N)c1",
+    "c8h5no6": "O=C(O)c1ccc(C(=O)O)c([N+](=O)[O-])c1", # BDC-NO2
+    "bdc-no2": "O=C(O)c1ccc(C(=O)O)c([N+](=O)[O-])c1",
+    "c8h5bro4": "O=C(O)c1ccc(C(=O)O)c(Br)c1",       # BDC-Br
+    "bdc-br": "O=C(O)c1ccc(C(=O)O)c(Br)c1",
+    "c8h6o5": "O=C(O)c1ccc(C(=O)O)c(O)c1",          # BDC-OH
+    "bdc-oh": "O=C(O)c1ccc(C(=O)O)c(O)c1",
 
-# ==========================================
-# 2. GENERATORE DATASET DEMO DI BACKUP
-# ==========================================
-def generate_synthetic_mof_dataset():
-    """Genera un dataset bilanciato e realistico di sintesi MOF se il CSV non è presente."""
-    np.random.seed(42)
-    n_samples = 300
+    # 3. DICARBOSSILICI ESTESI E ALIFATICI
+    "c12h10o4": "O=C(O)c1ccc(-c2ccc(C(=O)O)cc2)cc1", # BPDC
+    "bpdc": "O=C(O)c1ccc(-c2ccc(C(=O)O)cc2)cc1",
+    "c12h8o4": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",      # 2,6-NDC
+    "ndc": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",
+    "c4h4o4": "O=C(O)/C=C/C(=O)O",                 # Acido Fumarico
+    "fumaric acid": "O=C(O)/C=C/C(=O)O",
+
+    # 4. POLICARBOSSILICI
+    "c9h6o6": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",     # Acido Trimesico (BTC)
+    "btc": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",
+    "c27h18o6": "O=C(O)c1ccc(-c2cc(-c3ccc(C(=O)O)cc3)cc(-c3ccc(C(=O)O)cc3)c2)cc1", # BTB
+    "btb": "O=C(O)c1ccc(-c2cc(-c3ccc(C(=O)O)cc3)cc(-c3ccc(C(=O)O)cc3)c2)cc1",
+
+    # 5. IMIDAZOLI E LINKER PIRIDINICI
+    "c3h4n2": "c1c[nH]cn1",                        # Imidazolo
+    "c4h6n2": "Cc1c[nH]cn1",                        # 2-mIM
+    "2-mim": "Cc1c[nH]cn1",
+    "c10h8n2": "c1cnc(-c2ccncc2)cc1",                # 4,4'-Bipy
+    "4,4'-bipy": "c1cnc(-c2ccncc2)cc1"
+}
+
+# --- PROPRIETÀ ADDITIVI E MODULATORI ---
+ADDITIVES_DATABASE = {
+    'Nessuno': {'type': 'None', 'MW': 0.0, 'pKa': 0.0},
+    'Acido Acetico (AcOH)': {'type': 'Acid', 'MW': 60.05, 'pKa': 4.76},
+    'Acido Formico (HCOOH)': {'type': 'Acid', 'MW': 46.03, 'pKa': 3.75},
+    'Acido Benzoico': {'type': 'Acid', 'MW': 122.12, 'pKa': 4.20},
+    'Acido Trifluoroacetico (TFA)': {'type': 'Acid', 'MW': 114.02, 'pKa': 0.23},
+    'Acido Cloridrico (HCl)': {'type': 'Acid', 'MW': 36.46, 'pKa': -6.0},
+    'Trietilammina (TEA)': {'type': 'Base', 'MW': 101.19, 'pKa': 10.75},
+    'Diisopropiletilammina (DIPEA)': {'type': 'Base', 'MW': 129.24, 'pKa': 11.0},
+    'N-Metilmorfolina': {'type': 'Base', 'MW': 101.15, 'pKa': 7.38},
+    'Piridinetilammina / Piridina': {'type': 'Base', 'MW': 79.10, 'pKa': 5.25},
+    'Acqua (H2O Modulatore)': {'type': 'Neutral', 'MW': 18.015, 'pKa': 14.0},
+    'HF (Acido Fluoridrico)': {'type': 'Acid', 'MW': 20.01, 'pKa': 3.17}
+}
+
+# --- PROPRIETÀ METALLI COMPLETI ---
+metal_props = {
+    'Cu': {'Z': 29, 'Electronegativity': 1.90, 'Radius_pm': 132, 'Group': 11, 'Period': 4, 'MW': 63.55},
+    'Zn': {'Z': 30, 'Electronegativity': 1.65, 'Radius_pm': 122, 'Group': 12, 'Period': 4, 'MW': 65.38},
+    'Zr': {'Z': 40, 'Electronegativity': 1.33, 'Radius_pm': 160, 'Group': 4, 'Period': 5, 'MW': 91.22},
+    'Fe': {'Z': 26, 'Electronegativity': 1.83, 'Radius_pm': 126, 'Group': 8, 'Period': 4, 'MW': 55.85},
+    'Co': {'Z': 27, 'Electronegativity': 1.88, 'Radius_pm': 126, 'Group': 9, 'Period': 4, 'MW': 58.93},
+    'Ni': {'Z': 28, 'Electronegativity': 1.91, 'Radius_pm': 124, 'Group': 10, 'Period': 4, 'MW': 58.69},
+    'Mn': {'Z': 25, 'Electronegativity': 1.55, 'Radius_pm': 139, 'Group': 7, 'Period': 4, 'MW': 54.94},
+    'Cr': {'Z': 24, 'Electronegativity': 1.66, 'Radius_pm': 128, 'Group': 6, 'Period': 4, 'MW': 51.99},
+    'Ti': {'Z': 22, 'Electronegativity': 1.54, 'Radius_pm': 147, 'Group': 4, 'Period': 4, 'MW': 47.87},
+    'Al': {'Z': 13, 'Electronegativity': 1.61, 'Radius_pm': 121, 'Group': 13, 'Period': 3, 'MW': 26.98},
+    'Mg': {'Z': 12, 'Electronegativity': 1.31, 'Radius_pm': 141, 'Group': 2, 'Period': 3, 'MW': 24.31},
+    'Ce': {'Z': 58, 'Electronegativity': 1.12, 'Radius_pm': 181, 'Group': 3, 'Period': 6, 'MW': 140.12}
+}
+
+anion_mw = {
+    'Nitrato': 62.00 * 2,
+    'Acetato': 59.04 * 2,
+    'Cloruro': 35.45 * 2,
+    'Altro': 60.00
+}
+
+# --- FUNZIONE RESOLVER UNIVERSALE ---
+def resolve_molecule_to_smiles(query):
+    clean_query = query.strip().lower()
+    if not clean_query:
+        return None
     
-    temperatures = np.random.uniform(60, 220, n_samples)
-    times = np.random.uniform(2, 96, n_samples)
-    metal_concs = np.random.uniform(0.02, 0.5, n_samples)
-    ligand_concs = np.random.uniform(0.02, 0.5, n_samples)
-    modulator_eqs = np.random.uniform(0, 60, n_samples)
-    phs = np.random.uniform(1.0, 11.0, n_samples)
-    stirring_speeds = np.random.choice([0, 200, 500, 800], size=n_samples)
-    
-    metals = np.random.choice(['Zr', 'Cu', 'Zn', 'Fe', 'Al', 'UiO-Metal'], size=n_samples)
-    solvents = np.random.choice(['DMF', 'DEF', 'H2O', 'Ethanol', 'DMF/H2O'], size=n_samples)
-    
-    esiti = []
-    for i in range(n_samples):
-        score = 0.0
-        if 100 <= temperatures[i] <= 160:
-            score += 2.5
-        if 5 <= modulator_eqs[i] <= 30:
-            score += 2.0
-        ratio = metal_concs[i] / (ligand_concs[i] + 1e-5)
-        if 0.8 <= ratio <= 1.2:
-            score += 2.0
-        if 2.0 <= phs[i] <= 5.0:
-            score += 1.5
-            
-        noise = np.random.normal(0, 1.0)
-        final_score = score + noise
-        
-        if final_score > 5.5:
-            esiti.append(2)
-        elif final_score > 3.0:
-            esiti.append(1)
-        else:
-            esiti.append(0)
-            
-    df_gen = pd.DataFrame({
-        'Temperatura_C': np.round(temperatures, 1),
-        'Tempo_h': np.round(times, 1),
-        'Conc_Metallo_M': np.round(metal_concs, 3),
-        'Conc_Legante_M': np.round(ligand_concs, 3),
-        'Eq_Modulatore': np.round(modulator_eqs, 1),
-        'pH_Apparente': np.round(phs, 1),
-        'Velocita_Agitazione_RPM': stirring_speeds,
-        'Tipo_Metallo': metals,
-        'Solvente_Principale': solvents,
-        'Target_Esito_Classe': esiti
-    })
-    return df_gen
+    if clean_query in COMMON_MOF_LIGANDS:
+        return COMMON_MOF_LIGANDS[clean_query]
 
-# ==========================================
-# 3. PREPROCESSING E FEATURE ENGINEERING
-# ==========================================
-def process_unified_dataset(raw_df):
-    """Esegue pulizia, feature engineering e encoding categoriale del dataset."""
-    df = raw_df.copy()
-    df.columns = df.columns.str.strip()
-    
+    headers = {'User-Agent': 'MOF_Predictor_App/1.0'}
+    try:
+        url_nih = f"https://cactus.nci.nih.gov/chemical/structure/{requests.utils.quote(query)}/smiles"
+        res = requests.get(url_nih, headers=headers, timeout=3)
+        if res.status_code == 200 and res.text and "Page not found" not in res.text:
+            smiles_candidate = res.text.strip()
+            if Chem.MolFromSmiles(smiles_candidate):
+                return smiles_candidate
+    except Exception:
+        pass
+
+    try:
+        url_name = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{requests.utils.quote(query)}/property/IsomericSMILES/JSON"
+        res = requests.get(url_name, headers=headers, timeout=3)
+        if res.status_code == 200:
+            return res.json()['PropertyTable']['Properties'][0]['IsomericSMILES']
+    except Exception:
+        pass
+
+    return None
+
+def process_unified_dataset(df):
     target_col = None
-    possible_targets = ['Target_Esito_Classe', 'Esito', 'Outcome', 'Synthesis_Success', 'Result', 'Target']
-    for col in possible_targets:
-        if col in df.columns:
+    possible_targets = ['Target_Esito_Classe', 'Target', 'Esito', 'Classe']
+    for col in df.columns:
+        if col in possible_targets or 'Target' in col:
             target_col = col
             break
-            
-    if target_col is None:
-        target_col = df.columns[-1]
-        
-    df = df.rename(columns={target_col: 'Target_Esito_Classe'})
-    
-    # Rimuovi eventuali righe dove il target è nullo/NaN
-    df = df.dropna(subset=['Target_Esito_Classe'])
-    
-    # Feature Engineering Chimico-Fisico
-    if 'Conc_Metallo_M' in df.columns and 'Conc_Legante_M' in df.columns:
-        df['Rapporto_Metallo_Legante'] = df['Conc_Metallo_M'] / (df['Conc_Legante_M'] + 1e-5)
-    
-    if 'Temperatura_C' in df.columns and 'Tempo_h' in df.columns:
-        df['Energia_Termica_Effettiva'] = df['Temperatura_C'] * np.log1p(df['Tempo_h'])
-        
-    feature_cols = [c for c in df.columns if c != 'Target_Esito_Classe']
-    encoded_df = pd.get_dummies(df[feature_cols], drop_first=True)
-    encoded_df['Target_Esito_Classe'] = df['Target_Esito_Classe']
-    
-    return encoded_df
 
-# ==========================================
-# 4. CARICAMENTO O ADDESTRAMENTO MODELLO
-# ==========================================
+    processed = []
+    for idx, row in df.iterrows():
+        smiles = str(row.get('SMILES_Legante', ''))
+        mol = Chem.MolFromSmiles(smiles) if smiles and smiles != 'nan' else None
+        
+        mw = Descriptors.MolWt(mol) if mol else 166.13
+        logp = Descriptors.MolLogP(mol) if mol else 1.32
+        hbd = Descriptors.NumHDonors(mol) if mol else 2
+        hba = Descriptors.NumHAcceptors(mol) if mol else 4
+        tpsa = Descriptors.TPSA(mol) if mol else 74.6
+        rot = Descriptors.NumRotatableBonds(mol) if mol else 2
+        
+        met = str(row.get('Metallo', 'Cu'))
+        m_info = metal_props.get(met, metal_props['Cu'])
+        anione_sel = str(row.get('Anione', 'Nitrato'))
+        
+        m_leg = float(row.get('mmol legante', 0.1)) if pd.notnull(row.get('mmol legante')) else 0.1
+        m_sale = float(row.get('mmol sale', 0.1)) if pd.notnull(row.get('mmol sale')) else 0.1
+        ratio = m_leg / m_sale if m_sale > 0 else 1.0
+        
+        solv_p = str(row.get('Solvente', 'DMF'))
+        cosolv = str(row.get('CoSolvente', 'Nessuno'))
+        
+        ml_solv_p = float(row.get('mL_Solvente_P', 10.0)) if pd.notnull(row.get('mL_Solvente_P')) else 10.0
+        ml_cosolv = float(row.get('mL_CoSolvente', 0.0)) if pd.notnull(row.get('mL_CoSolvente')) else 0.0
+        total_vol = ml_solv_p + ml_cosolv
+        cosolv_pct = (ml_cosolv / total_vol * 100) if total_vol > 0 else 0.0
+        
+        add_type = str(row.get('Additivo_Tipo', 'None'))
+        add_eq = float(row.get('Additivo_Eq', 0.0)) if pd.notnull(row.get('Additivo_Eq')) else 0.0
+        
+        temp = float(row.get('Temperatura_num', 120)) if pd.notnull(row.get('Temperatura_num')) else 120.0
+        tempo = float(row.get('Tempo_ore_num', 48)) if pd.notnull(row.get('Tempo_ore_num')) else 48.0
+        
+        raw_target = row.get(target_col, 0) if target_col else 0
+        try:
+            target = int(float(raw_target))
+        except:
+            target = 0
+            
+        processed.append({
+            'MW_Legante': float(mw), 'LogP_Legante': float(logp), 'HBD_Legante': float(hbd), 'HBA_Legante': float(hba),
+            'TPSA_Legante': float(tpsa), 'RotatableBonds_Legante': float(rot),
+            'Temperatura_num': float(temp), 'Tempo_ore_num': float(tempo),
+            'mmol legante': float(m_leg), 'mmol sale': float(m_sale), 'Rapporto L/M': float(ratio),
+            'Metallo_Z': m_info['Z'], 'Metallo_Electronegativity': m_info['Electronegativity'],
+            'Metallo_Radius_pm': m_info['Radius_pm'], 'Metallo_Group': m_info['Group'], 'Metallo_Period': m_info['Period'],
+            'Anion_Acetato': 1 if anione_sel == 'Acetato' else 0,
+            'Anion_Cloruro': 1 if anione_sel == 'Cloruro' else 0,
+            'Anion_Nitrato': 1 if anione_sel == 'Nitrato' else 0,
+            'Anion_Altro': 1 if anione_sel == 'Altro' else 0,
+            'mL_Solvente_P': float(ml_solv_p), 'mL_CoSolvente': float(ml_cosolv), 'Total_Volume_mL': float(total_vol),
+            'CoSolvent_Pct': float(cosolv_pct),
+            'Additive_Eq': float(add_eq),
+            'Additive_Is_Acid': 1 if add_type == 'Acid' else 0,
+            'Additive_Is_Base': 1 if add_type == 'Base' else 0,
+            'Additive_Is_Neutral': 1 if add_type == 'Neutral' else 0,
+            'Solvent_DMF': 1 if 'DMF' in solv_p or 'DMF' in cosolv else 0,
+            'Solvent_H2O': 1 if 'H2O' in solv_p or 'H2O' in cosolv else 0,
+            'Solvent_MeOH': 1 if 'MeOH' in solv_p or 'MeOH' in cosolv else 0,
+            'Solvent_EtOH': 1 if 'EtOH' in solv_p or 'EtOH' in cosolv else 0,
+            'Solvent_DEF': 1 if 'DEF' in solv_p or 'DEF' in cosolv else 0,
+            'Solvent_MeCN': 1 if 'MeCN' in solv_p or 'MeCN' in cosolv else 0,
+            'Target_Esito_Classe': target
+        })
+    return pd.DataFrame(processed)
+
+# --- ADDESTRAMENTO MODELLO POTENZIATO CON LIGHTGBM E CALIBRAZIONE ---
 @st.cache_resource
 def load_or_train_model():
     pkl_file = "modello_sintesi_mof_ottimizzato.pkl"
     csv_file = "Dataset_Sintesi_Unificato.csv"
     
     if os.path.exists(pkl_file):
-        try:
-            saved_data = joblib.load(pkl_file)
-            if isinstance(saved_data, dict):
-                return saved_data['model'], saved_data['features'], saved_data.get('metrics', {}), saved_data.get('importances', [])
-            return saved_data, getattr(saved_data, 'feature_names_in_', []), {}, getattr(saved_data, 'feature_importances_', [])
-        except Exception:
-            pass
-            
-    if os.path.exists(csv_file):
+        return joblib.load(pkl_file)
+    elif os.path.exists(csv_file):
+        st.info("⚡ Addestramento del modello avanzato LightGBM con calibrazione chimica...")
         raw_df = pd.read_csv(csv_file)
-    else:
-        raw_df = generate_synthetic_mof_dataset()
-        raw_df.to_csv(csv_file, index=False)
+        df = process_unified_dataset(raw_df)
         
-    df = process_unified_dataset(raw_df)
-    
-    X = df.drop(columns=['Target_Esito_Classe'])
-    X = X.fillna(X.mean()).fillna(0)
-    
-    # PULIZIA SICURA TARGET (Conversione priva di errori NaN)
-    y_raw = pd.to_numeric(df['Target_Esito_Classe'], errors='coerce')
-    valid_mask = y_raw.notna()
-    X = X[valid_mask]
-    y = y_raw[valid_mask].astype(int)
-    
-    # Gestione di sicurezza per classi con campioni insufficienti (< 3)
-    counts = y.value_counts()
-    for cls, count in counts.items():
-        if count < 3:
-            needed = 3 - count
-            rows_to_dup = X[y == cls]
-            if len(rows_to_dup) > 0:
-                for _ in range(needed):
-                    X = pd.concat([X, rows_to_dup.iloc[[0]]], ignore_index=True)
-                    y = pd.concat([y, pd.Series([cls])], ignore_index=True)
-
-    # Modello di Base LightGBM
-    base_model = LGBMClassifier(
-        n_estimators=180,
-        learning_rate=0.04,
-        max_depth=6,
-        num_leaves=31,
-        class_weight='balanced',
-        random_state=42,
-        verbose=-1
-    )
-    
-    min_class_samples = y.value_counts().min()
-    cv_splits = min(3, max(2, min_class_samples))
-    
-    # Calibrazione delle probabilità
-    calibrated_model = CalibratedClassifierCV(
-        estimator=base_model,
-        method='sigmoid',
-        cv=StratifiedKFold(n_splits=cv_splits, shuffle=True, random_state=42)
-    )
-    
-    calibrated_model.fit(X, y)
-    
-    feature_names = X.columns.tolist()
-    try:
-        importances = np.mean([est.estimator.feature_importances_ for est in calibrated_model.calibrated_classifiers_], axis=0)
-    except Exception:
-        importances = np.zeros(len(feature_names))
+        X = df.drop(columns=['Target_Esito_Classe'])
+        X = X.fillna(X.mean()).fillna(0)
+        y = df['Target_Esito_Classe'].astype(int)
         
-    metrics = {
-        'train_accuracy': accuracy_score(y, calibrated_model.predict(X)),
-        'n_samples': len(X),
-        'n_features': len(feature_names)
-    }
-    
-    save_dict = {
-        'model': calibrated_model,
-        'features': feature_names,
-        'importances': importances,
-        'metrics': metrics
-    }
-    
-    joblib.dump(save_dict, pkl_file)
-    return calibrated_model, feature_names, metrics, importances
+        if len(y.unique()) < 2:
+            X_extra = X.copy().iloc[:3]
+            y_extra = pd.Series([0, 1, 2][:len(X_extra)])
+            X = pd.concat([X, X_extra], ignore_index=True)
+            y = pd.concat([y, y_extra], ignore_index=True)
 
-# Caricamento Modello
-model, features, metrics, feature_importances = load_or_train_model()
-
-# ==========================================
-# 5. SIDEBAR: INPUT PARAMETRI REAZIONE
-# ==========================================
-st.sidebar.header("⚙️ Parametri Reazione MOF")
-
-def user_input_features():
-    inputs = {}
-    
-    st.sidebar.subheader("🌡️ Condizioni Termodinamiche")
-    temp = st.sidebar.slider("Temperatura (°C)", 20.0, 250.0, 130.0, 5.0)
-    time_h = st.sidebar.slider("Tempo di Reazione (h)", 1.0, 120.0, 24.0, 1.0)
-    stirring = st.sidebar.select_slider("Velocità Agitazione (RPM)", options=[0, 200, 500, 800], value=0)
-    
-    st.sidebar.subheader("⚖️ Stechiometria e Soluzione")
-    metal_conc = st.sidebar.number_input("Conc. Metallo (M)", 0.001, 2.0, 0.10, 0.01)
-    ligand_conc = st.sidebar.number_input("Conc. Legante (M)", 0.001, 2.0, 0.10, 0.01)
-    modulator_eq = st.sidebar.slider("Equivalenti Modulatore", 0.0, 100.0, 15.0, 1.0)
-    ph = st.sidebar.slider("pH apparente", 0.0, 14.0, 3.5, 0.1)
-    
-    st.sidebar.subheader("🧪 Componenti Chimici")
-    metal_type = st.sidebar.selectbox("Tipo Metallo", ["Zr", "Cu", "Zn", "Fe", "Al", "UiO-Metal"])
-    solvent = st.sidebar.selectbox("Solvente Principale", ["DMF", "DEF", "H2O", "Ethanol", "DMF/H2O"])
-    
-    st.sidebar.subheader("🧬 Struttura Molecolare Legante")
-    smiles_input = st.sidebar.text_input("SMILES Legante", "c1cc(C(=O)O)cc(C(=O)O)c1")
-
-    for f in features:
-        f_lower = f.lower()
-        if 'temp' in f_lower and 'energia' not in f_lower:
-            inputs[f] = temp
-        elif 'tempo' in f_lower or 'time' in f_lower:
-            inputs[f] = time_h
-        elif 'metal' in f_lower and 'conc' in f_lower:
-            inputs[f] = metal_conc
-        elif 'legan' in f_lower and 'conc' in f_lower:
-            inputs[f] = ligand_conc
-        elif 'modulat' in f_lower or 'eq' in f_lower:
-            inputs[f] = modulator_eq
-        elif 'ph' in f_lower:
-            inputs[f] = ph
-        elif 'rpm' in f_lower or 'agita' in f_lower:
-            inputs[f] = stirring
-        elif 'rapporto' in f_lower:
-            inputs[f] = metal_conc / (ligand_conc + 1e-5)
-        elif 'energia' in f_lower:
-            inputs[f] = temp * np.log1p(time_h)
-        elif 'tipo_metallo_' + metal_type in f:
-            inputs[f] = 1.0
-        elif 'solvente_principale_' + solvent in f:
-            inputs[f] = 1.0
-        else:
-            inputs[f] = 0.0
-            
-    return pd.DataFrame([inputs]), smiles_input, temp, modulator_eq, metal_conc, ligand_conc, ph, metal_type, solvent
-
-input_df, smiles_str, current_temp, current_mod, current_m_conc, current_l_conc, current_ph, current_metal, current_solvent = user_input_features()
-
-# ==========================================
-# 6. FUNZIONI DI CALCOLO E DESCRITTORI MOLECOLARI
-# ==========================================
-def calculate_molecular_descriptors(smiles):
-    if not RDKIT_AVAILABLE or not smiles:
-        return None
-    try:
-        mol = Chem.MolFromSmiles(smiles)
-        if mol is None:
-            return None
-        return {
-            'Peso Molecolare (g/mol)': np.round(Descriptors.MolWt(mol), 2),
-            'LogP (Lipofilia)': np.round(Descriptors.MolLogP(mol), 2),
-            'H-Bond Donors': Descriptors.NumHDonors(mol),
-            'H-Bond Acceptors': Descriptors.NumHAcceptors(mol),
-            'TPSA (Å²)': np.round(Descriptors.TPSA(mol), 2),
-            'Legami Ruotabili': Descriptors.NumRotatableBonds(mol)
-        }
-    except Exception:
-        return None
-
-# ==========================================
-# 7. INTERFACCIA A SCHEDE (TABS)
-# ==========================================
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "🔮 Predizione & Diagnostica", 
-    "🧬 Descrittori & Molecola 3D", 
-    "🗺️ Mappa di Cristalizzazione 2D", 
-    "💡 Ottimizzatore & Ricetta Inversa",
-    "📊 Info Dataset & Prestazioni"
-])
-
-# ------------------------------------------
-# TAB 1: PREDIZIONE & DIAGNOSTICA
-# ------------------------------------------
-with tab1:
-    st.subheader("📊 Esito Predetto della Sintesi MOF")
-    
-    probs = model.predict_proba(input_df)[0]
-    classes = getattr(model, 'classes_', np.array([0, 1, 2]))
-    
-    class_names = {0: "Amorfo / Precipitato", 1: "Parziale / Miscela", 2: "Cristallino (Successo)"}
-    colors = {0: "#EF4444", 1: "#F59E0B", 2: "#10B981"}
-    
-    col1, col2, col3 = st.columns(3)
-    cols = [col1, col2, col3]
-    
-    for i, cls in enumerate(classes):
-        prob_pct = probs[i] * 100
-        name = class_names.get(cls, f"Classe {cls}")
-        with cols[i % 3]:
-            st.metric(label=name, value=f"{prob_pct:.1f}%")
-            st.progress(float(probs[i]))
-
-    st.markdown("---")
-    
-    col_chart, col_explain = st.columns([1, 1])
-    
-    with col_chart:
-        st.subheader("🥧 Distribuzione Probabilità")
-        labels = [class_names.get(c, f"Classe {c}") for c in classes]
-        fig_donut = go.Figure(data=[go.Pie(
-            labels=labels, 
-            values=probs, 
-            hole=.4,
-            marker_colors=[colors.get(c, '#9CA3AF') for c in classes]
-        )])
-        fig_donut.update_layout(height=300, margin=dict(l=20, r=20, t=20, b=20))
-        st.plotly_chart(fig_donut, use_container_width=True)
-        
-    with col_explain:
-        st.subheader("💡 Fattori Determinanti (Feature Importance)")
-        if len(feature_importances) > 0:
-            imp_df = pd.DataFrame({
-                'Parametro': features,
-                'Importanza': feature_importances
-            }).sort_values('Importanza', ascending=True).tail(8)
-            
-            fig_bar = px.bar(imp_df, x='Importanza', y='Parametro', orientation='h',
-                             color='Importanza', color_continuous_scale='Viridis')
-            fig_bar.update_layout(height=300, margin=dict(l=0, r=0, t=20, b=0), showlegend=False)
-            st.plotly_chart(fig_bar, use_container_width=True)
-
-# ------------------------------------------
-# TAB 2: DESCRITTORI & MOLECOLA 2D/3D
-# ------------------------------------------
-with tab2:
-    st.subheader("🧬 Analisi Molecolare del Legante Organico")
-    
-    descriptors = calculate_molecular_descriptors(smiles_str)
-    
-    if descriptors:
-        st.write("### 📐 Descrittori Fisico-Chimici Calcolati")
-        d_cols = st.columns(len(descriptors))
-        for idx, (k, v) in enumerate(descriptors.items()):
-            d_cols[idx].metric(k, str(v))
-        st.markdown("---")
-        
-    col_2d, col_3d = st.columns(2)
-    
-    with col_2d:
-        st.write("### 🖼️ Struttura 2D (RDKit)")
-        if RDKIT_AVAILABLE and smiles_str:
-            try:
-                mol = Chem.MolFromSmiles(smiles_str)
-                if mol:
-                    img = Draw.MolToImage(mol, size=(400, 350))
-                    st.image(img, caption=f"SMILES: {smiles_str}")
-                else:
-                    st.error("SMILES non valido.")
-            except Exception as e:
-                st.error(f"Errore generazione 2D: {e}")
-        else:
-            st.info("RDKit non disponibile o SMILES non specificato.")
-
-    with col_3d:
-        st.write("### 🧊 Visualizzazione 3D Interattiva")
-        if PY3DMOL_AVAILABLE and RDKIT_AVAILABLE and smiles_str:
-            try:
-                mol = Chem.MolFromSmiles(smiles_str)
-                if mol:
-                    mol = Chem.AddHs(mol)
-                    AllChem.EmbedMolecule(mol, randomSeed=42)
-                    mblock = Chem.MolToMolBlock(mol)
-                    
-                    xyzview = py3Dmol.view(width=400, height=350)
-                    xyzview.addModel(mblock, 'mol')
-                    xyzview.setStyle({'stick': {}})
-                    xyzview.zoomTo()
-                    showmol(xyzview, height=350, width=400)
-            except Exception:
-                st.warning("Impossibile generare la conformazione 3D per questa molecola.")
-        else:
-            st.info("Installa `stmol` e `py3Dmol` per la rendering 3D interattivo.")
-
-# ------------------------------------------
-# TAB 3: MAPPA DI CRISTALIZZAZIONE 2D
-# ------------------------------------------
-with tab3:
-    st.subheader("🗺️ Mappa di Cristalizzazione 2D (Isola di Sintesi)")
-    st.write("Visualizzazione del profilo di risposta variando **Temperatura** e **Modulatore** a parità di altre condizioni.")
-    
-    temp_range = np.linspace(40, 220, 30)
-    mod_range = np.linspace(0, 60, 30)
-    
-    grid_z = np.zeros((len(temp_range), len(mod_range)))
-    sample_row = input_df.copy()
-    
-    temp_cols = [c for c in features if 'temp' in c.lower() and 'energia' not in c.lower()]
-    mod_cols = [c for c in features if 'modulat' in c.lower() or 'eq' in c.lower()]
-    
-    if temp_cols and mod_cols:
-        t_col = temp_cols[0]
-        m_col = mod_cols[0]
-        
-        for i, t in enumerate(temp_range):
-            for j, m in enumerate(mod_range):
-                sample_row[t_col] = t
-                sample_row[m_col] = m
-                if 'Energia_Termica_Effettiva' in sample_row.columns:
-                    sample_row['Energia_Termica_Effettiva'] = t * np.log1p(sample_row.get('Tempo_h', 24))
-                
-                p_succ = model.predict_proba(sample_row)[0]
-                idx_succ = np.where(classes == 2)[0]
-                grid_z[i, j] = p_succ[idx_succ[0]] if len(idx_succ) > 0 else p_succ[-1]
-                
-        fig_contour = go.Figure(data=go.Contour(
-            z=grid_z,
-            x=mod_range,
-            y=temp_range,
-            colorscale='Viridis',
-            colorbar=dict(title='Prob. Cristallinità')
-        ))
-        
-        fig_contour.add_trace(go.Scatter(
-            x=[current_mod],
-            y=[current_temp],
-            mode='markers+text',
-            marker=dict(color='red', size=14, symbol='x'),
-            text=["Punto Selezionato"],
-            textposition="top center",
-            name="Condizioni Attuali"
-        ))
-        
-        fig_contour.update_layout(
-            xaxis_title="Equivalenti Modulatore",
-            yaxis_title="Temperatura (°C)",
-            height=500
+        # Base LightGBM con Pesi Bilanciati per evitare bias verso l'insuccesso
+        base_model = LGBMClassifier(
+            n_estimators=150,
+            learning_rate=0.05,
+            max_depth=6,
+            num_leaves=31,
+            class_weight='balanced',
+            random_state=42,
+            verbose=-1
         )
-        st.plotly_chart(fig_contour, use_container_width=True)
-    else:
-        st.warning("Impossibile generare la mappa: parametri termodinamici non mappati correttamente.")
+        
+        # Calibrazione Isotonica per probabilità chimicamente realistiche
+        calibrated_model = CalibratedClassifierCV(
+            estimator=base_model,
+            method='isotonic',
+            cv=StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+        )
+        
+        calibrated_model.fit(X, y)
+        
+        # Preservazione metadati feature
+        calibrated_model.feature_names_in_ = X.columns.tolist()
+        
+        try:
+            importances = np.mean([est.estimator.feature_importances_ for est in calibrated_model.calibrated_classifiers_], axis=0)
+            calibrated_model.feature_importances_ = importances
+        except Exception:
+            calibrated_model.feature_importances_ = np.zeros(X.shape[1])
 
-# ------------------------------------------
-# TAB 4: OTTIMIZZATORE & RICETTA INVERSA
-# ------------------------------------------
-with tab4:
-    st.subheader("💡 Ricerca delle Condizioni Ottimali (Inverse Design)")
-    st.write("Genera una ricetta consigliata per massimizzare la probabilità di successo cristallino.")
+        joblib.dump(calibrated_model, pkl_file)
+        return calibrated_model
+    else:
+        st.error(f"File '{csv_file}' non trovato!")
+        st.stop()
+
+try:
+    model = load_or_train_model()
+    st.sidebar.success("Modello ML LightGBM attivo e pronto!")
+except Exception as e:
+    st.sidebar.error(f"Errore caricamento modello: {e}")
+    st.stop()
+
+# --- SIDEBAR: FEATURE IMPORTANCE ---
+st.sidebar.markdown("---")
+st.sidebar.subheader("📊 Importanza Globale Parametri")
+if hasattr(model, 'feature_importances_'):
+    importances = pd.Series(model.feature_importances_, index=model.feature_names_in_).sort_values(ascending=True).tail(8)
+    st.sidebar.bar_chart(importances)
+
+# --- TAB INTERFACCIA ---
+tab1, tab2, tab3 = st.tabs(["🔮 Predizione Singola", "📂 Predizione Batch", "⚡ Ottimizzatore Automatico"])
+
+def build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_p, ml_solv_p, cosolvente, ml_cosolv, additivo_sel, add_eq):
+    add_info = ADDITIVES_DATABASE.get(additivo_sel, ADDITIVES_DATABASE['Nessuno'])
+    add_type = add_info['type']
     
-    if st.button("🚀 Avvia Ottimizzazione Sintetica"):
-        with st.spinner("Ricerca nello spazio delle condizioni di reazione..."):
-            best_prob = -1.0
-            best_params = None
+    total_vol = float(ml_solv_p) + float(ml_cosolv)
+    cosolv_pct = (float(ml_cosolv) / total_vol * 100.0) if total_vol > 0 else 0.0
+    
+    input_dict = {
+        'MW_Legante': float(mw),
+        'LogP_Legante': float(logp),
+        'HBD_Legante': float(hbd),
+        'HBA_Legante': float(hba),
+        'TPSA_Legante': float(tpsa),
+        'RotatableBonds_Legante': float(rot_bonds),
+        'Temperatura_num': float(temp),
+        'Tempo_ore_num': float(tempo),
+        'mmol legante': float(mmol_legante),
+        'mmol sale': float(mmol_sale),
+        'Rapporto L/M': float(mmol_legante) / float(mmol_sale) if float(mmol_sale) > 0 else 1.0,
+        'Metallo_Z': metal_props[metallo_sel]['Z'],
+        'Metallo_Electronegativity': metal_props[metallo_sel]['Electronegativity'],
+        'Metallo_Radius_pm': metal_props[metallo_sel]['Radius_pm'],
+        'Metallo_Group': metal_props[metallo_sel]['Group'],
+        'Metallo_Period': metal_props[metallo_sel]['Period'],
+        'Anion_Acetato': 1 if anione_sel == 'Acetato' else 0,
+        'Anion_Cloruro': 1 if anione_sel == 'Cloruro' else 0,
+        'Anion_Nitrato': 1 if anione_sel == 'Nitrato' else 0,
+        'Anion_Altro': 1 if anione_sel == 'Altro' else 0,
+        'mL_Solvente_P': float(ml_solv_p),
+        'mL_CoSolvente': float(ml_cosolv),
+        'Total_Volume_mL': float(total_vol),
+        'CoSolvent_Pct': float(cosolv_pct),
+        'Additive_Eq': float(add_eq),
+        'Additive_Is_Acid': 1 if add_type == 'Acid' else 0,
+        'Additive_Is_Base': 1 if add_type == 'Base' else 0,
+        'Additive_Is_Neutral': 1 if add_type == 'Neutral' else 0,
+        'Solvent_DMF': 1 if 'DMF' in solvente_p or 'DMF' in cosolvente else 0,
+        'Solvent_H2O': 1 if 'H2O' in solvente_p or 'H2O' in cosolvente else 0,
+        'Solvent_MeOH': 1 if 'MeOH' in solvente_p or 'MeOH' in cosolvente else 0,
+        'Solvent_EtOH': 1 if 'EtOH' in solvente_p or 'EtOH' in cosolvente else 0,
+        'Solvent_DEF': 1 if 'DEF' in solvente_p or 'DEF' in cosolvente else 0,
+        'Solvent_MeCN': 1 if 'MeCN' in solvente_p or 'MeCN' in cosolvente else 0,
+    }
+    
+    df_f = pd.DataFrame([input_dict])
+    
+    for col in model.feature_names_in_:
+        if col not in df_f.columns:
+            df_f[col] = 0.0
             
-            temps_test = np.linspace(80, 180, 10)
-            mods_test = np.linspace(5, 40, 10)
-            phs_test = np.linspace(2.0, 6.0, 5)
-            
-            test_row = input_df.copy()
-            
-            for t in temps_test:
-                for m in mods_test:
-                    for p in phs_test:
-                        for col in test_row.columns:
-                            if 'temp' in col.lower() and 'energia' not in col.lower():
-                                test_row[col] = t
-                            elif 'modulat' in col.lower() or 'eq' in col.lower():
-                                test_row[col] = m
-                            elif 'ph' in col.lower():
-                                test_row[col] = p
-                                
-                        p_succ = model.predict_proba(test_row)[0]
-                        idx_succ = np.where(classes == 2)[0]
-                        prob = p_succ[idx_succ[0]] if len(idx_succ) > 0 else p_succ[-1]
+    return df_f[model.feature_names_in_]
+
+# --- TAB 1: PREDIZIONE SINGOLA ---
+with tab1:
+    st.subheader("Inserisci i parametri della reazione")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("### 1. Legante Chimico")
+        mode_legante = st.radio(
+            "Modalità Input Legante:", 
+            ["SMILES", "Nome / Formula / CAS", "Carica File (.mol / .sdf / .cif)"],
+            horizontal=True
+        )
+        
+        mol = None
+        if mode_legante == "SMILES":
+            smiles_input = st.text_input("SMILES del Legante:", value="c1cc(C(=O)O)cc(C(=O)O)c1")
+            if smiles_input:
+                mol = Chem.MolFromSmiles(smiles_input)
+                
+        elif mode_legante == "Nome / Formula / CAS":
+            query_input = st.text_input("Nome, Formula o CAS:", value="Benzoic acid")
+            if query_input:
+                with st.spinner("Ricerca molecola nei database..."):
+                    found_smiles = resolve_molecule_to_smiles(query_input)
+                    if found_smiles:
+                        mol = Chem.MolFromSmiles(found_smiles)
+                        st.caption(f"SMILES Identificato: `{found_smiles}`")
+                    else:
+                        st.error("Nessuna molecola trovata.")
                         
-                        if prob > best_prob:
-                            best_prob = prob
-                            best_params = {'Temperatura': t, 'Modulatore Eq.': m, 'pH': p}
-                            
-            st.success(f"✅ Condizione Ottimale Trovata con Probabilità di Cristallinità: **{best_prob*100:.1f}%**")
-            
-            o_col1, o_col2, o_col3 = st.columns(3)
-            o_col1.metric("Temperatura Consigliata", f"{best_params['Temperatura']:.1f} °C")
-            o_col2.metric("Modulatore Consigliato", f"{best_params['Modulatore Eq.']:.1f} eq")
-            o_col3.metric("pH Consigliato", f"{best_params['pH']:.1f}")
+        elif mode_legante == "Carica File (.mol / .sdf / .cif)":
+            uploaded_file = st.file_uploader("Carica file .mol, .sdf o .cif", type=['mol', 'sdf', 'cif'])
+            if uploaded_file is not None:
+                file_ext = uploaded_file.name.split('.')[-1].lower()
+                file_bytes = uploaded_file.getvalue().decode('utf-8', errors='ignore')
+                
+                if file_ext in ['mol', 'sdf']:
+                    mol = Chem.MolFromMolBlock(file_bytes)
+                elif file_ext == 'cif':
+                    if HAS_PYMATGEN:
+                        try:
+                            with open("temp_upload.cif", "w", encoding="utf-8") as f:
+                                f.write(file_bytes)
+                            struct = Structure.from_file("temp_upload.cif")
+                            red_formula = struct.composition.reduced_formula
+                            found_smiles = resolve_molecule_to_smiles(red_formula)
+                            if found_smiles:
+                                mol = Chem.MolFromSmiles(found_smiles)
+                        except Exception as e:
+                            st.error(f"Errore lettura CIF: {e}")
 
-# ------------------------------------------
-# TAB 5: INFO DATASET & PRESTAZIONI
-# ------------------------------------------
-with tab5:
-    st.subheader("📊 Diagnostica Modello e Stato Dataset")
+        if mol:
+            mw = Descriptors.MolWt(mol)
+            logp = Descriptors.MolLogP(mol)
+            hbd = Descriptors.NumHDonors(mol)
+            hba = Descriptors.NumHAcceptors(mol)
+            tpsa = Descriptors.TPSA(mol)
+            rot_bonds = Descriptors.NumRotatableBonds(mol)
+            st.success(f"Molecola Valida! MW: {mw:.2f} g/mol")
+        else:
+            mw, logp, hbd, hba, tpsa, rot_bonds = 166.13, 1.32, 2, 4, 74.6, 2
+
+        input_mode_leg = st.radio("Inserisci Legante come:", ["MilliMoli (mmol)", "Massa (mg)"], key="rad_leg", horizontal=True)
+        if input_mode_leg == "MilliMoli (mmol)":
+            mmol_legante = st.number_input("mmol Legante:", min_value=0.001, max_value=20.0, value=0.10, step=0.01)
+            mg_legante = mmol_legante * mw
+            st.caption(f"⚖️ Corrispondono a **{mg_legante:.2f} mg** da pesare.")
+        else:
+            mg_legante = st.number_input("Massa Legante (mg pesati):", min_value=0.1, max_value=5000.0, value=16.61, step=1.0)
+            mmol_legante = mg_legante / mw if mw > 0 else 0.1
+            st.caption(f"⚖️ Corrispondono a **{mmol_legante:.3f} mmol** di Legante.")
+
+    with col2:
+        st.markdown("### 2. Sale Metallico & Idratazione")
+        metal_list = sorted(list(metal_props.keys()))
+        metallo_sel = st.selectbox("Metallo:", metal_list, index=metal_list.index('Cu') if 'Cu' in metal_list else 0)
+        anione_sel = st.selectbox("Anione / Precursore:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'])
+        
+        idratazione = st.selectbox(
+            "Stato di Idratazione (H₂O):",
+            [
+                "Anidro (0 H₂O)",
+                "Monoidrato (1 H₂O)",
+                "Diidrato (2 H₂O)",
+                "Triidrato (3 H₂O)",
+                "Tetraidrato (4 H₂O)",
+                "Pentaidrato (5 H₂O)",
+                "Esaidrato (6 H₂O)",
+                "Nonavidrato (9 H₂O)"
+            ],
+            index=3
+        )
+        
+        n_h2o = int(idratazione.split('(')[1].split(' ')[0])
+        base_salt_mw = metal_props[metallo_sel]['MW'] + anion_mw.get(anione_sel, 60.0)
+        total_salt_mw = base_salt_mw + (n_h2o * 18.015)
+        
+        st.caption(f"🧪 **Massa Molare Sale Idrato:** `{total_salt_mw:.2f} g/mol`")
+
+        input_mode_sale = st.radio("Inserisci Sale come:", ["MilliMoli (mmol)", "Massa (mg)"], key="rad_sale", horizontal=True)
+        if input_mode_sale == "MilliMoli (mmol)":
+            mmol_sale = st.number_input("mmol Sale Metallico:", min_value=0.001, max_value=20.0, value=0.10, step=0.01)
+            mg_sale = mmol_sale * total_salt_mw
+            st.caption(f"⚖️ Corrispondono a **{mg_sale:.2f} mg** da pesare.")
+        else:
+            mg_sale = st.number_input("Massa Sale (mg pesati):", min_value=0.1, max_value=5000.0, value=24.16, step=1.0)
+            mmol_sale = mg_sale / total_salt_mw
+            st.caption(f"⚖️ Corrispondono a **{mmol_sale:.3f} mmol** di {metallo_sel}.")
+
+    with col3:
+        st.markdown("### 3. Miscela Solvente (mL) & Modulatori")
+        
+        solvente_p = st.selectbox("Solvente Principale:", ['DMF', 'DEF', 'DMSO', 'MeCN', 'H2O', 'MeOH', 'EtOH'])
+        ml_solv_p = st.number_input(f"mL di {solvente_p}:", min_value=0.1, max_value=200.0, value=10.0, step=0.5)
+        
+        co_solvente = st.selectbox("Co-Solvente (Opzionale):", ['Nessuno', 'H2O', 'MeOH', 'EtOH', 'CH2Cl2', 'DEF'])
+        
+        ml_cosolv = 0.0
+        if co_solvente != 'Nessuno':
+            ml_cosolv = st.number_input(f"mL di Co-solvente ({co_solvente}):", min_value=0.1, max_value=200.0, value=2.0, step=0.5)
+
+        tot_vol = ml_solv_p + ml_cosolv
+        cosolv_pct = (ml_cosolv / tot_vol * 100) if tot_vol > 0 else 0.0
+        st.caption(f"🧪 **Volume Totale Miscela:** `{tot_vol:.1f} mL` | **Co-solvente:** `{cosolv_pct:.1f}% v/v`")
+
+        temp = st.number_input("Temperatura (°C):", min_value=20.0, max_value=250.0, value=120.0, step=5.0)
+        tempo = st.number_input("Tempo di Reazione (Ore):", min_value=1.0, max_value=168.0, value=48.0, step=6.0)
+
+        st.markdown("---")
+        use_add = st.checkbox("➕ Aggiungi Additivo / Modulatore (Base/Acido)")
+        
+        additivo_sel = 'Nessuno'
+        add_eq = 0.0
+        if use_add:
+            additivo_sel = st.selectbox("Seleziona Additivo:", list(ADDITIVES_DATABASE.keys())[1:])
+            add_mode = st.radio("Inserisci quantità additivo come:", ["Equivalenti (vs Legante)", "mmol Additivo"], horizontal=True)
+            
+            if add_mode == "Equivalenti (vs Legante)":
+                add_eq = st.number_input("Equivalenti rispetto al Legante:", min_value=0.1, max_value=100.0, value=2.0, step=0.5)
+                add_mmol = add_eq * mmol_legante
+                st.caption(f"🧪 Corrispondono a **{add_mmol:.3f} mmol** di additivo.")
+            else:
+                add_mmol = st.number_input("mmol Additivo:", min_value=0.001, max_value=50.0, value=0.20, step=0.05)
+                add_eq = add_mmol / mmol_legante if mmol_legante > 0 else 0.0
+                st.caption(f"🧪 Corrispondono a **{add_eq:.2f} eq.** rispetto al Legante.")
+
+    if st.button("🚀 Calcola Probabilità di Successo", type="primary"):
+        if not mol:
+            st.error("Inserisci una molecola valida prima di continuare.")
+        else:
+            df_features = build_feature_row(
+                mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, 
+                mmol_legante, mmol_sale, metallo_sel, anione_sel, 
+                solvente_p, ml_solv_p, co_solvente, ml_cosolv, additivo_sel, add_eq
+            )
+            probs = model.predict_proba(df_features)[0]
+            pred_class = model.predict(df_features)[0]
+
+            st.markdown("---")
+            st.subheader("📊 Risultato della Predizione")
+            res_col1, res_col2, res_col3 = st.columns(3)
+            
+            classes_map = {cls: idx for idx, cls in enumerate(model.classes_)}
+            p0 = probs[classes_map[0]] * 100 if 0 in classes_map else 0.0
+            p1 = probs[classes_map[1]] * 100 if 1 in classes_map else 0.0
+            p2 = probs[classes_map[2]] * 100 if 2 in classes_map else 0.0
+
+            res_col1.metric("🔴 Insuccesso (0)", f"{p0:.1f}%")
+            res_col2.metric("🟡 Parziale (1)", f"{p1:.1f}%")
+            res_col3.metric("🟢 Cristalli / Successo (2)", f"{p2:.1f}%")
+
+            if pred_class == 2:
+                st.balloons()
+                st.success("✨ **Sintesi Promettente!** Alta probabilità di formazione di monocristalli o fase pulita.")
+            elif pred_class == 1:
+                st.warning("⚠️ **Risultato Parziale Atteso.** Possibile prodotto amorfo o miscela.")
+            else:
+                st.error("❌ **Insuccesso Probabile.** Si consiglia di rivedere le condizioni di reazione.")
+
+            # SPIEGABILITÀ CHIMICA
+            st.markdown("---")
+            st.subheader("🧬 Spiegabilità Chimica della Predizione")
+            
+            rendered = False
+            if HAS_SHAP:
+                try:
+                    explainer = shap.TreeExplainer(model)
+                    shap_values = explainer.shap_values(df_features)
+                    target_idx = classes_map.get(2, len(shap_values) - 1) if isinstance(shap_values, list) else 0
+                    
+                    fig, ax = plt.subplots(figsize=(8, 3.5))
+                    s_vals = shap_values[target_idx][0] if isinstance(shap_values, list) else shap_values[0]
+                    shap_series = pd.Series(s_vals, index=df_features.columns).sort_values(key=abs, ascending=True).tail(8)
+                    
+                    colors = ['#2ecc71' if v > 0 else '#e74c3c' for v in shap_series.values]
+                    ax.barh(shap_series.index, shap_series.values, color=colors)
+                    ax.axvline(x=0, color='black', linestyle='--', linewidth=0.8)
+                    ax.set_xlabel("Impatto SHAP sulla Probabilità di Successo")
+                    ax.set_title("Analisi SHAP (Verde = Positivo, Rosso = Negativo)")
+                    st.pyplot(fig)
+                    rendered = True
+                except Exception:
+                    rendered = False
+
+            if not rendered:
+                fig, ax = plt.subplots(figsize=(8, 3.5))
+                feats_contrib = (df_features.iloc[0] * model.feature_importances_).sort_values(ascending=True).tail(8)
+                ax.barh(feats_contrib.index, feats_contrib.values, color='#3498db')
+                ax.set_xlabel("Punto di Impatto Relativo dei Parametri")
+                ax.set_title("Contributo dei Parametri Inseriti al Modello")
+                st.pyplot(fig)
+
+# --- TAB 2: PREDIZIONE BATCH ---
+with tab2:
+    st.subheader("Carica un file Excel o CSV con più sintesi da valutare")
+    uploaded_file = st.file_uploader("Scegli un file (.xlsx o .csv)", type=['xlsx', 'csv'])
     
-    st.write("### 📈 Metriche dell'Addestramento")
-    m_col1, m_col2, m_col3 = st.columns(3)
-    m_col1.metric("Campioni Totali Dataset", metrics.get('n_samples', 'N/A'))
-    m_col2.metric("Numero Feature Processate", metrics.get('n_features', 'N/A'))
-    m_col3.metric("Accuratezza Addestramento", f"{metrics.get('train_accuracy', 0)*100:.1f}%")
+    if uploaded_file is not None:
+        try:
+            if uploaded_file.name.endswith('.csv'):
+                input_batch = pd.read_csv(uploaded_file)
+            else:
+                input_batch = pd.read_excel(uploaded_file)
+                
+            st.write("📋 **Anteprima dei dati caricati:**", input_batch.head())
+            
+            if st.button("⚡ Elabora tutte le Sintesi"):
+                processed_batch = process_unified_dataset(input_batch)
+                X_batch = processed_batch.drop(columns=['Target_Esito_Classe'])
+                
+                for col in model.feature_names_in_:
+                    if col not in X_batch.columns:
+                        X_batch[col] = 0.0
+                X_batch = X_batch[model.feature_names_in_]
+                
+                preds = model.predict(X_batch)
+                probs = model.predict_proba(X_batch)
+                
+                classes_list = list(model.classes_)
+                idx0 = classes_list.index(0) if 0 in classes_list else None
+                idx1 = classes_list.index(1) if 1 in classes_list else None
+                idx2 = classes_list.index(2) if 2 in classes_list else None
+                
+                results_df = input_batch.copy()
+                results_df['Predizione_Classe'] = preds
+                results_df['Prob_Insuccesso_%'] = (probs[:, idx0] * 100).round(1) if idx0 is not None else 0.0
+                results_df['Prob_Parziale_%'] = (probs[:, idx1] * 100).round(1) if idx1 is not None else 0.0
+                results_df['Prob_Successo_%'] = (probs[:, idx2] * 100).round(1) if idx2 is not None else 0.0
+                
+                st.success("✅ Predizioni completate con successo!")
+                st.dataframe(results_df)
+                
+                csv_download = results_df.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="📥 Scarica Risultati in CSV",
+                    data=csv_download,
+                    file_name="Risultati_Predizione_MOF.csv",
+                    mime="text/csv"
+                )
+        except Exception as e:
+            st.error(f"Errore durante l'elaborazione del file: {e}")
+
+# --- TAB 3: OTTIMIZZATORE AUTOMATICO ---
+with tab3:
+    st.subheader("⚡ Ottimizzatore di Condizioni Sperimentali con Modulatori e Volumi")
+    st.markdown("L'IA cercherà la **combinazione ottimale di temperatura, volumi di solventi (mL) e modulatori** per massimizzare la cristalizzazione del MOF.")
     
-    st.markdown("---")
-    st.write("### 📂 Anteprima Dataset Unificato")
-    csv_file = "Dataset_Sintesi_Unificato.csv"
-    if os.path.exists(csv_file):
-        df_preview = pd.read_csv(csv_file)
-        st.dataframe(df_preview.head(15), use_container_width=True)
-    else:
-        st.info("Nessun CSV salvato su disco. Viene utilizzato il dataset generato dinamico.")
+    opt_col1, opt_col2 = st.columns(2)
+    with opt_col1:
+        opt_smiles = st.text_input("SMILES Legante:", value="c1cc(C(=O)O)cc(C(=O)O)c1", key="opt_smiles")
+        opt_mol = Chem.MolFromSmiles(opt_smiles)
+    with opt_col2:
+        metal_list_opt = sorted(list(metal_props.keys()))
+        opt_metallo = st.selectbox("Metallo Desiderato:", metal_list_opt, index=metal_list_opt.index('Cu') if 'Cu' in metal_list_opt else 0, key="opt_met")
+        opt_anione = st.selectbox("Anione:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'], key="opt_an")
+
+    if st.button("🔍 Trova Ricetta Ottimale"):
+        if not opt_mol:
+            st.error("SMILES non valido.")
+        else:
+            opt_mw = Descriptors.MolWt(opt_mol)
+            opt_logp = Descriptors.MolLogP(opt_mol)
+            opt_hbd = Descriptors.NumHDonors(opt_mol)
+            opt_hba = Descriptors.NumHAcceptors(opt_mol)
+            opt_tpsa = Descriptors.TPSA(opt_mol)
+            opt_rot = Descriptors.NumRotatableBonds(opt_mol)
+            
+            temperatures = [100.0, 120.0, 140.0, 160.0]
+            times = [24.0, 48.0, 72.0]
+            solvents_p = ['DMF', 'DEF', 'DMSO']
+            volumes_p = [5.0, 10.0]
+            cosolvents = [('Nessuno', 0.0), ('H2O', 1.0), ('MeOH', 2.0)]
+            additives = [('Nessuno', 0.0), ('Acido Acetico (AcOH)', 2.0), ('Trietilammina (TEA)', 1.0)]
+            
+            candidates = []
+            
+            # Dynamic Target Index Mapping
+            classes_list = [int(c) if str(c).isdigit() else c for c in model.classes_]
+            
+            if 2 in classes_list:
+                target_class_idx = classes_list.index(2)
+            elif 1 in classes_list:
+                target_class_idx = classes_list.index(1)
+            else:
+                target_class_idx = len(classes_list) - 1
+
+            with st.spinner("Simulazione dello spazio di reazione in corso..."):
+                for t in temperatures:
+                    for tm in times:
+                        for sp in solvents_p:
+                            for ml_sp in volumes_p:
+                                for cs, ml_cs in cosolvents:
+                                    for add_name, add_eq in additives:
+                                        feat = build_feature_row(
+                                            opt_mw, opt_logp, opt_hbd, opt_hba, opt_tpsa, opt_rot, 
+                                            t, tm, 0.1, 0.1, opt_metallo, opt_anione, 
+                                            sp, ml_sp, cs, ml_cs, add_name, add_eq
+                                        )
+                                        
+                                        prob_array = model.predict_proba(feat)[0]
+                                        p_success = float(prob_array[target_class_idx]) * 100.0
+                                        
+                                        candidates.append({
+                                            'Temperatura (°C)': t,
+                                            'Tempo (h)': tm,
+                                            'Solvente P. (mL)': f"{sp} ({ml_sp} mL)",
+                                            'Co-Solvente (mL)': f"{cs} ({ml_cs} mL)" if cs != 'Nessuno' else 'Nessuno',
+                                            'Vol. Totale (mL)': ml_sp + ml_cs,
+                                            'Additivo / Modulatore': f"{add_name} ({add_eq} eq)" if add_name != 'Nessuno' else 'Nessuno',
+                                            'Prob. Successo (%)': round(p_success, 1)
+                                        })
+            
+            opt_df = pd.DataFrame(candidates).sort_values(by='Prob. Successo (%)', ascending=False).reset_index(drop=True)
+            
+            st.success("✅ Ottimizzazione completata!")
+            st.markdown("### 🏆 Migliori Condizioni Sperimentali Identificate")
+            
+            best = opt_df.iloc[0]
+            st.metric("Top Probabilità di Successo", f"{best['Prob. Successo (%)']}%")
+            st.dataframe(opt_df.head(15))
+            
+            csv_opt = opt_df.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 Scarica tutte le condizioni simulate",
+                data=csv_opt,
+                file_name="Ottimizzazione_Sintesi_MOF.csv",
+                mime="text/csv"
+            )
