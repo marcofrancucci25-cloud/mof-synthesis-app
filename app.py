@@ -11,40 +11,7 @@ st.set_page_config(page_title="MOF Synthesis Predictor", page_icon="🧪", layou
 st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
 st.markdown("Strumento di supporto alle decisioni di laboratorio basato su Machine Learning (Gradient Boosting).")
 
-# Caricamento o addestramento automatico del modello
-@st.cache_resource
-def load_or_train_model():
-    pkl_file = "modello_sintesi_mof_ottimizzato.pkl"
-    csv_file = "Dataset_Sintesi_ML_Encoded.csv"
-    
-    if os.path.exists(pkl_file):
-        return joblib.load(pkl_file)
-    elif os.path.exists(csv_file):
-        st.info("⚡ Generazione e ottimizzazione del modello in corso dal dataset...")
-        df = pd.read_csv(csv_file)
-        drop_cols = ['ID', 'Sorgente_Database', 'Metallo', 'Sale metallico', 'Legante standard', 
-                     'SMILES_Legante', 'Solvente', 'Solvente_Clean', 'Stato XRD', 
-                     'Esito/Osservazioni', 'Anione_Tipo', 'Target_Esito_Classe']
-        features = [c for c in df.columns if c not in drop_cols]
-        X = df[features].fillna(df[features].mean())
-        y = df['Target_Esito_Classe'].astype(int)
-        
-        model = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=5, subsample=0.8, random_state=42)
-        model.fit(X, y)
-        joblib.dump(model, pkl_file)
-        return model
-    else:
-        st.error(f"Errore: Nessun file modello '{pkl_file}' o dataset '{csv_file}' trovato nel repository!")
-        st.stop()
-
-try:
-    model = load_or_train_model()
-    st.sidebar.success("Modello ML attivo e pronto!")
-except Exception as e:
-    st.sidebar.error(f"Errore: {e}")
-    st.stop()
-
-# Proprietà metalli
+# Dizionario proprietà metalli
 metal_props = {
     'Co': {'Z': 27, 'Electronegativity': 1.88, 'Radius_pm': 126, 'Group': 9, 'Period': 4},
     'Cu': {'Z': 29, 'Electronegativity': 1.90, 'Radius_pm': 132, 'Group': 11, 'Period': 4},
@@ -63,6 +30,80 @@ metal_props = {
     'Ti': {'Z': 22, 'Electronegativity': 1.54, 'Radius_pm': 147, 'Group': 4, 'Period': 4},
     'Mg': {'Z': 12, 'Electronegativity': 1.31, 'Radius_pm': 141, 'Group': 2, 'Period': 3}
 }
+
+# Funzione per encodare e preparare i dati al volo
+def process_unified_dataset(df):
+    processed = []
+    for idx, row in df.iterrows():
+        smiles = str(row.get('SMILES_Legante', ''))
+        mol = Chem.MolFromSmiles(smiles) if smiles else None
+        
+        mw = Descriptors.MolWt(mol) if mol else 166.13
+        logp = Descriptors.MolLogP(mol) if mol else 1.32
+        hbd = Descriptors.NumHDonors(mol) if mol else 2
+        hba = Descriptors.NumHAcceptors(mol) if mol else 4
+        tpsa = Descriptors.TPSA(mol) if mol else 74.6
+        rot = Descriptors.NumRotatableBonds(mol) if mol else 2
+        
+        met = str(row.get('Metallo', 'Cu'))
+        m_info = metal_props.get(met, metal_props['Cu'])
+        
+        m_leg = float(row.get('mmol legante', 0.1))
+        m_sale = float(row.get('mmol sale', 0.1))
+        ratio = m_leg / m_sale if m_sale > 0 else 1.0
+        
+        solv = str(row.get('Solvente', 'DMF'))
+        anion = str(row.get('Anione_Tipo', 'Nitrato'))
+        
+        processed.append({
+            'MW_Legante': mw, 'LogP_Legante': logp, 'HBD_Legante': hbd, 'HBA_Legante': hba,
+            'TPSA_Legante': tpsa, 'RotatableBonds_Legante': rot,
+            'Temperatura_num': float(row.get('Temperatura_num', 120)),
+            'Tempo_ore_num': float(row.get('Tempo_ore_num', 48)),
+            'mmol legante': m_leg, 'mmol sale': m_sale, 'Rapporto L/M': ratio,
+            'Metallo_Z': m_info['Z'], 'Metallo_Electronegativity': m_info['Electronegativity'],
+            'Metallo_Radius_pm': m_info['Radius_pm'], 'Metallo_Group': m_info['Group'], 'Metallo_Period': m_info['Period'],
+            'Anion_Acetato': 1 if 'Acetato' in anion else 0,
+            'Anion_Cloruro': 1 if 'Cloruro' in anion else 0,
+            'Anion_Nitrato': 1 if 'Nitrato' in anion else 0,
+            'Anion_Altro': 1 if not any(x in anion for x in ['Acetato','Cloruro','Nitrato']) else 0,
+            'Solvent_DMF': 1 if 'DMF' in solv else 0, 'Solvent_H2O': 1 if 'H2O' in solv else 0,
+            'Solvent_MeOH': 1 if 'MeOH' in solv else 0, 'Solvent_EtOH': 1 if 'EtOH' in solv else 0,
+            'Solvent_CH2Cl2': 1 if 'CH2Cl2' in solv else 0, 'Solvent_MeCN': 1 if 'MeCN' in solv else 0,
+            'Solvent_Is_Mixture': 1 if '/' in solv else 0,
+            'Target_Esito_Classe': int(row.get('Target_Esito_Classe', 0))
+        })
+    return pd.DataFrame(processed)
+
+@st.cache_resource
+def load_or_train_model():
+    pkl_file = "modello_sintesi_mof_ottimizzato.pkl"
+    csv_file = "Dataset_Sintesi_Unificato.csv"
+    
+    if os.path.exists(pkl_file):
+        return joblib.load(pkl_file)
+    elif os.path.exists(csv_file):
+        st.info("⚡ Generazione e analisi automatica del dataset in corso...")
+        raw_df = pd.read_csv(csv_file)
+        df = process_unified_dataset(raw_df)
+        
+        X = df.drop(columns=['Target_Esito_Classe'])
+        y = df['Target_Esito_Classe']
+        
+        model = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=5, subsample=0.8, random_state=42)
+        model.fit(X, y)
+        joblib.dump(model, pkl_file)
+        return model
+    else:
+        st.error(f"File '{csv_file}' non trovato! Assicurati di aver caricato il file su GitHub.")
+        st.stop()
+
+try:
+    model = load_or_train_model()
+    st.sidebar.success("Modello ML attivo e pronto!")
+except Exception as e:
+    st.sidebar.error(f"Errore: {e}")
+    st.stop()
 
 tab1, tab2 = st.tabs(["🔮 Predizione Singola Sintesi", "📂 Predizione da File Excel"])
 
@@ -144,7 +185,7 @@ with tab1:
 
             if pred_class == 2:
                 st.balloons()
-                st.success("✨ **Sintesi Promettente!** Alta probabilità di formazione di monocristalli/fase pulita.")
+                st.success("✨ **Sintesi Promettente!** Alta probabilità di formazione di monocristalli o fase pulita.")
             elif pred_class == 1:
                 st.warning("⚠️ **Risultato Parziale Atteso.** Possibile prodotto amorfo o miscela.")
             else:
