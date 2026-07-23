@@ -20,7 +20,10 @@ try:
 except Exception:
     HAS_PYMATGEN = False
 
-from sklearn.ensemble import GradientBoostingClassifier
+from lightgbm import LGBMClassifier
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import accuracy_score
 from rdkit import Chem
 from rdkit.Chem import Descriptors
 
@@ -196,7 +199,7 @@ def process_unified_dataset(df):
         raw_target = row.get(target_col, 0) if target_col else 0
         try:
             target = int(float(raw_target))
-        except:
+        except Exception:
             target = 0
             
         processed.append({
@@ -226,38 +229,101 @@ def process_unified_dataset(df):
         })
     return pd.DataFrame(processed)
 
+# --- CARICAMENTO O ADDESTRAMENTO MODELLO LIGHTGBM BLINDATO ---
 @st.cache_resource
 def load_or_train_model():
     pkl_file = "modello_sintesi_mof_ottimizzato.pkl"
     csv_file = "Dataset_Sintesi_Unificato.csv"
     
     if os.path.exists(pkl_file):
-        return joblib.load(pkl_file)
-    elif os.path.exists(csv_file):
-        st.info("⚡ Addestramento del modello ML in corso...")
+        try:
+            saved_data = joblib.load(pkl_file)
+            if isinstance(saved_data, dict):
+                return saved_data['model'], saved_data['features'], saved_data.get('metrics', {}), saved_data.get('importances', [])
+            return saved_data, getattr(saved_data, 'feature_names_in_', []), {}, getattr(saved_data, 'feature_importances_', [])
+        except Exception:
+            pass
+            
+    if os.path.exists(csv_file):
         raw_df = pd.read_csv(csv_file)
-        df = process_unified_dataset(raw_df)
-        
-        X = df.drop(columns=['Target_Esito_Classe'])
-        X = X.fillna(X.mean()).fillna(0)
-        y = df['Target_Esito_Classe'].astype(int)
-        
-        if len(y.unique()) < 2:
-            X_extra = X.copy().iloc[:3]
-            y_extra = pd.Series([0, 1, 2][:len(X_extra)])
-            X = pd.concat([X, X_extra], ignore_index=True)
-            y = pd.concat([y, y_extra], ignore_index=True)
-
-        model = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=5, subsample=0.8, random_state=42)
-        model.fit(X, y)
-        joblib.dump(model, pkl_file)
-        return model
     else:
         st.error(f"File '{csv_file}' non trovato!")
         st.stop()
+        
+    df = process_unified_dataset(raw_df)
+    
+    X = df.drop(columns=['Target_Esito_Classe'])
+    y_series = pd.to_numeric(df['Target_Esito_Classe'], errors='coerce')
+    valid_mask = y_series.notna()
+    
+    # Allineamento indici per prevenire ValueError
+    X = X[valid_mask].copy().reset_index(drop=True)
+    y = y_series[valid_mask].astype(int).copy().reset_index(drop=True)
+    X = X.apply(pd.to_numeric, errors='coerce').fillna(0.0)
+    
+    # Bilanciamento classi con pochissimi campioni
+    counts = y.value_counts()
+    for cls, count in counts.items():
+        if count < 3:
+            needed = 3 - count
+            rows_to_dup = X[y == cls]
+            if len(rows_to_dup) > 0:
+                for _ in range(needed):
+                    X = pd.concat([X, rows_to_dup.iloc[[0]]], ignore_index=True)
+                    y = pd.concat([y, pd.Series([cls])], ignore_index=True)
+
+    feature_names = X.columns.tolist()
+    
+    base_model = LGBMClassifier(
+        n_estimators=180,
+        learning_rate=0.04,
+        max_depth=6,
+        num_leaves=31,
+        class_weight='balanced',
+        random_state=42,
+        verbose=-1
+    )
+    
+    min_class_samples = y.value_counts().min()
+    unique_classes = y.nunique()
+    
+    if min_class_samples >= 2 and unique_classes > 1:
+        cv_splits = min(3, max(2, min_class_samples))
+        final_model = CalibratedClassifierCV(
+            estimator=base_model,
+            method='sigmoid',
+            cv=StratifiedKFold(n_splits=cv_splits, shuffle=True, random_state=42)
+        )
+        try:
+            final_model.fit(X, y)
+            importances = np.mean([est.estimator.feature_importances_ for est in final_model.calibrated_classifiers_], axis=0)
+        except Exception:
+            base_model.fit(X, y)
+            final_model = base_model
+            importances = getattr(base_model, 'feature_importances_', np.zeros(len(feature_names)))
+    else:
+        base_model.fit(X, y)
+        final_model = base_model
+        importances = getattr(base_model, 'feature_importances_', np.zeros(len(feature_names)))
+
+    metrics = {
+        'train_accuracy': accuracy_score(y, final_model.predict(X)),
+        'n_samples': len(X),
+        'n_features': len(feature_names)
+    }
+    
+    save_dict = {
+        'model': final_model,
+        'features': feature_names,
+        'importances': importances,
+        'metrics': metrics
+    }
+    
+    joblib.dump(save_dict, pkl_file)
+    return final_model, feature_names, metrics, importances
 
 try:
-    model = load_or_train_model()
+    model, feature_names, metrics, importances = load_or_train_model()
     st.sidebar.success("Modello ML attivo e pronto!")
 except Exception as e:
     st.sidebar.error(f"Errore caricamento modello: {e}")
@@ -266,9 +332,9 @@ except Exception as e:
 # --- SIDEBAR: FEATURE IMPORTANCE ---
 st.sidebar.markdown("---")
 st.sidebar.subheader("📊 Importanza Globale Parametri")
-if hasattr(model, 'feature_importances_'):
-    importances = pd.Series(model.feature_importances_, index=model.feature_names_in_).sort_values(ascending=True).tail(8)
-    st.sidebar.bar_chart(importances)
+if len(importances) > 0 and len(feature_names) == len(importances):
+    imp_series = pd.Series(importances, index=feature_names).sort_values(ascending=True).tail(8)
+    st.sidebar.bar_chart(imp_series)
 
 # --- TAB INTERFACCIA ---
 tab1, tab2, tab3 = st.tabs(["🔮 Predizione Singola", "📂 Predizione Batch", "⚡ Ottimizzatore Automatico"])
@@ -319,11 +385,11 @@ def build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_leg
     
     df_f = pd.DataFrame([input_dict])
     
-    for col in model.feature_names_in_:
+    for col in feature_names:
         if col not in df_f.columns:
             df_f[col] = 0.0
             
-    return df_f[model.feature_names_in_]
+    return df_f[feature_names]
 
 # --- TAB 1: PREDIZIONE SINGOLA ---
 with tab1:
@@ -531,11 +597,12 @@ with tab1:
 
             if not rendered:
                 fig, ax = plt.subplots(figsize=(8, 3.5))
-                feats_contrib = (df_features.iloc[0] * model.feature_importances_).sort_values(ascending=True).tail(8)
-                ax.barh(feats_contrib.index, feats_contrib.values, color='#3498db')
-                ax.set_xlabel("Punto di Impatto Relativo dei Parametri")
-                ax.set_title("Contributo dei Parametri Inseriti al Modello")
-                st.pyplot(fig)
+                if len(importances) == len(feature_names):
+                    feats_contrib = (df_features.iloc[0] * importances).sort_values(ascending=True).tail(8)
+                    ax.barh(feats_contrib.index, feats_contrib.values, color='#3498db')
+                    ax.set_xlabel("Punto di Impatto Relativo dei Parametri")
+                    ax.set_title("Contributo dei Parametri Inseriti al Modello")
+                    st.pyplot(fig)
 
 # --- TAB 2: PREDIZIONE BATCH ---
 with tab2:
@@ -555,10 +622,10 @@ with tab2:
                 processed_batch = process_unified_dataset(input_batch)
                 X_batch = processed_batch.drop(columns=['Target_Esito_Classe'])
                 
-                for col in model.feature_names_in_:
+                for col in feature_names:
                     if col not in X_batch.columns:
                         X_batch[col] = 0.0
-                X_batch = X_batch[model.feature_names_in_]
+                X_batch = X_batch[feature_names]
                 
                 preds = model.predict(X_batch)
                 probs = model.predict_proba(X_batch)
@@ -612,7 +679,6 @@ with tab3:
             opt_tpsa = Descriptors.TPSA(opt_mol)
             opt_rot = Descriptors.NumRotatableBonds(opt_mol)
             
-            # Griglia di parametrizzazione avanzata
             temperatures = [100.0, 120.0, 140.0, 160.0]
             times = [24.0, 48.0, 72.0]
             solvents_p = ['DMF', 'DEF', 'DMSO']
@@ -621,8 +687,6 @@ with tab3:
             additives = [('Nessuno', 0.0), ('Acido Acetico (AcOH)', 2.0), ('Trietilammina (TEA)', 1.0)]
             
             candidates = []
-            
-            # Dynamic Target Index Mapping (Esaustivo e Robusto)
             classes_list = [int(c) if str(c).isdigit() else c for c in model.classes_]
             
             if 2 in classes_list:
@@ -646,31 +710,22 @@ with tab3:
                                         )
                                         
                                         prob_array = model.predict_proba(feat)[0]
-                                        p_success = float(prob_array[target_class_idx]) * 100.0
+                                        p_success = prob_array[target_class_idx] * 100.0
                                         
                                         candidates.append({
                                             'Temperatura (°C)': t,
                                             'Tempo (h)': tm,
-                                            'Solvente P. (mL)': f"{sp} ({ml_sp} mL)",
-                                            'Co-Solvente (mL)': f"{cs} ({ml_cs} mL)" if cs != 'Nessuno' else 'Nessuno',
-                                            'Vol. Totale (mL)': ml_sp + ml_cs,
-                                            'Additivo / Modulatore': f"{add_name} ({add_eq} eq)" if add_name != 'Nessuno' else 'Nessuno',
-                                            'Prob. Successo (%)': round(p_success, 1)
+                                            'Solvente Principal': sp,
+                                            'mL Solvente P.': ml_sp,
+                                            'Co-Solvente': cs,
+                                            'mL Co-Solvente': ml_cs,
+                                            'Additivo': add_name,
+                                            'Eq. Additivo': add_eq,
+                                            'Probabilità Successo (%)': round(p_success, 1)
                                         })
             
-            opt_df = pd.DataFrame(candidates).sort_values(by='Prob. Successo (%)', ascending=False).reset_index(drop=True)
+            df_cand = pd.DataFrame(candidates).sort_values(by='Probabilità Successo (%)', ascending=False)
             
-            st.success("✅ Ottimizzazione completata!")
-            st.markdown("### 🏆 Migliori Condizioni Sperimentali Identificate")
-            
-            best = opt_df.iloc[0]
-            st.metric("Top Probabilità di Successo", f"{best['Prob. Successo (%)']}%")
-            st.dataframe(opt_df.head(15))
-            
-            csv_opt = opt_df.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="📥 Scarica tutte le condizioni simulate",
-                data=csv_opt,
-                file_name="Ottimizzazione_Sintesi_MOF.csv",
-                mime="text/csv"
-            )
+            st.success("✨ Scansione completata!")
+            st.markdown("### 🏆 Migliori Condizioni Sperimentali Trovate")
+            st.dataframe(df_cand.head(10))
