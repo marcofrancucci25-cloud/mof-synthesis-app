@@ -153,7 +153,6 @@ metal_props = {
     'Tb': {'Z': 65, 'Electronegativity': 1.20, 'Radius_pm': 178, 'Group': 3, 'Period': 6, 'MW': 158.93}
 }
 
-# Masse molari mediamente associate agli anioni più diffusi (per stechiometria 2+)
 anion_mw = {
     'Nitrato': 62.00 * 2,   # NO3- x2
     'Acetato': 59.04 * 2,   # OAc- x2
@@ -332,10 +331,10 @@ with tab1:
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.markdown("### 1. Legante Chimico / Cristallo")
+        st.markdown("### 1. Legante Chimico")
         mode_legante = st.radio(
             "Modalità Input Legante:", 
-            ["SMILES", "Nome Chimico / Formula / CAS", "Carica File (.mol / .sdf / .cif)"],
+            ["SMILES", "Nome / Formula / CAS", "Carica File (.mol / .sdf / .cif)"],
             horizontal=True
         )
         
@@ -345,10 +344,10 @@ with tab1:
             if smiles_input:
                 mol = Chem.MolFromSmiles(smiles_input)
                 
-        elif mode_legante == "Nome Chimico / Formula / CAS":
+        elif mode_legante == "Nome / Formula / CAS":
             query_input = st.text_input("Nome, Formula o CAS:", value="Benzoic acid")
             if query_input:
-                with st.spinner("Ricerca molecola nei database chimici..."):
+                with st.spinner("Ricerca molecola nei database..."):
                     found_smiles = resolve_molecule_to_smiles(query_input)
                     if found_smiles:
                         mol = Chem.MolFromSmiles(found_smiles)
@@ -386,7 +385,18 @@ with tab1:
             rot_bonds = Descriptors.NumRotatableBonds(mol)
             st.success(f"Molecola Valida! MW: {mw:.2f} g/mol")
         else:
-            mw, logp, hbd, hba, tpsa, rot_bonds = 0, 0, 0, 0, 0, 0
+            mw, logp, hbd, hba, tpsa, rot_bonds = 166.13, 1.32, 2, 4, 74.6, 2 # Default fallback se vuoto
+
+        # SELEZIONE QUANTITÀ LEGANTE (mmol vs mg)
+        input_mode_leg = st.radio("Inserisci Legante come:", ["MilliMoli (mmol)", "Massa (mg)"], key="rad_leg", horizontal=True)
+        if input_mode_leg == "MilliMoli (mmol)":
+            mmol_legante = st.number_input("mmol Legante:", min_value=0.001, max_value=20.0, value=0.10, step=0.01)
+            mg_legante = mmol_legante * mw
+            st.caption(f"⚖️ Corrispondono a **{mg_legante:.2f} mg** da pesare.")
+        else:
+            mg_legante = st.number_input("Massa Legante (mg pesati):", min_value=0.1, max_value=5000.0, value=16.61, step=1.0)
+            mmol_legante = mg_legante / mw if mw > 0 else 0.1
+            st.caption(f"⚖️ Corrispondono a **{mmol_legante:.3f} mmol** di Legante.")
 
     with col2:
         st.markdown("### 2. Sale Metallico & Idratazione")
@@ -394,7 +404,6 @@ with tab1:
         metallo_sel = st.selectbox("Metallo:", metal_list, index=metal_list.index('Cu') if 'Cu' in metal_list else 0)
         anione_sel = st.selectbox("Anione / Precursore:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'])
         
-        # NUOVA GESTIONE IDRATAZIONE
         idratazione = st.selectbox(
             "Stato di Idratazione (H₂O):",
             [
@@ -407,31 +416,28 @@ with tab1:
                 "Esaidrato (6 H₂O)",
                 "Nonavidrato (9 H₂O)"
             ],
-            index=3 # Default Triidrato
+            index=3
         )
         
         n_h2o = int(idratazione.split('(')[1].split(' ')[0])
-        
-        # Calcolo Massa Molare reale del Sale commerciale
         base_salt_mw = metal_props[metallo_sel]['MW'] + anion_mw.get(anione_sel, 60.0)
         total_salt_mw = base_salt_mw + (n_h2o * 18.015)
         
         st.caption(f"🧪 **Massa Molare Sale Idrato:** `{total_salt_mw:.2f} g/mol`")
 
-    with col3:
-        st.markdown("### 3. Quantità e Condizioni")
-        input_mode = st.radio("Inserisci Sale come:", ["MilliMoli (mmol)", "Massa (mg pesati)"], horizontal=True)
-        
-        if input_mode == "MilliMoli (mmol)":
-            mmol_sale = st.number_input("mmol Sale Metallico:", min_value=0.01, max_value=10.0, value=0.10, step=0.01)
+        # SELEZIONE QUANTITÀ SALE (mmol vs mg)
+        input_mode_sale = st.radio("Inserisci Sale come:", ["MilliMoli (mmol)", "Massa (mg)"], key="rad_sale", horizontal=True)
+        if input_mode_sale == "MilliMoli (mmol)":
+            mmol_sale = st.number_input("mmol Sale Metallico:", min_value=0.001, max_value=20.0, value=0.10, step=0.01)
             mg_sale = mmol_sale * total_salt_mw
-            st.caption(f"Corrispondono a **{mg_sale:.2f} mg** pesati.")
+            st.caption(f"⚖️ Corrispondono a **{mg_sale:.2f} mg** da pesare.")
         else:
-            mg_sale = st.number_input("Massa Sale (mg pesati):", min_value=0.1, max_value=2000.0, value=24.16, step=1.0)
+            mg_sale = st.number_input("Massa Sale (mg pesati):", min_value=0.1, max_value=5000.0, value=24.16, step=1.0)
             mmol_sale = mg_sale / total_salt_mw
-            st.caption(f"Corrispondono a **{mmol_sale:.3f} mmol** di {metallo_sel}.")
+            st.caption(f"⚖️ Corrispondono a **{mmol_sale:.3f} mmol** di {metallo_sel}.")
 
-        mmol_legante = st.number_input("mmol Legante:", min_value=0.01, max_value=10.0, value=0.10, step=0.01)
+    with col3:
+        st.markdown("### 3. Condizioni della Reazione")
         solvente_sel = st.selectbox("Solvente:", ['DMF', 'DMF/H2O', 'MeOH', 'EtOH', 'CH2Cl2', 'MeCN', 'Altro'])
         temp = st.number_input("Temperatura (°C):", min_value=20.0, max_value=250.0, value=120.0, step=5.0)
         tempo = st.number_input("Tempo di Reazione (Ore):", min_value=1.0, max_value=168.0, value=48.0, step=6.0)
