@@ -21,46 +21,59 @@ st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="
 st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
 st.markdown("Strumento avanzato di Machine Learning per la predizione, ottimizzazione e **spiegabilità chimica** della sintesi di MOF.")
 
-# --- FUNZIONE HELPER AVANZATA: DA NOME O FORMULA A SMILES (PubChem API) ---
+# --- DIZIONARIO LOCALE DEI LEGANTI PIÙ COMUNI NEI MOF ---
+COMMON_MOF_LIGANDS = {
+    # Formule e Nomi Chimici mappati direttamente a SMILES
+    "c8h6o4": "O=C(O)c1ccc(C(=O)O)cc1",             # Acido Tereftalico (BDC)
+    "terephthalic acid": "O=C(O)c1ccc(C(=O)O)cc1",
+    "bdc": "O=C(O)c1ccc(C(=O)O)cc1",
+    "c9h6o6": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",     # Acido Trimesico (BTC)
+    "trimesic acid": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",
+    "btc": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",
+    "c4h4o4": "O=C(O)/C=C/C(=O)O",                 # Acido Fumarico
+    "fumaric acid": "O=C(O)/C=C/C(=O)O",
+    "c10h8n2": "c1cnc(-c2ccncc2)cc1",                # 4,4'-Bipyridine
+    "bipyridine": "c1cnc(-c2ccncc2)cc1",
+    "4,4'-bipyridine": "c1cnc(-c2ccncc2)cc1",
+    "c12h10o4": "O=C(O)c1ccc(-c2ccc(C(=O)O)cc2)cc1", # BPDC
+    "bpdc": "O=C(O)c1ccc(-c2ccc(C(=O)O)cc2)cc1",
+    "c8h7no4": "O=C(O)c1ccc(C(=O)O)c(N)c1",         # 2-Aminoterephthalic acid
+    "2-aminoterephthalic acid": "O=C(O)c1ccc(C(=O)O)c(N)c1",
+    "c3h4n2": "c1c[nH]cn1",                        # Imidazolo (ZIF)
+    "imidazole": "c1c[nH]cn1",
+    "c4h6n2": "Cc1c[nH]cn1"                         # 2-Methylimidazole (ZIF-8)
+}
+
+# --- FUNZIONE HELPER IBRIDA: LOCALE + PUBCHEM API ---
 def get_smiles_from_pubchem(query):
-    query = query.strip()
-    if not query:
+    clean_query = query.strip().lower()
+    if not clean_query:
         return None
     
-    # 1. Tentativo come NOME CHIMICO
+    # 1. CONTROLLO ISTANTANEO NEL DIZIONARIO LOCALE
+    if clean_query in COMMON_MOF_LIGANDS:
+        return COMMON_MOF_LIGANDS[clean_query]
+
+    # 2. TENTATIVO ONLINE SU PUBCHEM CON USER-AGENT CUSTOM
+    headers = {'User-Agent': 'MOF_Predictor_App/1.0'}
+    
+    # Ricerca per Nome
     try:
-        url_name = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{query}/property/IsomericSMILES,Title/JSON"
-        res = requests.get(url_name, timeout=5)
+        url_name = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{requests.utils.quote(query)}/property/IsomericSMILES/JSON"
+        res = requests.get(url_name, headers=headers, timeout=3)
         if res.status_code == 200:
-            data = res.json()
-            return data['PropertyTable']['Properties'][0]['IsomericSMILES']
+            return res.json()['PropertyTable']['Properties'][0]['IsomericSMILES']
     except Exception:
         pass
 
-    # 2. Tentativo come FORMULA BRUTA (es. C8H6O4)
+    # Ricerca per Formula Bruta
     try:
-        url_formula = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/fastformula/{query}/property/IsomericSMILES/JSON"
-        res = requests.get(url_formula, timeout=5)
+        url_formula = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/fastformula/{requests.utils.quote(query)}/property/IsomericSMILES/JSON"
+        res = requests.get(url_formula, headers=headers, timeout=3)
         if res.status_code == 200:
-            data = res.json()
-            props = data['PropertyTable']['Properties']
+            props = res.json().get('PropertyTable', {}).get('Properties', [])
             if props:
-                return props[0]['IsomericSMILES']  # Prende il primo isomero trovato
-    except Exception:
-        pass
-
-    # 3. Fallback: Autocomplete / Search per Nomi Complessi o Sinonimi
-    try:
-        url_search = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/autocomplete/descriptor/{query}/JSON"
-        res = requests.get(url_search, timeout=5)
-        if res.status_code == 200:
-            suggestions = res.json().get('dictionary_terms', {}).get('compound', [])
-            if suggestions:
-                best_match = suggestions[0]
-                url_best = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{best_match}/property/IsomericSMILES/JSON"
-                res_best = requests.get(url_best, timeout=5)
-                if res_best.status_code == 200:
-                    return res_best.json()['PropertyTable']['Properties'][0]['IsomericSMILES']
+                return props[0]['IsomericSMILES']
     except Exception:
         pass
 
@@ -242,15 +255,15 @@ with tab1:
                 mol = Chem.MolFromSmiles(smiles_input)
                 
         elif mode_legante == "Nome Chimico / Formula":
-            query_input = st.text_input("Nome o Formula (es. 'Terephthalic acid' o 'C8H6O4'):", value="Terephthalic acid")
+            query_input = st.text_input("Nome o Formula (es. 'Terephthalic acid', 'BDC' o 'C8H6O4'):", value="C8H6O4")
             if query_input:
-                with st.spinner("Ricerca struttura su PubChem..."):
+                with st.spinner("Ricerca e verifica struttura in corso..."):
                     found_smiles = get_smiles_from_pubchem(query_input)
                     if found_smiles:
                         mol = Chem.MolFromSmiles(found_smiles)
-                        st.caption(f"SMILES Ricavato: `{found_smiles}`")
+                        st.caption(f"SMILES Identificato: `{found_smiles}`")
                     else:
-                        st.error("Nessuna molecola trovata. Prova con il nome inglese o controlla la formula.")
+                        st.error("Nessuna molecola trovata. Prova a inserire lo SMILES direttamente.")
                         
         elif mode_legante == "Carica File (.mol / .sdf)":
             uploaded_mol_file = st.file_uploader("Carica file .mol o .sdf", type=['mol', 'sdf'])
