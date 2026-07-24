@@ -114,20 +114,20 @@ ADDITIVES_DATABASE = {
     'HF (Acido Fluoridrico)': {'type': 'Acid', 'MW': 20.01, 'pKa': 3.17}
 }
 
-# --- PROPRIETÀ METALLI COMPLETI ---
+# --- PROPRIETÀ METALLI COMPLETI E HSAB ---
 metal_props = {
-    'Cu': {'Z': 29, 'Electronegativity': 1.90, 'Radius_pm': 132, 'Group': 11, 'Period': 4, 'MW': 63.55},
-    'Zn': {'Z': 30, 'Electronegativity': 1.65, 'Radius_pm': 122, 'Group': 12, 'Period': 4, 'MW': 65.38},
-    'Zr': {'Z': 40, 'Electronegativity': 1.33, 'Radius_pm': 160, 'Group': 4, 'Period': 5, 'MW': 91.22},
-    'Fe': {'Z': 26, 'Electronegativity': 1.83, 'Radius_pm': 126, 'Group': 8, 'Period': 4, 'MW': 55.85},
-    'Co': {'Z': 27, 'Electronegativity': 1.88, 'Radius_pm': 126, 'Group': 9, 'Period': 4, 'MW': 58.93},
-    'Ni': {'Z': 28, 'Electronegativity': 1.91, 'Radius_pm': 124, 'Group': 10, 'Period': 4, 'MW': 58.69},
-    'Mn': {'Z': 25, 'Electronegativity': 1.55, 'Radius_pm': 139, 'Group': 7, 'Period': 4, 'MW': 54.94},
-    'Cr': {'Z': 24, 'Electronegativity': 1.66, 'Radius_pm': 128, 'Group': 6, 'Period': 4, 'MW': 51.99},
-    'Ti': {'Z': 22, 'Electronegativity': 1.54, 'Radius_pm': 147, 'Group': 4, 'Period': 4, 'MW': 47.87},
-    'Al': {'Z': 13, 'Electronegativity': 1.61, 'Radius_pm': 121, 'Group': 13, 'Period': 3, 'MW': 26.98},
-    'Mg': {'Z': 12, 'Electronegativity': 1.31, 'Radius_pm': 141, 'Group': 2, 'Period': 3, 'MW': 24.31},
-    'Ce': {'Z': 58, 'Electronegativity': 1.12, 'Radius_pm': 181, 'Group': 3, 'Period': 6, 'MW': 140.12}
+    'Cu': {'Z': 29, 'Electronegativity': 1.90, 'Radius_pm': 132, 'Group': 11, 'Period': 4, 'MW': 63.55, 'HSAB': 'Intermediate'},
+    'Zn': {'Z': 30, 'Electronegativity': 1.65, 'Radius_pm': 122, 'Group': 12, 'Period': 4, 'MW': 65.38, 'HSAB': 'Intermediate'},
+    'Zr': {'Z': 40, 'Electronegativity': 1.33, 'Radius_pm': 160, 'Group': 4, 'Period': 5, 'MW': 91.22, 'HSAB': 'Hard'},
+    'Fe': {'Z': 26, 'Electronegativity': 1.83, 'Radius_pm': 126, 'Group': 8, 'Period': 4, 'MW': 55.85, 'HSAB': 'Hard'},
+    'Co': {'Z': 27, 'Electronegativity': 1.88, 'Radius_pm': 126, 'Group': 9, 'Period': 4, 'MW': 58.93, 'HSAB': 'Intermediate'},
+    'Ni': {'Z': 28, 'Electronegativity': 1.91, 'Radius_pm': 124, 'Group': 10, 'Period': 4, 'MW': 58.69, 'HSAB': 'Intermediate'},
+    'Mn': {'Z': 25, 'Electronegativity': 1.55, 'Radius_pm': 139, 'Group': 7, 'Period': 4, 'MW': 54.94, 'HSAB': 'Intermediate'},
+    'Cr': {'Z': 24, 'Electronegativity': 1.66, 'Radius_pm': 128, 'Group': 6, 'Period': 4, 'MW': 51.99, 'HSAB': 'Hard'},
+    'Ti': {'Z': 22, 'Electronegativity': 1.54, 'Radius_pm': 147, 'Group': 4, 'Period': 4, 'MW': 47.87, 'HSAB': 'Hard'},
+    'Al': {'Z': 13, 'Electronegativity': 1.61, 'Radius_pm': 121, 'Group': 13, 'Period': 3, 'MW': 26.98, 'HSAB': 'Hard'},
+    'Mg': {'Z': 12, 'Electronegativity': 1.31, 'Radius_pm': 141, 'Group': 2, 'Period': 3, 'MW': 24.31, 'HSAB': 'Hard'},
+    'Ce': {'Z': 58, 'Electronegativity': 1.12, 'Radius_pm': 181, 'Group': 3, 'Period': 6, 'MW': 140.12, 'HSAB': 'Hard'}
 }
 
 anion_mw = {
@@ -136,6 +136,42 @@ anion_mw = {
     'Cloruro': 35.45 * 2,
     'Altro': 60.00
 }
+
+# --- SMARTS PATTERNS PER RDKIT ---
+SMARTS_PATTERNS = {
+    'COOH': Chem.MolFromSmarts('[CX3](=O)[OX2H1]'),
+    'Aromatic_N': Chem.MolFromSmarts('[n]')
+}
+
+def extract_smarts_features(mol):
+    if not mol:
+        return {'n_COOH': 0, 'n_Aromatic_N': 0, 'fraction_sp2': 0.0}
+    
+    n_cooh = len(mol.GetSubstructMatches(SMARTS_PATTERNS['COOH']))
+    n_aro_n = len(mol.GetSubstructMatches(SMARTS_PATTERNS['Aromatic_N']))
+    
+    c_atoms = [atom for atom in mol.GetAtoms() if atom.GetSymbol() == 'C']
+    if c_atoms:
+        sp2_c = sum(1 for atom in c_atoms if atom.GetHybridization() == Chem.rdchem.HybridizationType.SP2)
+        fraction_sp2 = sp2_c / len(c_atoms)
+    else:
+        fraction_sp2 = 0.0
+        
+    return {
+        'n_COOH': n_cooh,
+        'n_Aromatic_N': n_aro_n,
+        'fraction_sp2': fraction_sp2
+    }
+
+def calculate_hsab_match(metal_hsab, n_cooh, n_aro_n):
+    # Hard Acid (es. Zr4+, Fe3+) preferisce Hard Base (-COOH)
+    # Intermediate Acid (es. Cu2+, Zn2+) preferisce Intermediate Base (Azoti aromatici/imidazoli)
+    if metal_hsab == 'Hard':
+        return 1.0 if n_cooh > 0 else 0.2
+    elif metal_hsab == 'Intermediate':
+        return 1.0 if (n_aro_n > 0 or n_cooh > 0) else 0.5
+    else:
+        return 0.5
 
 def resolve_molecule_to_smiles(query):
     clean_query = query.strip().lower()
@@ -205,9 +241,15 @@ def process_unified_dataset(df):
         tpsa = Descriptors.TPSA(mol) if mol else 74.6
         rot = Descriptors.NumRotatableBonds(mol) if mol else 2
         
+        # Feature SMARTS
+        smarts_f = extract_smarts_features(mol)
+        
         met = str(row.get('Metallo', 'Cu'))
         m_info = metal_props.get(met, metal_props['Cu'])
         anione_sel = str(row.get('Anione', 'Nitrato'))
+        
+        # Match HSAB
+        hsab_match = calculate_hsab_match(m_info['HSAB'], smarts_f['n_COOH'], smarts_f['n_Aromatic_N'])
         
         m_leg = float(row.get('mmol legante', 0.1)) if pd.notnull(row.get('mmol legante')) else 0.1
         m_sale = float(row.get('mmol sale', 0.1)) if pd.notnull(row.get('mmol sale')) else 0.1
@@ -239,6 +281,10 @@ def process_unified_dataset(df):
             'SMILES_Group': smiles if smiles and smiles != 'nan' else 'sconosciuto',
             'MW_Legante': float(mw), 'LogP_Legante': float(logp), 'HBD_Legante': float(hbd), 'HBA_Legante': float(hba),
             'TPSA_Legante': float(tpsa), 'RotatableBonds_Legante': float(rot),
+            'SMARTS_n_COOH': smarts_f['n_COOH'],
+            'SMARTS_n_Aromatic_N': smarts_f['n_Aromatic_N'],
+            'SMARTS_fraction_sp2': smarts_f['fraction_sp2'],
+            'HSAB_Match_Index': hsab_match,
             'Temperatura_num': float(temp), 'Tempo_ore_num': float(tempo),
             'mmol legante': float(m_leg), 'mmol sale': float(m_sale), 'Rapporto L/M': float(ratio),
             'Metallo_Z': m_info['Z'], 'Metallo_Electronegativity': m_info['Electronegativity'],
@@ -325,7 +371,6 @@ def load_or_train_model():
     
     feature_names = X.columns.tolist()
     
-    # Inizializzazione dello Stacking Ensemble Multi-Algoritmo
     base_ensemble = create_stacking_ensemble()
     
     n_unique_groups = len(np.unique(groups))
@@ -347,7 +392,6 @@ def load_or_train_model():
         base_ensemble.fit(X, y)
         final_model = base_ensemble
 
-    # Estrazione feature importance media dal primo stimatore (LightGBM)
     try:
         if hasattr(final_model, 'calibrated_classifiers_'):
             lgb_est = final_model.calibrated_classifiers_[0].estimator.named_estimators_['lgb']
@@ -375,7 +419,7 @@ def load_or_train_model():
 
 try:
     model, feature_names, metrics, importances = load_or_train_model()
-    st.sidebar.success("Modello Ensemble Stacking (LGBM + RF + CatBoost) Attivo!")
+    st.sidebar.success("Modello Stacking (LGBM + RF + CatBoost) con SMARTS & HSAB Attivo!")
 except Exception as e:
     st.sidebar.error(f"Errore caricamento modello: {e}")
     st.stop()
@@ -390,13 +434,17 @@ if len(importances) > 0 and len(feature_names) == len(importances):
 # --- TAB INTERFACCIA ---
 tab1, tab2, tab3 = st.tabs(["🔮 Predizione Singola", "📂 Predizione Batch", "⚡ Ottimizzatore Automatico"])
 
-def build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_p, ml_solv_p, cosolvente, ml_cosolv, additivo_sel, add_eq):
+def build_feature_row(mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_p, ml_solv_p, cosolvente, ml_cosolv, additivo_sel, add_eq):
     add_info = ADDITIVES_DATABASE.get(additivo_sel, ADDITIVES_DATABASE['Nessuno'])
     add_type = add_info['type']
     
     total_vol = float(ml_solv_p) + float(ml_cosolv)
     cosolv_pct = (float(ml_cosolv) / total_vol * 100.0) if total_vol > 0 else 0.0
     mix_props = calculate_solvent_mix_properties(solvente_p, float(ml_solv_p), cosolvente, float(ml_cosolv))
+    
+    smarts_f = extract_smarts_features(mol)
+    metal_m = metal_props[metallo_sel]
+    hsab_match = calculate_hsab_match(metal_m['HSAB'], smarts_f['n_COOH'], smarts_f['n_Aromatic_N'])
     
     input_dict = {
         'MW_Legante': float(mw),
@@ -405,16 +453,20 @@ def build_feature_row(mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_leg
         'HBA_Legante': float(hba),
         'TPSA_Legante': float(tpsa),
         'RotatableBonds_Legante': float(rot_bonds),
+        'SMARTS_n_COOH': smarts_f['n_COOH'],
+        'SMARTS_n_Aromatic_N': smarts_f['n_Aromatic_N'],
+        'SMARTS_fraction_sp2': smarts_f['fraction_sp2'],
+        'HSAB_Match_Index': hsab_match,
         'Temperatura_num': float(temp),
         'Tempo_ore_num': float(tempo),
         'mmol legante': float(mmol_legante),
         'mmol sale': float(mmol_sale),
         'Rapporto L/M': float(mmol_legante) / float(mmol_sale) if float(mmol_sale) > 0 else 1.0,
-        'Metallo_Z': metal_props[metallo_sel]['Z'],
-        'Metallo_Electronegativity': metal_props[metallo_sel]['Electronegativity'],
-        'Metallo_Radius_pm': metal_props[metallo_sel]['Radius_pm'],
-        'Metallo_Group': metal_props[metallo_sel]['Group'],
-        'Metallo_Period': metal_props[metallo_sel]['Period'],
+        'Metallo_Z': metal_m['Z'],
+        'Metallo_Electronegativity': metal_m['Electronegativity'],
+        'Metallo_Radius_pm': metal_m['Radius_pm'],
+        'Metallo_Group': metal_m['Group'],
+        'Metallo_Period': metal_m['Period'],
         'Anion_Acetato': 1 if anione_sel == 'Acetato' else 0,
         'Anion_Cloruro': 1 if anione_sel == 'Cloruro' else 0,
         'Anion_Nitrato': 1 if anione_sel == 'Nitrato' else 0,
@@ -593,7 +645,7 @@ with tab1:
             st.error("Inserisci una molecola valida prima di continuare.")
         else:
             df_features = build_feature_row(
-                mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, 
+                mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, 
                 mmol_legante, mmol_sale, metallo_sel, anione_sel, 
                 solvente_p, ml_solv_p, co_solvente, ml_cosolv, additivo_sel, add_eq
             )
@@ -732,7 +784,7 @@ with tab3:
                                 for cs, ml_cs in cosolvents:
                                     for add_name, add_eq in additives:
                                         feat = build_feature_row(
-                                            opt_mw, opt_logp, opt_hbd, opt_hba, opt_tpsa, opt_rot, 
+                                            opt_mol, opt_mw, opt_logp, opt_hbd, opt_hba, opt_tpsa, opt_rot, 
                                             t, tm, 0.1, 0.1, opt_metallo, opt_anione, 
                                             sp, ml_sp, cs, ml_cs, add_name, add_eq
                                         )
