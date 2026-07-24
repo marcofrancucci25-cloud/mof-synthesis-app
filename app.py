@@ -242,10 +242,11 @@ ADDITIVES_DATABASE = {
     'HF (Acido Fluoridrico)': {'type': 'Acid', 'MW': 20.01, 'pKa': 3.17}
 }
 
-# --- PROPRIETÀ METALLI COMPLETI E HSAB ---
+# --- DATABASE METALLI AMPIATO (30 METALLI) E HSAB ---
 metal_props = {
     'Zr': {'Z': 40, 'Electronegativity': 1.33, 'Radius_pm': 160, 'Group': 4, 'Period': 5, 'MW': 91.22, 'HSAB': 'Hard', 'Name': 'Zirconio'},
     'Hf': {'Z': 72, 'Electronegativity': 1.30, 'Radius_pm': 159, 'Group': 4, 'Period': 6, 'MW': 178.49, 'HSAB': 'Hard', 'Name': 'Afnio'},
+    'Ti': {'Z': 22, 'Electronegativity': 1.54, 'Radius_pm': 147, 'Group': 4, 'Period': 4, 'MW': 47.87, 'HSAB': 'Hard', 'Name': 'Titanio'},
     'Cu': {'Z': 29, 'Electronegativity': 1.90, 'Radius_pm': 132, 'Group': 11, 'Period': 4, 'MW': 63.55, 'HSAB': 'Intermediate', 'Name': 'Rame'},
     'Zn': {'Z': 30, 'Electronegativity': 1.65, 'Radius_pm': 122, 'Group': 12, 'Period': 4, 'MW': 65.38, 'HSAB': 'Intermediate', 'Name': 'Zinco'},
     'Fe': {'Z': 26, 'Electronegativity': 1.83, 'Radius_pm': 126, 'Group': 8, 'Period': 4, 'MW': 55.85, 'HSAB': 'Hard', 'Name': 'Ferro'},
@@ -253,13 +254,26 @@ metal_props = {
     'Ni': {'Z': 28, 'Electronegativity': 1.91, 'Radius_pm': 124, 'Group': 10, 'Period': 4, 'MW': 58.69, 'HSAB': 'Intermediate', 'Name': 'Nichel'},
     'Mn': {'Z': 25, 'Electronegativity': 1.55, 'Radius_pm': 139, 'Group': 7, 'Period': 4, 'MW': 54.94, 'HSAB': 'Intermediate', 'Name': 'Manganese'},
     'Cr': {'Z': 24, 'Electronegativity': 1.66, 'Radius_pm': 128, 'Group': 6, 'Period': 4, 'MW': 51.99, 'HSAB': 'Hard', 'Name': 'Cromo'},
-    'Ti': {'Z': 22, 'Electronegativity': 1.54, 'Radius_pm': 147, 'Group': 4, 'Period': 4, 'MW': 47.87, 'HSAB': 'Hard', 'Name': 'Titanio'},
+    'V':  {'Z': 23, 'Electronegativity': 1.63, 'Radius_pm': 134, 'Group': 5, 'Period': 4, 'MW': 50.94, 'HSAB': 'Hard', 'Name': 'Vanadio'},
     'Al': {'Z': 13, 'Electronegativity': 1.61, 'Radius_pm': 121, 'Group': 13, 'Period': 3, 'MW': 26.98, 'HSAB': 'Hard', 'Name': 'Alluminio'},
+    'Ga': {'Z': 31, 'Electronegativity': 1.81, 'Radius_pm': 122, 'Group': 13, 'Period': 4, 'MW': 69.72, 'HSAB': 'Hard', 'Name': 'Gallio'},
+    'In': {'Z': 49, 'Electronegativity': 1.78, 'Radius_pm': 142, 'Group': 13, 'Period': 5, 'MW': 114.82, 'HSAB': 'Hard', 'Name': 'Indio'},
     'Mg': {'Z': 12, 'Electronegativity': 1.31, 'Radius_pm': 141, 'Group': 2, 'Period': 3, 'MW': 24.31, 'HSAB': 'Hard', 'Name': 'Magnesio'},
+    'Ca': {'Z': 20, 'Electronegativity': 1.00, 'Radius_pm': 174, 'Group': 2, 'Period': 4, 'MW': 40.08, 'HSAB': 'Hard', 'Name': 'Calcio'},
+    'Sr': {'Z': 38, 'Electronegativity': 0.95, 'Radius_pm': 192, 'Group': 2, 'Period': 5, 'MW': 87.62, 'HSAB': 'Hard', 'Name': 'Stronzio'},
+    'Ba': {'Z': 56, 'Electronegativity': 0.89, 'Radius_pm': 198, 'Group': 2, 'Period': 6, 'MW': 137.33, 'HSAB': 'Hard', 'Name': 'Bario'},
     'Ce': {'Z': 58, 'Electronegativity': 1.12, 'Radius_pm': 181, 'Group': 3, 'Period': 6, 'MW': 140.12, 'HSAB': 'Hard', 'Name': 'Cerio'},
+    'La': {'Z': 57, 'Electronegativity': 1.10, 'Radius_pm': 187, 'Group': 3, 'Period': 6, 'MW': 138.91, 'HSAB': 'Hard', 'Name': 'Lantanio'},
+    'Nd': {'Z': 60, 'Electronegativity': 1.14, 'Radius_pm': 182, 'Group': 3, 'Period': 6, 'MW': 144.24, 'HSAB': 'Hard', 'Name': 'Neodimio'},
+    'Eu': {'Z': 63, 'Electronegativity': 1.20, 'Radius_pm': 180, 'Group': 3, 'Period': 6, 'MW': 151.96, 'HSAB': 'Hard', 'Name': 'Europio'},
+    'Gd': {'Z': 64, 'Electronegativity': 1.20, 'Radius_pm': 180, 'Group': 3, 'Period': 6, 'MW': 157.25, 'HSAB': 'Hard', 'Name': 'Gadolinio'},
+    'Tb': {'Z': 65, 'Electronegativity': 1.20, 'Radius_pm': 177, 'Group': 3, 'Period': 6, 'MW': 158.93, 'HSAB': 'Hard', 'Name': 'Terbio'},
+    'Y':  {'Z': 39, 'Electronegativity': 1.22, 'Radius_pm': 180, 'Group': 3, 'Period': 5, 'MW': 88.91,  'HSAB': 'Hard', 'Name': 'Ittrio'},
     'Cd': {'Z': 48, 'Electronegativity': 1.69, 'Radius_pm': 151, 'Group': 12, 'Period': 5, 'MW': 112.41, 'HSAB': 'Soft', 'Name': 'Cadmio'},
     'Bi': {'Z': 83, 'Electronegativity': 2.02, 'Radius_pm': 156, 'Group': 15, 'Period': 6, 'MW': 208.98, 'HSAB': 'Intermediate', 'Name': 'Bismuto'},
-    'La': {'Z': 57, 'Electronegativity': 1.10, 'Radius_pm': 187, 'Group': 3, 'Period': 6, 'MW': 138.91, 'HSAB': 'Hard', 'Name': 'Lantanio'}
+    'Sn': {'Z': 50, 'Electronegativity': 1.96, 'Radius_pm': 140, 'Group': 14, 'Period': 5, 'MW': 118.71, 'HSAB': 'Hard', 'Name': 'Stagno'},
+    'Pd': {'Z': 46, 'Electronegativity': 2.20, 'Radius_pm': 137, 'Group': 10, 'Period': 5, 'MW': 106.42, 'HSAB': 'Soft', 'Name': 'Palladio'},
+    'Ag': {'Z': 47, 'Electronegativity': 1.93, 'Radius_pm': 144, 'Group': 11, 'Period': 5, 'MW': 107.87, 'HSAB': 'Soft', 'Name': 'Argento'}
 }
 
 anion_mw = {
@@ -564,51 +578,29 @@ except Exception as e:
     st.sidebar.error(f"Errore caricamento modello: {e}")
     st.stop()
 
-# --- COMPONENTE INTERFACCIA: GRIGLIA SELEZIONE METALLO ---
-def render_metal_grid_selector(key_prefix="pred"):
+# --- COMPONENTE INTERFACCIA: MENÙ A TENDINA METALLO UNIFORMATO ---
+def render_metal_dropdown_selector(key_prefix="pred"):
     """
-    Rende una griglia interattiva visiva per la selezione del metallo
+    Rende un menù a tendina uniforme per la selezione del metallo
     """
-    st.markdown("##### 🧱 Seleziona Metallo dalla Griglia chimica:")
+    metal_options = sorted(list(metal_props.keys()))
+    default_idx = metal_options.index('Zr') if 'Zr' in metal_options else 0
     
-    # Formattazione opzioni con nome e classificazione HSAB
-    metal_options = list(metal_props.keys())
-    metal_labels = {
-        m: f"{m} ({metal_props[m]['Name']} - {metal_props[m]['HSAB']})"
-        for m in metal_options
-    }
-    
-    # Se st.pills è supportato nella versione Streamlit, lo usa; altrimenti fallback su radio/selectbox
-    if hasattr(st, "pills"):
-        selected = st.pills(
-            "Seleziona Metallo:", 
-            options=metal_options, 
-            format_func=lambda x: f"{x} - {metal_props[x]['Name']}",
-            default="Zr" if "Zr" in metal_options else metal_options[0],
-            key=f"{key_prefix}_pills_metal"
-        )
-    else:
-        # Griglia dinamica in colonne
-        cols = st.columns(4)
-        selected = None
-        
-        # Uso di radio formattato con indicazione dettagliata
-        selected = st.selectbox(
-            "Metallo di reazione:",
-            options=metal_options,
-            format_func=lambda x: f"{x} | {metal_props[x]['Name']} ({metal_props[x]['HSAB']})",
-            index=metal_options.index('Zr') if 'Zr' in metal_options else 0,
-            key=f"{key_prefix}_select_metal"
-        )
+    selected = st.selectbox(
+        "🧱 Seleziona Metallo Reagente:",
+        options=metal_options,
+        format_func=lambda x: f"{x} | {metal_props[x]['Name']} (Pearson: {metal_props[x]['HSAB']})",
+        index=default_idx,
+        key=f"{key_prefix}_select_metal"
+    )
 
-    # Dettagli del metallo selezionato
     m_data = metal_props[selected]
     hsab_color = "🔴 Hard" if m_data['HSAB'] == 'Hard' else ("🟡 Intermediate" if m_data['HSAB'] == 'Intermediate' else "🟢 Soft")
     
     st.caption(
-        f"**Metallo:** `{selected}` ({m_data['Name']}) | "
+        f"**Metallo Selezionato:** `{selected}` ({m_data['Name']}) | "
         f"**HSAB:** {hsab_color} | "
-        f"**Peso Atomico:** `{m_data['MW']:.2f}` g/mol | "
+        f"**MW:** `{m_data['MW']:.2f}` g/mol | "
         f"**Raggio Ionico:** `{m_data['Radius_pm']}` pm"
     )
     return selected
@@ -628,7 +620,7 @@ st.sidebar.markdown(f"""
 * **Architettura:** Stacking Ensemble  
   *(LightGBM + Random Forest + CatBoost)*
 * **Parametri Valutati:** `{metrics.get('n_features', 36)}` Feature Chimico-Fisiche
-* **Motori Descrittori:** RDKit (SMARTS) + HSAB Pearson
+* **Database Metalli:** `{len(metal_props)}` Elementi censiti
 """)
 
 st.sidebar.markdown("---")
@@ -784,8 +776,8 @@ with tab1:
     with col2:
         st.markdown("### 2. Sale Metallico & Idratazione")
         
-        # --- IMPLEMENTAZIONE GRIGLIA SELEZIONE METALLO ---
-        metallo_sel = render_metal_grid_selector(key_prefix="tab1")
+        # --- MENÙ A TENDINA UNIFORMATO METALLI ---
+        metallo_sel = render_metal_dropdown_selector(key_prefix="tab1")
         
         anione_sel = st.selectbox("Anione / Precursore:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'])
         
@@ -961,7 +953,7 @@ with tab2:
         except Exception as e:
             st.error(f"Errore durante l'elaborazione del file: {e}")
 
-# --- TAB 3: OTTIMIZZATORE AUTOMATICO MULTI-METALLO (GRIGLIA ESPANSA) ---
+# --- TAB 3: OTTIMIZZATORE AUTOMATICO MULTI-METALLO ---
 with tab3:
     st.subheader("⚡ Ottimizzatore di Condizioni Sperimentali Multi-Metallo")
     st.markdown("L'IA simulerà ed esaminerà **griglie di combinazioni chimiche in parallelo**, testando anche **più metalli contemporaneamente**.")
@@ -1032,15 +1024,15 @@ with tab3:
             st.caption(f"⚖️ Corrispondono a **{opt_mmol_legante:.3f} mmol**")
 
     with opt_col2:
-        st.markdown("### 2. Griglia Metalli e Precursore")
+        st.markdown("### 2. Selezione Metalli e Precursore")
         
-        # --- IMPLEMENTAZIONE GRIGLIA MULTI-SELEZIONE METALLI PER OTTIMIZZATORE ---
+        # --- SELEZIONE MULTIPLA METALLI PER OTTIMIZZATORE ---
         metal_list_opt = sorted(list(metal_props.keys()))
         opt_selected_metals = st.multiselect(
-            "🧱 Seleziona Metalli da inserire nella griglia di Scansione:",
+            "🧱 Seleziona uno o più Metalli da includere nella Scansione:",
             options=metal_list_opt,
             default=['Zr', 'Cu', 'Zn'] if all(m in metal_list_opt for m in ['Zr', 'Cu', 'Zn']) else [metal_list_opt[0]],
-            help="Puoi selezionare uno o più metalli per confrontare quale offre la resa di sintesi migliore con questo legante."
+            format_func=lambda x: f"{x} | {metal_props[x]['Name']} ({metal_props[x]['HSAB']})"
         )
         
         if not opt_selected_metals:
@@ -1077,7 +1069,6 @@ with tab3:
         if not opt_mol:
             st.error("Seleziona o inserisci un legante valido prima di avviare l'ottimizzazione.")
         else:
-            # Calcolo proprietà invarianti del legante una sola volta
             opt_mw = float(Descriptors.MolWt(opt_mol))
             opt_logp = float(Descriptors.MolLogP(opt_mol))
             opt_hbd = float(Descriptors.NumHDonors(opt_mol))
@@ -1087,7 +1078,6 @@ with tab3:
             
             smarts_f = extract_smarts_features(opt_mol)
 
-            # Definizione della griglia di ricerca in base alla velocità scelta
             if "Ultra-Veloce" in opt_speed_mode:
                 temperatures = [100.0, 120.0, 140.0]
                 times = [24.0, 48.0]
@@ -1104,7 +1094,6 @@ with tab3:
                 additives = [('Nessuno', 0.0), ('Acido Acetico (AcOH)', 2.0), ('Acido Formico (HCOOH)', 2.0), ('Trietilammina (TEA)', 1.0)]
 
             with st.spinner(f"⚡ Simulazione vettorizzata su {len(opt_selected_metals)} metalli e centinaia di condizioni..."):
-                # Generazione combinazioni cartesiane veloci con itertools inclusi I METALLI SELEZIONATI
                 grid_combos = list(itertools.product(
                     opt_selected_metals, temperatures, times, solvents_p, volumes_p, cosolvents, additives
                 ))
@@ -1112,10 +1101,8 @@ with tab3:
                 rows_list = []
                 display_info = []
 
-                # Calcolo del rapporto molare L/M
                 ratio_lm = float(opt_mmol_legante) / float(opt_mmol_sale) if float(opt_mmol_sale) > 0 else 1.0
 
-                # Costruzione veloce del DataFrame vettorizzato per la griglia estesa
                 for cur_metal, temp, tempo, solv_p, ml_solv_p, (cosolv, ml_cosolv), (add_name, add_eq) in grid_combos:
                     metal_m = metal_props[cur_metal]
                     hsab_match = float(calculate_hsab_match(metal_m['HSAB'], smarts_f['n_COOH'], smarts_f['n_Aromatic_N']))
@@ -1175,14 +1162,12 @@ with tab3:
                         'mmol Additivo': round(add_mmol_calc, 3)
                     })
 
-                # Generazione matrice unica per scikit-learn
                 df_simulation = pd.DataFrame(rows_list)
                 for col in feature_names:
                     if col not in df_simulation.columns:
                         df_simulation[col] = 0.0
                 df_simulation = df_simulation[feature_names]
 
-                # Predizione Vettorizzata ISTANTANEA di tutte le combinazioni in una sola chiamata
                 probs_matrix = model.predict_proba(df_simulation)
                 
                 classes_list = [int(c) if str(c).isdigit() else c for c in model.classes_]
@@ -1195,7 +1180,6 @@ with tab3:
 
                 success_probs = (probs_matrix[:, target_class_idx] * 100.0).round(1)
 
-                # Unione dei risultati
                 df_results = pd.DataFrame(display_info)
                 df_results['Probabilità Successo (%)'] = success_probs
                 df_results = df_results.sort_values(by='Probabilità Successo (%)', ascending=False).reset_index(drop=True)
