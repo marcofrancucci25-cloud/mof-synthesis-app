@@ -20,15 +20,15 @@ try:
 except Exception:
     HAS_PYMATGEN = False
 
-# Import opzionali per Modelli Ensemble & Stacking
+# Import per RDKit e Scikit-Learn / Ensemble
+from rdkit import Chem
+from rdkit.Chem import Descriptors
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import RandomForestClassifier, StackingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import StratifiedGroupKFold
 from sklearn.metrics import accuracy_score
-from rdkit import Chem
-from rdkit.Chem import Descriptors
 
 try:
     from catboost import CatBoostClassifier
@@ -76,7 +76,6 @@ def search_tavily_for_ligand_smiles(query):
     if res and "results" in res:
         for item in res["results"]:
             content = item.get("content", "")
-            # Semplice euristica per estrarre uno SMILES valido dalla risposta
             words = content.replace(";", " ").replace("\n", " ").split(" ")
             for w in words:
                 w_clean = w.strip(".,()[]{}")
@@ -275,9 +274,9 @@ def calculate_solvent_mix_properties(solv_p, ml_p, cosolv, ml_cosolv):
 
 def process_unified_dataset(df):
     target_col = None
-    possible_targets = ['Target_Esito_Classe', 'Target', 'Esito', 'Classe']
+    possible_targets = ['Target_Esito_Classe', 'Target', 'Esito', 'Classe', 'target', 'esito']
     for col in df.columns:
-        if col in possible_targets or 'Target' in col:
+        if col in possible_targets or 'Target' in col or 'Esito' in col:
             target_col = col
             break
 
@@ -391,18 +390,20 @@ def load_or_train_model():
     pkl_file = "modello_sintesi_mof_ottimizzato.pkl"
     csv_file = "Dataset_Sintesi_Unificato.csv"
     
+    # 1. Prova a caricare da pkl se valido
     if os.path.exists(pkl_file):
         try:
             saved_data = joblib.load(pkl_file)
-            if isinstance(saved_data, dict):
+            if isinstance(saved_data, dict) and 'model' in saved_data:
                 return saved_data['model'], saved_data['features'], saved_data.get('metrics', {}), saved_data.get('importances', [])
         except Exception:
             pass
-            
+
+    # 2. Carica il dataset CSV
     if os.path.exists(csv_file):
         raw_df = pd.read_csv(csv_file)
     else:
-        st.error(f"File '{csv_file}' non trovato!")
+        st.error(f"File '{csv_file}' non trovato nella directory di lavoro!")
         st.stop()
         
     df = process_unified_dataset(raw_df)
@@ -417,8 +418,15 @@ def load_or_train_model():
     groups = [g for i, g in enumerate(groups) if valid_mask.iloc[i]]
     X = X.apply(pd.to_numeric, errors='coerce').fillna(0.0)
     
+    # CONTROLLO SICUREZZA: Almeno 2 classi distinte
+    if y.nunique() < 2:
+        st.error(
+            f"⚠️ **Errore Dataset:** La colonna del Target contiene un solo valore distinto ('{y.unique()}'). "
+            "Il modello richiede almeno 2 classi distinte (es. 0 per insuccesso e 1 o 2 per successo) nel file CSV."
+        )
+        st.stop()
+
     feature_names = X.columns.tolist()
-    
     base_ensemble = create_stacking_ensemble()
     
     n_unique_groups = len(np.unique(groups))
@@ -475,7 +483,6 @@ except Exception as e:
 # --- SIDEBAR: COMBINAZIONE STATO MODELLO & QUICK REFERENCE CHIMICA ---
 st.sidebar.markdown("---")
 
-# 1. SCHEDA STATO MODELLO & METRICHE
 st.sidebar.subheader("📊 Stato & Performance Modello")
 
 col_sb1, col_sb2 = st.sidebar.columns(2)
@@ -494,7 +501,6 @@ st.sidebar.markdown(f"""
 
 st.sidebar.markdown("---")
 
-# 2. QUICK REFERENCE CHIMICA (LEGANTI, HSAB & SOLVENTI)
 st.sidebar.subheader("💡 Quick Reference Chimica")
 
 with st.sidebar.expander("🧪 Teoria HSAB di Pearson", expanded=False):
