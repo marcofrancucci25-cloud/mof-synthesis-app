@@ -30,7 +30,7 @@ except Exception:
 
 from lightgbm import LGBMClassifier
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedGroupKFold
 from sklearn.metrics import accuracy_score
 from rdkit import Chem
 from rdkit.Chem import Descriptors
@@ -40,8 +40,6 @@ st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
 st.markdown("Strumento avanzato di Machine Learning per la predizione, ottimizzazione e **spiegabilità chimica** della sintesi di MOF.")
 
 # --- DATABASE SOLVENTI CON PARAMETRI FISICO-CHIMICI ---
-# Alpha = Acidità legame idrogeno, Beta = Basicità legame idrogeno, Pi* = Polarizzabilità (Kamlet-Taft)
-# Dielectric = Costante dielettrica (ε), Boiling_Pt = Punto di ebollizione (°C)
 SOLVENT_PROPERTIES = {
     'DMF':  {'alpha': 0.00, 'beta': 0.69, 'pi_star': 0.88, 'dielectric': 36.7, 'boiling_pt': 153.0},
     'DEF':  {'alpha': 0.00, 'beta': 0.69, 'pi_star': 0.88, 'dielectric': 32.1, 'boiling_pt': 177.0},
@@ -178,7 +176,6 @@ def calculate_solvent_mix_properties(solv_p, ml_p, cosolv, ml_cosolv):
     f_p = ml_p / tot_vol
     f_co = ml_cosolv / tot_vol
     
-    # Media ponderata delle proprietà chimico-fisiche della miscela
     return {
         'mix_alpha': (prop_p['alpha'] * f_p) + (prop_co['alpha'] * f_co),
         'mix_beta': (prop_p['beta'] * f_p) + (prop_co['beta'] * f_co),
@@ -223,7 +220,6 @@ def process_unified_dataset(df):
         total_vol = ml_solv_p + ml_cosolv
         cosolv_pct = (ml_cosolv / total_vol * 100) if total_vol > 0 else 0.0
         
-        # Calcolo descrittori avanzati per i solventi
         mix_props = calculate_solvent_mix_properties(solv_p, ml_solv_p, cosolv, ml_cosolv)
         
         add_type = str(row.get('Additivo_Tipo', 'None'))
@@ -239,6 +235,7 @@ def process_unified_dataset(df):
             target = 0
             
         processed.append({
+            'SMILES_Group': smiles if smiles and smiles != 'nan' else 'sconosciuto',
             'MW_Legante': float(mw), 'LogP_Legante': float(logp), 'HBD_Legante': float(hbd), 'HBA_Legante': float(hba),
             'TPSA_Legante': float(tpsa), 'RotatableBonds_Legante': float(rot),
             'Temperatura_num': float(temp), 'Tempo_ore_num': float(tempo),
@@ -251,7 +248,6 @@ def process_unified_dataset(df):
             'Anion_Altro': 1 if anione_sel == 'Altro' else 0,
             'mL_Solvente_P': float(ml_solv_p), 'mL_CoSolvente': float(ml_cosolv), 'Total_Volume_mL': float(total_vol),
             'CoSolvent_Pct': float(cosolv_pct),
-            # Inserimento Proprietà Fisico-Chimiche della Miscela Solvente
             'Solvent_Mix_Alpha': mix_props['mix_alpha'],
             'Solvent_Mix_Beta': mix_props['mix_beta'],
             'Solvent_Mix_PiStar': mix_props['mix_pi_star'],
@@ -265,8 +261,8 @@ def process_unified_dataset(df):
         })
     return pd.DataFrame(processed)
 
-# --- HYPERPARAMETER TUNING CON OPTUNA ---
-def optimize_lgbm_optuna(X, y):
+# --- HYPERPARAMETER TUNING CON OPTUNA E STRATIFIED GROUP K-FOLD ---
+def optimize_lgbm_optuna_grouped(X, y, groups):
     def objective(trial):
         params = {
             'n_estimators': trial.suggest_int('n_estimators', 50, 300),
@@ -279,19 +275,25 @@ def optimize_lgbm_optuna(X, y):
             'random_state': 42,
             'verbose': -1
         }
-        skf = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+        
+        n_splits = min(3, len(np.unique(groups)))
+        sgkf = StratifiedGroupKFold(n_splits=n_splits)
+        
         scores = []
-        for train_idx, val_idx in skf.split(X, y):
+        for train_idx, val_idx in sgkf.split(X, y, groups=groups):
             X_tr, X_va = X.iloc[train_idx], X.iloc[val_idx]
             y_tr, y_va = y.iloc[train_idx], y.iloc[val_idx]
+            
             clf = LGBMClassifier(**params)
             clf.fit(X_tr, y_tr)
             preds = clf.predict(X_va)
             scores.append(accuracy_score(y_va, preds))
+            
         return np.mean(scores)
 
     study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=15)
+    
     best_params = study.best_params
     best_params['class_weight'] = 'balanced'
     best_params['random_state'] = 42
@@ -320,47 +322,40 @@ def load_or_train_model():
         
     df = process_unified_dataset(raw_df)
     
-    X = df.drop(columns=['Target_Esito_Classe'])
+    # Separazione gruppi per prevenzione data-leakage sui leganti
+    groups = df['SMILES_Group'].tolist()
+    X = df.drop(columns=['Target_Esito_Classe', 'SMILES_Group'])
     y_series = pd.to_numeric(df['Target_Esito_Classe'], errors='coerce')
     valid_mask = y_series.notna()
     
     X = X[valid_mask].copy().reset_index(drop=True)
     y = y_series[valid_mask].astype(int).copy().reset_index(drop=True)
+    groups = [g for i, g in enumerate(groups) if valid_mask.iloc[i]]
     X = X.apply(pd.to_numeric, errors='coerce').fillna(0.0)
     
-    # Bilanciamento classi minime
-    counts = y.value_counts()
-    for cls, count in counts.items():
-        if count < 3:
-            needed = 3 - count
-            rows_to_dup = X[y == cls]
-            if len(rows_to_dup) > 0:
-                for _ in range(needed):
-                    X = pd.concat([X, rows_to_dup.iloc[[0]]], ignore_index=True)
-                    y = pd.concat([y, pd.Series([cls])], ignore_index=True)
-
     feature_names = X.columns.tolist()
     
     # Selezione tra Optuna Tuning o Modello Base
-    if HAS_OPTUNA:
-        base_model = optimize_lgbm_optuna(X, y)
+    if HAS_OPTUNA and len(np.unique(groups)) >= 3:
+        base_model = optimize_lgbm_optuna_grouped(X, y, groups)
     else:
         base_model = LGBMClassifier(
             n_estimators=180, learning_rate=0.04, max_depth=6, 
             num_leaves=31, class_weight='balanced', random_state=42, verbose=-1
         )
     
-    min_class_samples = y.value_counts().min()
+    n_unique_groups = len(np.unique(groups))
     unique_classes = y.nunique()
     
-    if min_class_samples >= 2 and unique_classes > 1:
-        cv_splits = min(3, max(2, min_class_samples))
+    if n_unique_groups >= 2 and unique_classes > 1:
+        cv_splits = min(3, n_unique_groups)
+        sgkf_calib = StratifiedGroupKFold(n_splits=cv_splits)
         final_model = CalibratedClassifierCV(
             estimator=base_model, method='sigmoid',
-            cv=StratifiedKFold(n_splits=cv_splits, shuffle=True, random_state=42)
+            cv=sgkf_calib
         )
         try:
-            final_model.fit(X, y)
+            final_model.fit(X, y, groups=groups)
             importances = np.mean([est.estimator.feature_importances_ for est in final_model.calibrated_classifiers_], axis=0)
         except Exception:
             base_model.fit(X, y)
@@ -389,7 +384,7 @@ def load_or_train_model():
 
 try:
     model, feature_names, metrics, importances = load_or_train_model()
-    st.sidebar.success("Modello ML Ottimizzato (Optuna + Kamlet-Taft) Attivo!")
+    st.sidebar.success("Modello ML Ottimizzato (GroupKFold + Optuna) Attivo!")
 except Exception as e:
     st.sidebar.error(f"Errore caricamento modello: {e}")
     st.stop()
@@ -684,7 +679,7 @@ with tab2:
             
             if st.button("⚡ Elabora tutte le Sintesi"):
                 processed_batch = process_unified_dataset(input_batch)
-                X_batch = processed_batch.drop(columns=['Target_Esito_Classe'])
+                X_batch = processed_batch.drop(columns=['Target_Esito_Classe', 'SMILES_Group'])
                 
                 for col in feature_names:
                     if col not in X_batch.columns:
