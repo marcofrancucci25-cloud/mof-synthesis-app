@@ -242,7 +242,7 @@ ADDITIVES_DATABASE = {
     'HF (Acido Fluoridrico)': {'type': 'Acid', 'MW': 20.01, 'pKa': 3.17}
 }
 
-# --- DATABASE METALLI AMPIATO (30 METALLI) E HSAB ---
+# --- DATABASE METALLI AMPLIATO (30 METALLI) E HSAB ---
 metal_props = {
     'Zr': {'Z': 40, 'Electronegativity': 1.33, 'Radius_pm': 160, 'Group': 4, 'Period': 5, 'MW': 91.22, 'HSAB': 'Hard', 'Name': 'Zirconio'},
     'Hf': {'Z': 72, 'Electronegativity': 1.30, 'Radius_pm': 159, 'Group': 4, 'Period': 6, 'MW': 178.49, 'HSAB': 'Hard', 'Name': 'Afnio'},
@@ -742,13 +742,16 @@ with tab1:
                 elif file_ext == 'cif':
                     if HAS_PYMATGEN:
                         try:
-                            with open("temp_upload.cif", "w", encoding="utf-8") as f:
+                            temp_filename = "temp_upload.cif"
+                            with open(temp_filename, "w", encoding="utf-8") as f:
                                 f.write(file_bytes)
-                            struct = Structure.from_file("temp_upload.cif")
+                            struct = Structure.from_file(temp_filename)
                             red_formula = struct.composition.reduced_formula
                             found_smiles = resolve_molecule_to_smiles(red_formula)
                             if found_smiles:
                                 mol = Chem.MolFromSmiles(found_smiles)
+                            if os.path.exists(temp_filename):
+                                os.remove(temp_filename)
                         except Exception as e:
                             st.error(f"Errore lettura CIF: {e}")
 
@@ -997,13 +1000,16 @@ with tab3:
                 elif file_ext == 'cif':
                     if HAS_PYMATGEN:
                         try:
-                            with open("temp_opt_upload.cif", "w", encoding="utf-8") as f:
+                            opt_temp_filename = "temp_opt_upload.cif"
+                            with open(opt_temp_filename, "w", encoding="utf-8") as f:
                                 f.write(file_bytes)
-                            struct = Structure.from_file("temp_opt_upload.cif")
+                            struct = Structure.from_file(opt_temp_filename)
                             red_formula = struct.composition.reduced_formula
                             opt_found_smiles = resolve_molecule_to_smiles(red_formula)
                             if opt_found_smiles:
                                 opt_mol = Chem.MolFromSmiles(opt_found_smiles)
+                            if os.path.exists(opt_temp_filename):
+                                os.remove(opt_temp_filename)
                         except Exception as e:
                             st.error(f"Errore lettura CIF: {e}")
 
