@@ -57,7 +57,8 @@ def clean_float_val(val, default_val=0.0):
         return float(default_val)
 
 # --- CONFIGURAZIONE TAVILY AI ---
-TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
+DEFAULT_TAVILY_KEY = "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"
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", DEFAULT_TAVILY_KEY)
 
 with st.sidebar.expander("🌐 Configurazione Agent Web (Tavily)", expanded=False):
     tavily_input_key = st.text_input("Tavily API Key:", value=TAVILY_API_KEY, type="password")
