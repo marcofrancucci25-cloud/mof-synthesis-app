@@ -911,19 +911,70 @@ with tab3:
     st.markdown("L'IA simulerà ed esaminerà **centinaia di combinazioni fisico-chimiche in parallelo** per individuare la ricetta ad altissimo rendimento.")
     
     opt_col1, opt_col2, opt_col3 = st.columns([2, 2, 1])
+    
     with opt_col1:
-        opt_smiles = st.text_input("SMILES Legante:", value="O=C(O)c1ccc(C(=O)O)cc1", key="opt_smiles")
-        opt_mol = Chem.MolFromSmiles(opt_smiles)
+        st.markdown("### 1. Legante Chimico")
+        opt_mode_legante = st.radio(
+            "Modalità Input Legante:", 
+            ["SMILES", "Nome / Formula / CAS", "Carica File (.mol / .sdf / .cif)"],
+            horizontal=True,
+            key="opt_mode_leg"
+        )
+        
+        opt_mol = None
+        if opt_mode_legante == "SMILES":
+            opt_smiles_input = st.text_input("SMILES del Legante:", value="O=C(O)c1ccc(C(=O)O)cc1", key="opt_smiles")
+            if opt_smiles_input:
+                opt_mol = Chem.MolFromSmiles(opt_smiles_input)
+                
+        elif opt_mode_legante == "Nome / Formula / CAS":
+            opt_query_input = st.text_input("Nome, Formula Bruta o CAS:", value="C8H6O4", key="opt_query")
+            if opt_query_input:
+                with st.spinner("Ricerca molecola nei database e sul Web..."):
+                    opt_found_smiles = resolve_molecule_to_smiles(opt_query_input)
+                    if opt_found_smiles:
+                        opt_mol = Chem.MolFromSmiles(opt_found_smiles)
+                        st.caption(f"SMILES Identificato: `{opt_found_smiles}`")
+                    else:
+                        st.error("Nessuna molecola trovata per la formula/nome inserito.")
+                        
+        elif opt_mode_legante == "Carica File (.mol / .sdf / .cif)":
+            opt_uploaded_file = st.file_uploader("Carica file .mol, .sdf o .cif", type=['mol', 'sdf', 'cif'], key="opt_file")
+            if opt_uploaded_file is not None:
+                file_ext = opt_uploaded_file.name.split('.')[-1].lower()
+                file_bytes = opt_uploaded_file.getvalue().decode('utf-8', errors='ignore')
+                
+                if file_ext in ['mol', 'sdf']:
+                    opt_mol = Chem.MolFromMolBlock(file_bytes)
+                elif file_ext == 'cif':
+                    if HAS_PYMATGEN:
+                        try:
+                            with open("temp_opt_upload.cif", "w", encoding="utf-8") as f:
+                                f.write(file_bytes)
+                            struct = Structure.from_file("temp_opt_upload.cif")
+                            red_formula = struct.composition.reduced_formula
+                            opt_found_smiles = resolve_molecule_to_smiles(red_formula)
+                            if opt_found_smiles:
+                                opt_mol = Chem.MolFromSmiles(opt_found_smiles)
+                        except Exception as e:
+                            st.error(f"Errore lettura CIF: {e}")
+
+        if opt_mol:
+            st.success("Molecola acquisita correttamente per l'ottimizzazione!")
+
     with opt_col2:
+        st.markdown("### 2. Metallo e Precursore")
         metal_list_opt = sorted(list(metal_props.keys()))
         opt_metallo = st.selectbox("Metallo Desiderato:", metal_list_opt, index=metal_list_opt.index('Zr') if 'Zr' in metal_list_opt else 0, key="opt_met")
         opt_anione = st.selectbox("Anione:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'], key="opt_an")
+        
     with opt_col3:
-        opt_speed_mode = st.radio("Velocità Scansione:", ["Ultra-Veloce ⚡", "Completa 🔍"], index=0)
+        st.markdown("### 3. Opzioni Scansione")
+        opt_speed_mode = st.radio("Velocità Scansione:", ["Ultra-Veloce ⚡", "Completa 🔍"], index=0, key="opt_speed")
 
     if st.button("🚀 Avvia Scansione e Ottimizzazione Veloce", type="primary"):
         if not opt_mol:
-            st.error("SMILES non valido.")
+            st.error("Seleziona o inserisci un legante valido prima di avviare l'ottimizzazione.")
         else:
             # Calcolo proprietà invarianti del legante una sola volta
             opt_mw = float(Descriptors.MolWt(opt_mol))
