@@ -164,8 +164,6 @@ def extract_smarts_features(mol):
     }
 
 def calculate_hsab_match(metal_hsab, n_cooh, n_aro_n):
-    # Hard Acid (es. Zr4+, Fe3+) preferisce Hard Base (-COOH)
-    # Intermediate Acid (es. Cu2+, Zn2+) preferisce Intermediate Base (Azoti aromatici/imidazoli)
     if metal_hsab == 'Hard':
         return 1.0 if n_cooh > 0 else 0.2
     elif metal_hsab == 'Intermediate':
@@ -241,14 +239,12 @@ def process_unified_dataset(df):
         tpsa = Descriptors.TPSA(mol) if mol else 74.6
         rot = Descriptors.NumRotatableBonds(mol) if mol else 2
         
-        # Feature SMARTS
         smarts_f = extract_smarts_features(mol)
         
         met = str(row.get('Metallo', 'Cu'))
         m_info = metal_props.get(met, metal_props['Cu'])
         anione_sel = str(row.get('Anione', 'Nitrato'))
         
-        # Match HSAB
         hsab_match = calculate_hsab_match(m_info['HSAB'], smarts_f['n_COOH'], smarts_f['n_Aromatic_N'])
         
         m_leg = float(row.get('mmol legante', 0.1)) if pd.notnull(row.get('mmol legante')) else 0.1
@@ -308,7 +304,6 @@ def process_unified_dataset(df):
         })
     return pd.DataFrame(processed)
 
-# --- CREAZIONE MODELLO ENSEMBLE STACKING ---
 def create_stacking_ensemble():
     estimators = [
         ('lgb', LGBMClassifier(
@@ -337,7 +332,6 @@ def create_stacking_ensemble():
     )
     return stacking_clf
 
-# --- CARICAMENTO O ADDESTRAMENTO MODELLO ---
 @st.cache_resource
 def load_or_train_model():
     pkl_file = "modello_sintesi_mof_ottimizzato.pkl"
@@ -419,19 +413,56 @@ def load_or_train_model():
 
 try:
     model, feature_names, metrics, importances = load_or_train_model()
-    st.sidebar.success("Modello Stacking (LGBM + RF + CatBoost) con SMARTS & HSAB Attivo!")
+    st.sidebar.success("Modello Ensemble Stacking Attivo!")
 except Exception as e:
     st.sidebar.error(f"Errore caricamento modello: {e}")
     st.stop()
 
-# --- SIDEBAR: FEATURE IMPORTANCE ---
+# --- SIDEBAR: COMBINAZIONE STATO MODELLO & QUICK REFERENCE CHIMICA ---
 st.sidebar.markdown("---")
-st.sidebar.subheader("📊 Importanza Globale Parametri")
-if len(importances) > 0 and len(feature_names) == len(importances):
-    imp_series = pd.Series(importances, index=feature_names).sort_values(ascending=True).tail(8)
-    st.sidebar.bar_chart(imp_series)
 
-# --- TAB INTERFACCIA ---
+# 1. SCHEDA STATO MODELLO & METRICHE
+st.sidebar.subheader("📊 Stato & Performance Modello")
+
+col_sb1, col_sb2 = st.sidebar.columns(2)
+with col_sb1:
+    acc_val = metrics.get('train_accuracy', 0.85) * 100
+    st.metric("Accuratezza", f"{acc_val:.1f}%")
+with col_sb2:
+    st.metric("Sintesi DB", metrics.get('n_samples', 'N/A'))
+
+st.sidebar.markdown(f"""
+* **Architettura:** Stacking Ensemble  
+  *(LightGBM + Random Forest + CatBoost)*
+* **Parametri Valutati:** `{metrics.get('n_features', 36)}` Feature Chimico-Fisiche
+* **Motori Descrittori:** RDKit (SMARTS) + HSAB Pearson
+""")
+
+st.sidebar.markdown("---")
+
+# 2. QUICK REFERENCE CHIMICA (LEGANTI, HSAB & SOLVENTI)
+st.sidebar.subheader("💡 Quick Reference Chimica")
+
+with st.sidebar.expander("🧪 Teoria HSAB di Pearson", expanded=False):
+    st.markdown("""
+    **Acidi Hard ($\text{Zr}^{4+}, \text{Fe}^{3+}, \text{Al}^{3+}, \text{Cr}^{3+}$):**
+    * Alta densità di carica.
+    * Prediligono **Basi Hard** (es. Carbossili $-\text{COOH}$).
+    
+    **Acidi Intermediate ($\text{Cu}^{2+}, \text{Zn}^{2+}, \text{Ni}^{2+}, \text{Co}^{2+}$):**
+    * Densità di carica media.
+    * Prediligono **Azoti Aromatici** (Imidazoli, Piridine) o miscele $-\text{COOH}/\text{N}$.
+    """)
+
+with st.sidebar.expander("💧 Parametri Solventi Comuni", expanded=False):
+    st.markdown("""
+    * **DMF:** $\epsilon = 36.7$ | $T_{eb} = 153^\circ\text{C}$ *(Polare Aprotico)*
+    * **DEF:** $\epsilon = 32.1$ | $T_{eb} = 177^\circ\text{C}$ *(Polare Aprotico)*
+    * **DMSO:** $\epsilon = 46.7$ | $T_{eb} = 189^\circ\text{C}$ *(Alto punto di ebollizione)*
+    * **$\text{H}_2\text{O}$:** $\epsilon = 80.1$ | $T_{eb} = 100^\circ\text{C}$ *(Molto Polare)*
+    """)
+
+# --- TAB INTERFACCIA MAIN ---
 tab1, tab2, tab3 = st.tabs(["🔮 Predizione Singola", "📂 Predizione Batch", "⚡ Ottimizzatore Automatico"])
 
 def build_feature_row(mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_p, ml_solv_p, cosolvente, ml_cosolv, additivo_sel, add_eq):
