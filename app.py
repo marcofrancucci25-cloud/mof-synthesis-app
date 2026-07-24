@@ -156,6 +156,87 @@ COMMON_MOF_LIGANDS = {
     "4,4'-bipy": "c1cnc(-c2ccncc2)cc1"
 }
 
+# --- DATABASE DI MOF NOTI E PUBBLICAZIONI ---
+KNOWN_MOFS_DATABASE = [
+    {
+        "name": "UiO-66",
+        "metal": "Zr",
+        "ligand_smiles": "O=C(O)c1ccc(C(=O)O)cc1", # BDC
+        "ligand_alias": ["bdc", "terephthalic acid", "acido tereftalico"],
+        "doi": "https://doi.org/10.1021/ja8057953",
+        "ref": "Cavka et al., J. Am. Chem. Soc. (2008)"
+    },
+    {
+        "name": "HKUST-1 (MOF-199)",
+        "metal": "Cu",
+        "ligand_smiles": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1", # BTC
+        "ligand_alias": ["btc", "trimesic acid", "acido trimesico"],
+        "doi": "https://doi.org/10.1126/science.283.5405.1148",
+        "ref": "Chui et al., Science (1999)"
+    },
+    {
+        "name": "ZIF-8",
+        "metal": "Zn",
+        "ligand_smiles": "Cc1c[nH]cn1", # 2-mIM
+        "ligand_alias": ["2-mim", "2-methylimidazole", "2-metilimidazolo"],
+        "doi": "https://doi.org/10.1073/pnas.0602439103",
+        "ref": "Park et al., PNAS (2006)"
+    },
+    {
+        "name": "MIL-101(Cr)",
+        "metal": "Cr",
+        "ligand_smiles": "O=C(O)c1ccc(C(=O)O)cc1", # BDC
+        "ligand_alias": ["bdc", "terephthalic acid", "acido tereftalico"],
+        "doi": "https://doi.org/10.1126/science.1116275",
+        "ref": "Férey et al., Science (2005)"
+    },
+    {
+        "name": "MOF-5",
+        "metal": "Zn",
+        "ligand_smiles": "O=C(O)c1ccc(C(=O)O)cc1", # BDC
+        "ligand_alias": ["bdc", "terephthalic acid", "acido tereftalico"],
+        "doi": "https://doi.org/10.1038/43341",
+        "ref": "Li et al., Nature (1999)"
+    },
+    {
+        "name": "MIL-53(Al)",
+        "metal": "Al",
+        "ligand_smiles": "O=C(O)c1ccc(C(=O)O)cc1", # BDC
+        "ligand_alias": ["bdc", "terephthalic acid", "acido tereftalico"],
+        "doi": "https://doi.org/10.1021/cm034360e",
+        "ref": "Loiseau et al., Chem. Mater. (2004)"
+    },
+    {
+        "name": "UiO-66-NH2",
+        "metal": "Zr",
+        "ligand_smiles": "O=C(O)c1ccc(C(=O)O)c(N)c1", # BDC-NH2
+        "ligand_alias": ["bdc-nh2", "2-aminoterephthalic acid"],
+        "doi": "https://doi.org/10.1021/ic101229f",
+        "ref": "Kandiah et al., Inorg. Chem. (2010)"
+    }
+]
+
+def check_known_mof(metal_symbol, mol_obj=None, ligand_query=""):
+    """Verifica se la combinazione Metallo + Legante è già nota e censita."""
+    matches = []
+    input_smiles = Chem.MolToSmiles(mol_obj) if mol_obj else None
+    query_clean = ligand_query.strip().lower()
+
+    for mof in KNOWN_MOFS_DATABASE:
+        if mof["metal"] == metal_symbol:
+            # Match via SMILES canonico (RDKit)
+            if input_smiles:
+                db_mol = Chem.MolFromSmiles(mof["ligand_smiles"])
+                if db_mol and Chem.MolToSmiles(db_mol) == input_smiles:
+                    matches.append(mof)
+                    continue
+            
+            # Match via testo / alias
+            if query_clean and any(alias in query_clean for alias in mof["ligand_alias"]):
+                matches.append(mof)
+
+    return matches
+
 # --- PROPRIETÀ ADDITIVI E MODULATORI ---
 ADDITIVES_DATABASE = {
     'Nessuno': {'type': 'None', 'MW': 0.0, 'pKa': 0.0},
@@ -332,7 +413,6 @@ def process_unified_dataset(df):
         add_type = str(row.get('Additivo_Tipo', 'None'))
         add_eq = clean_float_val(row.get('Additivo_Eq'), default_val=0.0)
         
-        # Uso di clean_float_val per prevenire crash su 'T.A.', 'RT', ecc.
         temp = clean_float_val(row.get('Temperatura_num'), default_val=120.0)
         tempo = clean_float_val(row.get('Tempo_ore_num'), default_val=48.0)
         
@@ -406,7 +486,6 @@ def load_or_train_model():
     pkl_file = "modello_sintesi_mof_ottimizzato.pkl"
     csv_file = "Dataset_Sintesi_Unificato.csv"
     
-    # 1. Prova a caricare da pkl se valido
     if os.path.exists(pkl_file):
         try:
             saved_data = joblib.load(pkl_file)
@@ -415,7 +494,6 @@ def load_or_train_model():
         except Exception:
             pass
 
-    # 2. Carica il dataset CSV
     if os.path.exists(csv_file):
         raw_df = pd.read_csv(csv_file)
     else:
@@ -433,11 +511,9 @@ def load_or_train_model():
     y = y_series[valid_mask].astype(int).copy().reset_index(drop=True)
     groups = [g for i, g in enumerate(groups) if valid_mask.iloc[i]]
     
-    # Sanitizzazione completa di X prima dell'addestramento
     X = X.apply(lambda col: col.apply(clean_float_val) if col.dtype == 'object' else col)
     X = X.apply(pd.to_numeric, errors='coerce').fillna(0.0)
     
-    # CONTROLLO SICUREZZA: Almeno 2 classi distinte
     if y.nunique() < 2:
         st.error(
             f"⚠️ **Errore Dataset:** La colonna del Target contiene un solo valore distinto ('{y.unique()}'). "
@@ -499,9 +575,8 @@ except Exception as e:
     st.sidebar.error(f"Errore caricamento modello: {e}")
     st.stop()
 
-# --- SIDEBAR: COMBINAZIONE STATO MODELLO & QUICK REFERENCE CHIMICA ---
+# --- SIDEBAR ---
 st.sidebar.markdown("---")
-
 st.sidebar.subheader("📊 Stato & Performance Modello")
 
 col_sb1, col_sb2 = st.sidebar.columns(2)
@@ -519,7 +594,6 @@ st.sidebar.markdown(f"""
 """)
 
 st.sidebar.markdown("---")
-
 st.sidebar.subheader("💡 Quick Reference Chimica")
 
 with st.sidebar.expander("🧪 Teoria HSAB di Pearson", expanded=False):
@@ -609,6 +683,7 @@ with tab1:
     st.subheader("Inserisci i parametri della reazione")
     col1, col2, col3 = st.columns(3)
     
+    query_input = ""
     with col1:
         st.markdown("### 1. Legante Chimico")
         mode_legante = st.radio(
@@ -754,6 +829,35 @@ with tab1:
         if not mol:
             st.error("Inserisci una molecola valida prima di continuare.")
         else:
+            # --- VERIFICA SE COMBINAZIONE È GIÀ NOTA ---
+            known_matches = check_known_mof(
+                metal_symbol=metallo_sel, 
+                mol_obj=mol, 
+                ligand_query=query_input if mode_legante == "Nome / Formula / CAS" else ""
+            )
+            
+            st.markdown("---")
+            if known_matches:
+                for mof in known_matches:
+                    st.info(
+                        f"🟢 **Combinazione già nota e pubblicata in letteratura!**\n\n"
+                        f"* **MOF Identificato:** `{mof['name']}`\n"
+                        f"* **Articolo di Riferimento:** {mof['ref']}\n"
+                        f"* 🔗 [Leggi la Pubblicazione Scientifico (DOI)]({mof['doi']})"
+                    )
+            else:
+                st.success("✨ **Combinazione Inedita / Non presente a DB:** Nessun MOF classico censito direttamente per questa specifica coppia.")
+                if TAVILY_API_KEY:
+                    with st.expander("🔎 Esegui ricerca bibliografica rapida su Tavily AI", expanded=False):
+                        query_search = f"{metallo_sel} MOF ligand synthesis structure doi paper"
+                        if st.button("Avvia Ricerca Web"):
+                            with st.spinner("Ricerca in corso..."):
+                                res = search_tavily_web(query_search, max_results=2)
+                                if res and "results" in res:
+                                    for r in res["results"]:
+                                        st.markdown(f"📄 **[{r.get('title')}]({r.get('url')})**")
+                                        st.write(r.get("content"))
+
             df_features = build_feature_row(
                 mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, 
                 mmol_legante, mmol_sale, metallo_sel, anione_sel, 
