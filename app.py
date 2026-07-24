@@ -15,7 +15,7 @@ except Exception:
     HAS_SHAP = False
 
 from rdkit import Chem
-from rdkit.Chem import Descriptors, rdMolDescriptors, Fragments
+from rdkit.Chem import Descriptors, rdMolDescriptors
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import RandomForestClassifier, StackingClassifier
 from sklearn.linear_model import LogisticRegression
@@ -141,6 +141,20 @@ SMARTS_PATTERNS = {
     'Sulfonate': Chem.MolFromSmarts('S(=O)(=O)[O-]'),
     'Phosphonate': Chem.MolFromSmarts('P(=O)([O-])[O-]')
 }
+
+def clean_float_val(val, default_val=0.0):
+    """ Converte in float gestendo stringhe speciali come T.A. (Temperatura Ambiente = 25) """
+    if pd.isna(val):
+        return float(default_val)
+    s_val = str(val).strip().upper()
+    if s_val in ['T.A.', 'TA', 'RT', 'ROOM TEMP', 'ROOM TEMPERATURA', 'AMBIENTE']:
+        return 25.0
+    # Rimozione caratteri non numerici salvo punto e segno
+    s_clean = re.sub(r'[^0-9\.-]', '', str(val))
+    try:
+        return float(s_clean)
+    except Exception:
+        return float(default_val)
 
 def extract_extended_rdkit_descriptors(mol):
     if not mol:
@@ -272,9 +286,14 @@ def process_unified_dataset(df):
         
         hsab_match = calculate_hsab_match(m_info['HSAB'], smarts_f.get('SMARTS_n_COOH', 0), smarts_f.get('SMARTS_n_Aromatic_N', 0))
         
-        m_leg = float(row.get('mmol legante', 0.1)) if pd.notnull(row.get('mmol legante')) else 0.1
-        m_sale = float(row.get('mmol sale', row.get('mmol metallo', 0.1))) if pd.notnull(row.get('mmol sale')) or pd.notnull(row.get('mmol metallo')) else 0.1
-        ratio = float(row.get('Rapporto L/M', m_leg / m_sale if m_sale > 0 else 1.0)) if pd.notnull(row.get('Rapporto L/M')) else (m_leg / m_sale if m_sale > 0 else 1.0)
+        m_leg = clean_float_val(row.get('mmol legante', 0.1), default_val=0.1)
+        m_sale = clean_float_val(row.get('mmol sale', row.get('mmol metallo', 0.1)), default_val=0.1)
+        
+        raw_ratio = row.get('Rapporto L/M', np.nan)
+        if pd.notnull(raw_ratio):
+            ratio = clean_float_val(raw_ratio, default_val=(m_leg / m_sale if m_sale > 0 else 1.0))
+        else:
+            ratio = m_leg / m_sale if m_sale > 0 else 1.0
         
         solv_p = str(row.get('Solvente', 'DMF')).split('/')[0].strip()
         cosolv = 'Nessuno'
@@ -283,7 +302,7 @@ def process_unified_dataset(df):
             if len(parts) > 1:
                 cosolv = parts[1].strip()
 
-        vol_tot = float(row.get('Volume solvente', 10.0)) if pd.notnull(row.get('Volume solvente')) else 10.0
+        vol_tot = clean_float_val(row.get('Volume solvente', 10.0), default_val=10.0)
         ml_solv_p = vol_tot * 0.8
         ml_cosolv = vol_tot * 0.2 if cosolv != 'Nessuno' else 0.0
         cosolv_pct = (ml_cosolv / vol_tot * 100) if vol_tot > 0 else 0.0
@@ -291,10 +310,11 @@ def process_unified_dataset(df):
         mix_props = calculate_solvent_mix_properties(solv_p, ml_solv_p, cosolv, ml_cosolv)
         
         add_type = str(row.get('Co-linker/Additivo', 'Nessuno'))
-        add_eq = float(row.get('Quantita additivo', 0.0)) if pd.notnull(row.get('Quantita additivo')) else 0.0
+        add_eq = clean_float_val(row.get('Quantita additivo', 0.0), default_val=0.0)
         
-        temp = float(row.get('Temperatura', 120)) if pd.notnull(row.get('Temperatura')) else 120.0
-        tempo = float(row.get('Tempo ore', 48)) if pd.notnull(row.get('Tempo ore')) else 48.0
+        # --- PULIZIA TEMPERATURA E TEMPO (Gestisce 'T.A.' -> 25.0) ---
+        temp = clean_float_val(row.get('Temperatura', 120.0), default_val=120.0)
+        tempo = clean_float_val(row.get('Tempo ore', 48.0), default_val=48.0)
         
         # --- PULIZIA REGEX TARGET ---
         raw_target = row.get(target_col, np.nan) if target_col else np.nan
@@ -393,6 +413,8 @@ def load_or_train_model():
     valid_mask = df['Target_Esito_Classe'].notna()
     X = df.drop(columns=['Target_Esito_Classe', 'SMILES_Group'])[valid_mask].copy().reset_index(drop=True)
     y = df['Target_Esito_Classe'][valid_mask].astype(int).copy().reset_index(drop=True)
+    
+    # Conversione forzata a numerico di sicurezza
     X = X.apply(pd.to_numeric, errors='coerce').fillna(0.0)
     
     if y.nunique() < 2:
