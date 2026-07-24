@@ -603,7 +603,10 @@ with st.sidebar.expander("💧 Parametri Solventi Comuni", expanded=False):
     * **DMF:** $\epsilon = 36.7$ | $T_{eb} = 153^\circ\text{C}$ *(Polare Aprotico)*
     * **DEF:** $\epsilon = 32.1$ | $T_{eb} = 177^\circ\text{C}$ *(Polare Aprotico)*
     * **DMSO:** $\epsilon = 46.7$ | $T_{eb} = 189^\circ\text{C}$ *(Alto punto di ebollizione)*
+    * **MeCN:** $\epsilon = 37.5$ | $T_{eb} = 82^\circ\text{C}$ *(Polare Aprotico)*
     * **$\text{H}_2\text{O}$:** $\epsilon = 80.1$ | $T_{eb} = 100^\circ\text{C}$ *(Molto Polare)*
+    * **MeOH:** $\epsilon = 32.7$ | $T_{eb} = 64.7^\circ\text{C}$ *(Polare Protico)*
+    * **EtOH:** $\epsilon = 24.5$ | $T_{eb} = 78.3^\circ\text{C}$ *(Polare Protico)*
     """)
 
 # --- TAB INTERFACCIA MAIN ---
@@ -785,7 +788,7 @@ with tab1:
         solvente_p = st.selectbox("Solvente Principale:", ['DMF', 'DEF', 'DMSO', 'MeCN', 'H2O', 'MeOH', 'EtOH'])
         ml_solv_p = st.number_input(f"mL di {solvente_p}:", min_value=0.1, max_value=200.0, value=10.0, step=0.5)
         
-        co_solvente = st.selectbox("Co-Solvente (Opzionale):", ['Nessuno', 'H2O', 'MeOH', 'EtOH', 'CH2Cl2', 'DEF'])
+        co_solvente = st.selectbox("Co-Solvente (Opzionale):", ['Nessuno', 'H2O', 'MeOH', 'EtOH', 'CH2Cl2', 'DEF', 'MeCN', 'DMSO'])
         
         ml_cosolv = 0.0
         if co_solvente != 'Nessuno':
@@ -969,9 +972,9 @@ with tab3:
             
             temperatures = [100.0, 120.0, 140.0, 160.0]
             times = [24.0, 48.0, 72.0]
-            solvents_p = ['DMF', 'DEF', 'DMSO']
+            solvents_p = ['DMF', 'DEF', 'DMSO', 'MeCN', 'EtOH', 'MeOH']
             volumes_p = [5.0, 10.0]
-            cosolvents = [('Nessuno', 0.0), ('H2O', 1.0), ('MeOH', 2.0)]
+            cosolvents = [('Nessuno', 0.0), ('H2O', 1.0), ('MeOH', 2.0), ('EtOH', 2.0)]
             additives = [('Nessuno', 0.0), ('Acido Acetico (AcOH)', 2.0), ('Trietilammina (TEA)', 1.0)]
             
             candidates = []
