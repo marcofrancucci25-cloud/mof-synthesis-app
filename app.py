@@ -907,10 +907,10 @@ with tab2:
 
 # --- TAB 3: OTTIMIZZATORE AUTOMATICO (VETTORIZZATO AD ALTA VELOCITÀ) ---
 with tab3:
-    st.subheader("⚡ Ottimizzatore di Condizioni Sperimentali con Modulatori e Volumi")
+    st.subheader("⚡ Ottimizzatore di Condizioni Sperimentali con Modulatori, Reagenti e Volumi")
     st.markdown("L'IA simulerà ed esaminerà **centinaia di combinazioni fisico-chimiche in parallelo** per individuare la ricetta ad altissimo rendimento.")
     
-    opt_col1, opt_col2, opt_col3 = st.columns([2, 2, 1])
+    opt_col1, opt_col2, opt_col3 = st.columns(3)
     
     with opt_col1:
         st.markdown("### 1. Legante Chimico")
@@ -960,14 +960,58 @@ with tab3:
                             st.error(f"Errore lettura CIF: {e}")
 
         if opt_mol:
-            st.success("Molecola acquisita correttamente per l'ottimizzazione!")
+            opt_mw_val = float(Descriptors.MolWt(opt_mol))
+            st.success(f"Molecola acquisita! MW: {opt_mw_val:.2f} g/mol")
+        else:
+            opt_mw_val = 166.13
+
+        opt_input_mode_leg = st.radio("Inserisci Legante per l'ottimizzazione come:", ["MilliMoli (mmol)", "Massa (mg)"], key="opt_rad_leg", horizontal=True)
+        if opt_input_mode_leg == "MilliMoli (mmol)":
+            opt_mmol_legante = st.number_input("mmol Legante:", min_value=0.001, max_value=50.0, value=0.10, step=0.01, key="opt_mmol_leg")
+            opt_mg_legante = opt_mmol_legante * opt_mw_val
+            st.caption(f"⚖️ Corrispondono a **{opt_mg_legante:.2f} mg**")
+        else:
+            opt_mg_legante = st.number_input("Massa Legante (mg):", min_value=0.1, max_value=5000.0, value=16.61, step=1.0, key="opt_mg_leg")
+            opt_mmol_legante = opt_mg_legante / opt_mw_val if opt_mw_val > 0 else 0.1
+            st.caption(f"⚖️ Corrispondono a **{opt_mmol_legante:.3f} mmol**")
 
     with opt_col2:
         st.markdown("### 2. Metallo e Precursore")
         metal_list_opt = sorted(list(metal_props.keys()))
         opt_metallo = st.selectbox("Metallo Desiderato:", metal_list_opt, index=metal_list_opt.index('Zr') if 'Zr' in metal_list_opt else 0, key="opt_met")
-        opt_anione = st.selectbox("Anione:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'], key="opt_an")
+        opt_anione = st.selectbox("Anione / Precursore:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'], key="opt_an")
         
+        opt_idratazione = st.selectbox(
+            "Stato di Idratazione (H₂O):",
+            [
+                "Anidro (0 H₂O)",
+                "Monoidrato (1 H₂O)",
+                "Diidrato (2 H₂O)",
+                "Triidrato (3 H₂O)",
+                "Tetraidrato (4 H₂O)",
+                "Pentaidrato (5 H₂O)",
+                "Esaidrato (6 H₂O)",
+                "Nonavidrato (9 H₂O)"
+            ],
+            index=0,
+            key="opt_hydr"
+        )
+        
+        opt_n_h2o = int(opt_idratazione.split('(')[1].split(' ')[0])
+        opt_base_salt_mw = metal_props[opt_metallo]['MW'] + anion_mw.get(opt_anione, 60.0)
+        opt_total_salt_mw = opt_base_salt_mw + (opt_n_h2o * 18.015)
+        st.caption(f"🧪 **Massa Molare Sale Idrato:** `{opt_total_salt_mw:.2f} g/mol`")
+
+        opt_input_mode_sale = st.radio("Inserisci Sale per l'ottimizzazione come:", ["MilliMoli (mmol)", "Massa (mg)"], key="opt_rad_sale", horizontal=True)
+        if opt_input_mode_sale == "MilliMoli (mmol)":
+            opt_mmol_sale = st.number_input("mmol Sale Metallico:", min_value=0.001, max_value=50.0, value=0.10, step=0.01, key="opt_mmol_sale")
+            opt_mg_sale = opt_mmol_sale * opt_total_salt_mw
+            st.caption(f"⚖️ Corrispondono a **{opt_mg_sale:.2f} mg**")
+        else:
+            opt_mg_sale = st.number_input("Massa Sale (mg):", min_value=0.1, max_value=5000.0, value=24.16, step=1.0, key="opt_mg_sale")
+            opt_mmol_sale = opt_mg_sale / opt_total_salt_mw if opt_total_salt_mw > 0 else 0.1
+            st.caption(f"⚖️ Corrispondono a **{opt_mmol_sale:.3f} mmol**")
+
     with opt_col3:
         st.markdown("### 3. Opzioni Scansione")
         opt_speed_mode = st.radio("Velocità Scansione:", ["Ultra-Veloce ⚡", "Completa 🔍"], index=0, key="opt_speed")
@@ -1013,6 +1057,9 @@ with tab3:
                 rows_list = []
                 display_info = []
 
+                # Calcolo del rapporto molare L/M
+                ratio_lm = float(opt_mmol_legante) / float(opt_mmol_sale) if float(opt_mmol_sale) > 0 else 1.0
+
                 # Costruzione veloce del DataFrame vettorizzato
                 for temp, tempo, solv_p, ml_solv_p, (cosolv, ml_cosolv), (add_name, add_eq) in grid_combos:
                     add_info = ADDITIVES_DATABASE.get(add_name, ADDITIVES_DATABASE['Nessuno'])
@@ -1028,7 +1075,7 @@ with tab3:
                         'SMARTS_n_COOH': smarts_f['n_COOH'], 'SMARTS_n_Aromatic_N': smarts_f['n_Aromatic_N'],
                         'SMARTS_fraction_sp2': smarts_f['fraction_sp2'], 'HSAB_Match_Index': hsab_match,
                         'Temperatura_num': temp, 'Tempo_ore_num': tempo,
-                        'mmol legante': 0.1, 'mmol sale': 0.1, 'Rapporto L/M': 1.0,
+                        'mmol legante': float(opt_mmol_legante), 'mmol sale': float(opt_mmol_sale), 'Rapporto L/M': float(ratio_lm),
                         'Metallo_Z': metal_m['Z'], 'Metallo_Electronegativity': metal_m['Electronegativity'],
                         'Metallo_Radius_pm': metal_m['Radius_pm'], 'Metallo_Group': metal_m['Group'], 'Metallo_Period': metal_m['Period'],
                         'Anion_Acetato': 1 if opt_anione == 'Acetato' else 0,
@@ -1046,7 +1093,14 @@ with tab3:
                         'Additive_Is_Neutral': 1 if add_type == 'Neutral' else 0,
                     })
                     
+                    add_mmol_calc = add_eq * opt_mmol_legante
+                    
                     display_info.append({
+                        'mmol Legante': round(opt_mmol_legante, 3),
+                        'mg Legante': round(opt_mg_legante, 2),
+                        'mmol Sale': round(opt_mmol_sale, 3),
+                        'mg Sale': round(opt_mg_sale, 2),
+                        'Rapporto L/M': round(ratio_lm, 2),
                         'Temperatura (°C)': temp,
                         'Tempo (h)': tempo,
                         'Solvente Principale': solv_p,
@@ -1054,7 +1108,8 @@ with tab3:
                         'Co-Solvente': cosolv,
                         'mL Co-Solvente': ml_cosolv,
                         'Additivo': add_name,
-                        'Eq. Additivo': add_eq
+                        'Eq. Additivo': add_eq,
+                        'mmol Additivo': round(add_mmol_calc, 3)
                     })
 
                 # Generazione matrice unica per scikit-learn
