@@ -112,30 +112,22 @@ def fetch_real_doi_from_crossref(query_term):
             if items:
                 paper = items[0]
                 doi = paper.get('DOI', '')
-                
-                # Estrazione e gestione fallback per titolo
-                title_list = paper.get('title', [])
+                title_list = paper.get('title', ['Non disponibile'])
                 title = title_list[0] if title_list else 'Non disponibile'
-                
-                # Estrazione e gestione fallback per rivista (journal)
-                container_list = paper.get('container-title', [])
+                container_list = paper.get('container-title', [''])
                 journal = container_list[0] if container_list else 'Rivista N.D.'
                 
-                # Estrazione pulita dell'anno di pubblicazione
-                pub_date_parts = paper.get('published-print', {}).get('date-parts', [])
-                if not pub_date_parts:
-                    pub_date_parts = paper.get('published-online', {}).get('date-parts', [])
-                
-                year_str = "N.D."
-                if pub_date_parts and len(pub_date_parts[0]) > 0:
-                    year_str = str(pub_date_parts[0][0])
+                pub_date = paper.get('published-print', {}).get('date-parts', [[None]])[0][0]
+                if not pub_date:
+                    pub_date = paper.get('published-online', {}).get('date-parts', [[None]])[0][0]
+                year_str = str(pub_date) if pub_date else "N.D."
                 
                 return {
                     'doi': doi,
                     'title': title,
                     'journal': journal,
                     'year': year_str,
-                    'url': f"https://doi.org/{doi}" if doi else ""
+                    'url': f"https://doi.org/{doi}"
                 }
     except Exception:
         pass
@@ -381,12 +373,10 @@ def calculate_solvent_mix_properties(solv_p, ml_p, cosolv, ml_cosolv):
 
 def process_unified_dataset(df):
     target_col = None
-    # 'Esito_ML' al primo posto per priorità assoluta
-    possible_targets = ['Esito_ML', 'Target_Esito_Classe', 'Target', 'Esito', 'Classe', 'target', 'esito']
-    
-    for pt in possible_targets:
-        if pt in df.columns:
-            target_col = pt
+    # Cerchiamo prima la colonna specifica Esito_ML o Target_Esito_Classe
+    for col in ['Esito_ML', 'Target_Esito_Classe', 'Target', 'Esito', 'Classe', 'target', 'esito']:
+        if col in df.columns:
+            target_col = col
             break
             
     if not target_col:
