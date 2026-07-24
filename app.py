@@ -373,11 +373,19 @@ def calculate_solvent_mix_properties(solv_p, ml_p, cosolv, ml_cosolv):
 
 def process_unified_dataset(df):
     target_col = None
-    possible_targets = ['Target_Esito_Classe', 'Target', 'Esito', 'Classe', 'target', 'esito']
-    for col in df.columns:
-        if col in possible_targets or 'Target' in col or 'Esito' in col:
-            target_col = col
+    # 'Esito_ML' al primo posto per priorità assoluta
+    possible_targets = ['Esito_ML', 'Target_Esito_Classe', 'Target', 'Esito', 'Classe', 'target', 'esito']
+    
+    for pt in possible_targets:
+        if pt in df.columns:
+            target_col = pt
             break
+            
+    if not target_col:
+        for col in df.columns:
+            if 'Esito' in col or 'Target' in col:
+                target_col = col
+                break
 
     processed = []
     for idx, row in df.iterrows():
