@@ -611,23 +611,61 @@ def render_metal_dropdown_selector(key_prefix="pred"):
     )
     return selected
 
-# --- SIDEBAR ---
+# --- SIDEBAR (VISUALIZZAZIONE METRICHE OTTIMIZZATA) ---
 st.sidebar.markdown("---")
 st.sidebar.subheader("📊 Stato & Performance Modello")
 
+acc_val = metrics.get('train_accuracy', 0.582) * 100
+sintesi_count = metrics.get('n_samples', 400)
+num_features = metrics.get('n_features', 37)
+
+# Layout HTML/CSS per evitare il troncamento delle cifre nella sidebar
 col_sb1, col_sb2 = st.sidebar.columns(2)
 with col_sb1:
-    acc_val = metrics.get('train_accuracy', 0.85) * 100
-    st.metric("Accuratezza", f"{acc_val:.1f}%")
+    st.markdown(
+        f"""
+        <div style="background-color: rgba(255, 255, 255, 0.05); padding: 8px 4px; border-radius: 8px; text-align: center;">
+            <span style="font-size: 0.8rem; color: #888;">Accuratezza</span><br>
+            <strong style="font-size: 1.15rem;">{acc_val:.1f}%</strong>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 with col_sb2:
-    st.metric("Sintesi DB", metrics.get('n_samples', 'N/A'))
+    st.markdown(
+        f"""
+        <div style="background-color: rgba(255, 255, 255, 0.05); padding: 8px 4px; border-radius: 8px; text-align: center;">
+            <span style="font-size: 0.8rem; color: #888;">Sintesi DB</span><br>
+            <strong style="font-size: 1.15rem;">{sintesi_count}</strong>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-st.sidebar.markdown(f"""
-* **Architettura:** Stacking Ensemble  
-  *(LightGBM + Random Forest + CatBoost)*
-* **Parametri Valutati:** `{metrics.get('n_features', 36)}` Feature Chimico-Fisiche
-* **Database Metalli:** `{len(metal_props)}` Elementi censiti
-""")
+st.sidebar.markdown("<br>", unsafe_allow_html=True)
+
+# Elenco descrittivo con badge numerici per Feature e Metalli
+st.sidebar.markdown(
+    f"""
+    <ul style="padding-left: 1.2rem; margin-top: 0;">
+        <li style="margin-bottom: 8px;">
+            <strong>Architettura:</strong> Stacking Ensemble<br>
+            <small style="color: #888;"><i>(LightGBM + Random Forest + CatBoost)</i></small>
+        </li>
+        <li style="margin-bottom: 8px;">
+            <strong>Parametri Valutati:</strong> 
+            <span style="background-color: rgba(255, 255, 255, 0.1); padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; color: #2e7d32;">{num_features}</span> 
+            Feature Chimico-Fisiche
+        </li>
+        <li style="margin-bottom: 8px;">
+            <strong>Database Metalli:</strong> 
+            <span style="background-color: rgba(255, 255, 255, 0.1); padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; color: #2e7d32;">{len(metal_props)}</span> 
+            Elementi censiti
+        </li>
+    </ul>
+    """,
+    unsafe_allow_html=True
+)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("💡 Quick Reference Chimica")
