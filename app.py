@@ -505,21 +505,21 @@ st.sidebar.subheader("💡 Quick Reference Chimica")
 
 with st.sidebar.expander("🧪 Teoria HSAB di Pearson", expanded=False):
     st.markdown("""
-    **Acidi Hard ($\text{Zr}^{4+}, \text{Fe}^{3+}, \text{Al}^{3+}, \text{Cr}^{3+}$):**
+    **Acidi Hard (Zr4+, Fe3+, Al3+, Cr3+):**
     * Alta densità di carica.
-    * Prediligono **Basi Hard** (es. Carbossili $-\text{COOH}$).
+    * Prediligono **Basi Hard** (es. Carbossili -COOH).
     
-    **Acidi Intermediate ($\text{Cu}^{2+}, \text{Zn}^{2+}, \text{Ni}^{2+}, \text{Co}^{2+}$):**
+    **Acidi Intermediate (Cu2+, Zn2+, Ni2+, Co2+):**
     * Densità di carica media.
-    * Prediligono **Azoti Aromatici** (Imidazoli, Piridine) o miscele $-\text{COOH}/\text{N}$.
+    * Prediligono **Azoti Aromatici** (Imidazoli, Piridine) o miscele -COOH/N.
     """)
 
 with st.sidebar.expander("💧 Parametri Solventi Comuni", expanded=False):
     st.markdown("""
-    * **DMF:** $\epsilon = 36.7$ | $T_{eb} = 153^\circ\text{C}$ *(Polare Aprotico)*
-    * **DEF:** $\epsilon = 32.1$ | $T_{eb} = 177^\circ\text{C}$ *(Polare Aprotico)*
-    * **DMSO:** $\epsilon = 46.7$ | $T_{eb} = 189^\circ\text{C}$ *(Alto punto di ebollizione)*
-    * **$\text{H}_2\text{O}$:** $\epsilon = 80.1$ | $T_{eb} = 100^\circ\text{C}$ *(Molto Polare)*
+    * **DMF:** Costante dielettrica = 36.7 | Teb = 153 °C *(Polare Aprotico)*
+    * **DEF:** Costante dielettrica = 32.1 | Teb = 177 °C *(Polare Aprotico)*
+    * **DMSO:** Costante dielettrica = 46.7 | Teb = 189 °C *(Alto punto di ebollizione)*
+    * **H2O:** Costante dielettrica = 80.1 | Teb = 100 °C *(Molto Polare)*
     """)
 
 # --- TAB INTERFACCIA MAIN ---
