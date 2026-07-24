@@ -20,20 +20,21 @@ try:
 except Exception:
     HAS_PYMATGEN = False
 
-# Import opzionale per Optuna (Tuning Iperparametri)
-try:
-    import optuna
-    optuna.logging.set_verbosity(optuna.logging.WARNING)
-    HAS_OPTUNA = True
-except Exception:
-    HAS_OPTUNA = False
-
+# Import opzionali per Modelli Ensemble & Stacking
 from lightgbm import LGBMClassifier
+from sklearn.ensemble import RandomForestClassifier, StackingClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import StratifiedGroupKFold
 from sklearn.metrics import accuracy_score
 from rdkit import Chem
 from rdkit.Chem import Descriptors
+
+try:
+    from catboost import CatBoostClassifier
+    HAS_CATBOOST = True
+except Exception:
+    HAS_CATBOOST = False
 
 st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="🧪", layout="wide")
 st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
@@ -261,44 +262,34 @@ def process_unified_dataset(df):
         })
     return pd.DataFrame(processed)
 
-# --- HYPERPARAMETER TUNING CON OPTUNA E STRATIFIED GROUP K-FOLD ---
-def optimize_lgbm_optuna_grouped(X, y, groups):
-    def objective(trial):
-        params = {
-            'n_estimators': trial.suggest_int('n_estimators', 50, 300),
-            'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.1, log=True),
-            'max_depth': trial.suggest_int('max_depth', 3, 10),
-            'num_leaves': trial.suggest_int('num_leaves', 15, 63),
-            'subsample': trial.suggest_float('subsample', 0.6, 1.0),
-            'colsample_bytree': trial.suggest_float('colsample_bytree', 0.6, 1.0),
-            'class_weight': 'balanced',
-            'random_state': 42,
-            'verbose': -1
-        }
-        
-        n_splits = min(3, len(np.unique(groups)))
-        sgkf = StratifiedGroupKFold(n_splits=n_splits)
-        
-        scores = []
-        for train_idx, val_idx in sgkf.split(X, y, groups=groups):
-            X_tr, X_va = X.iloc[train_idx], X.iloc[val_idx]
-            y_tr, y_va = y.iloc[train_idx], y.iloc[val_idx]
-            
-            clf = LGBMClassifier(**params)
-            clf.fit(X_tr, y_tr)
-            preds = clf.predict(X_va)
-            scores.append(accuracy_score(y_va, preds))
-            
-        return np.mean(scores)
-
-    study = optuna.create_study(direction='maximize')
-    study.optimize(objective, n_trials=15)
+# --- CREAZIONE MODELLO ENSEMBLE STACKING ---
+def create_stacking_ensemble():
+    estimators = [
+        ('lgb', LGBMClassifier(
+            n_estimators=180, learning_rate=0.03, max_depth=6, 
+            num_leaves=31, class_weight='balanced', random_state=42, verbose=-1
+        )),
+        ('rf', RandomForestClassifier(
+            n_estimators=150, max_depth=8, class_weight='balanced_subsample', 
+            random_state=42, n_jobs=-1
+        ))
+    ]
     
-    best_params = study.best_params
-    best_params['class_weight'] = 'balanced'
-    best_params['random_state'] = 42
-    best_params['verbose'] = -1
-    return LGBMClassifier(**best_params)
+    if HAS_CATBOOST:
+        estimators.append(('cat', CatBoostClassifier(
+            iterations=200, learning_rate=0.04, depth=6, 
+            verbose=0, random_seed=42
+        )))
+        
+    meta_model = LogisticRegression(class_weight='balanced', max_iter=500)
+    
+    stacking_clf = StackingClassifier(
+        estimators=estimators,
+        final_estimator=meta_model,
+        stack_method='predict_proba',
+        n_jobs=-1
+    )
+    return stacking_clf
 
 # --- CARICAMENTO O ADDESTRAMENTO MODELLO ---
 @st.cache_resource
@@ -322,7 +313,6 @@ def load_or_train_model():
         
     df = process_unified_dataset(raw_df)
     
-    # Separazione gruppi per prevenzione data-leakage sui leganti
     groups = df['SMILES_Group'].tolist()
     X = df.drop(columns=['Target_Esito_Classe', 'SMILES_Group'])
     y_series = pd.to_numeric(df['Target_Esito_Classe'], errors='coerce')
@@ -335,14 +325,8 @@ def load_or_train_model():
     
     feature_names = X.columns.tolist()
     
-    # Selezione tra Optuna Tuning o Modello Base
-    if HAS_OPTUNA and len(np.unique(groups)) >= 3:
-        base_model = optimize_lgbm_optuna_grouped(X, y, groups)
-    else:
-        base_model = LGBMClassifier(
-            n_estimators=180, learning_rate=0.04, max_depth=6, 
-            num_leaves=31, class_weight='balanced', random_state=42, verbose=-1
-        )
+    # Inizializzazione dello Stacking Ensemble Multi-Algoritmo
+    base_ensemble = create_stacking_ensemble()
     
     n_unique_groups = len(np.unique(groups))
     unique_classes = y.nunique()
@@ -351,20 +335,27 @@ def load_or_train_model():
         cv_splits = min(3, n_unique_groups)
         sgkf_calib = StratifiedGroupKFold(n_splits=cv_splits)
         final_model = CalibratedClassifierCV(
-            estimator=base_model, method='sigmoid',
+            estimator=base_ensemble, method='sigmoid',
             cv=sgkf_calib
         )
         try:
             final_model.fit(X, y, groups=groups)
-            importances = np.mean([est.estimator.feature_importances_ for est in final_model.calibrated_classifiers_], axis=0)
         except Exception:
-            base_model.fit(X, y)
-            final_model = base_model
-            importances = getattr(base_model, 'feature_importances_', np.zeros(len(feature_names)))
+            base_ensemble.fit(X, y)
+            final_model = base_ensemble
     else:
-        base_model.fit(X, y)
-        final_model = base_model
-        importances = getattr(base_model, 'feature_importances_', np.zeros(len(feature_names)))
+        base_ensemble.fit(X, y)
+        final_model = base_ensemble
+
+    # Estrazione feature importance media dal primo stimatore (LightGBM)
+    try:
+        if hasattr(final_model, 'calibrated_classifiers_'):
+            lgb_est = final_model.calibrated_classifiers_[0].estimator.named_estimators_['lgb']
+            importances = lgb_est.feature_importances_
+        else:
+            importances = final_model.named_estimators_['lgb'].feature_importances_
+    except Exception:
+        importances = np.zeros(len(feature_names))
 
     metrics = {
         'train_accuracy': accuracy_score(y, final_model.predict(X)),
@@ -384,7 +375,7 @@ def load_or_train_model():
 
 try:
     model, feature_names, metrics, importances = load_or_train_model()
-    st.sidebar.success("Modello ML Ottimizzato (GroupKFold + Optuna) Attivo!")
+    st.sidebar.success("Modello Ensemble Stacking (LGBM + RF + CatBoost) Attivo!")
 except Exception as e:
     st.sidebar.error(f"Errore caricamento modello: {e}")
     st.stop()
@@ -610,7 +601,7 @@ with tab1:
             pred_class = model.predict(df_features)[0]
 
             st.markdown("---")
-            st.subheader("📊 Risultato della Predizione")
+            st.subheader("📊 Risultato della Predizione (Ensemble Multi-Algoritmo)")
             res_col1, res_col2, res_col3 = st.columns(3)
             
             classes_map = {cls: idx for idx, cls in enumerate(model.classes_)}
@@ -633,35 +624,13 @@ with tab1:
             st.markdown("---")
             st.subheader("🧬 Spiegabilità Chimica della Predizione")
             
-            rendered = False
-            if HAS_SHAP:
-                try:
-                    explainer = shap.TreeExplainer(model)
-                    shap_values = explainer.shap_values(df_features)
-                    target_idx = classes_map.get(2, len(shap_values) - 1) if isinstance(shap_values, list) else 0
-                    
-                    fig, ax = plt.subplots(figsize=(8, 3.5))
-                    s_vals = shap_values[target_idx][0] if isinstance(shap_values, list) else shap_values[0]
-                    shap_series = pd.Series(s_vals, index=df_features.columns).sort_values(key=abs, ascending=True).tail(8)
-                    
-                    colors = ['#2ecc71' if v > 0 else '#e74c3c' for v in shap_series.values]
-                    ax.barh(shap_series.index, shap_series.values, color=colors)
-                    ax.axvline(x=0, color='black', linestyle='--', linewidth=0.8)
-                    ax.set_xlabel("Impatto SHAP sulla Probabilità di Successo")
-                    ax.set_title("Analisi SHAP (Verde = Positivo, Rosso = Negativo)")
-                    st.pyplot(fig)
-                    rendered = True
-                except Exception:
-                    rendered = False
-
-            if not rendered:
-                fig, ax = plt.subplots(figsize=(8, 3.5))
-                if len(importances) == len(feature_names):
-                    feats_contrib = (df_features.iloc[0] * importances).sort_values(ascending=True).tail(8)
-                    ax.barh(feats_contrib.index, feats_contrib.values, color='#3498db')
-                    ax.set_xlabel("Punto di Impatto Relativo dei Parametri")
-                    ax.set_title("Contributo dei Parametri Inseriti al Modello")
-                    st.pyplot(fig)
+            fig, ax = plt.subplots(figsize=(8, 3.5))
+            if len(importances) == len(feature_names):
+                feats_contrib = (df_features.iloc[0] * importances).sort_values(ascending=True).tail(8)
+                ax.barh(feats_contrib.index, feats_contrib.values, color='#3498db')
+                ax.set_xlabel("Punto di Impatto Relativo dei Parametri")
+                ax.set_title("Contributo dei Parametri Inseriti al Modello Stacking")
+                st.pyplot(fig)
 
 # --- TAB 2: PREDIZIONE BATCH ---
 with tab2:
