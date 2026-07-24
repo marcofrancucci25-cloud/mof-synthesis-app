@@ -112,22 +112,30 @@ def fetch_real_doi_from_crossref(query_term):
             if items:
                 paper = items[0]
                 doi = paper.get('DOI', '')
-                title_list = paper.get('title', ['Non disponibile'])
+                
+                # Estrazione e gestione fallback per titolo
+                title_list = paper.get('title', [])
                 title = title_list[0] if title_list else 'Non disponibile'
-                container_list = paper.get('container-title', [''])
+                
+                # Estrazione e gestione fallback per rivista (journal)
+                container_list = paper.get('container-title', [])
                 journal = container_list[0] if container_list else 'Rivista N.D.'
                 
-                pub_date = paper.get('published-print', {}).get('date-parts', [[None]])[0][0]
-                if not pub_date:
-                    pub_date = paper.get('published-online', {}).get('date-parts', [[None]])[0][0]
-                year_str = str(pub_date) if pub_date else "N.D."
+                # Estrazione pulita dell'anno di pubblicazione
+                pub_date_parts = paper.get('published-print', {}).get('date-parts', [])
+                if not pub_date_parts:
+                    pub_date_parts = paper.get('published-online', {}).get('date-parts', [])
+                
+                year_str = "N.D."
+                if pub_date_parts and len(pub_date_parts[0]) > 0:
+                    year_str = str(pub_date_parts[0][0])
                 
                 return {
                     'doi': doi,
                     'title': title,
                     'journal': journal,
                     'year': year_str,
-                    'url': f"https://doi.org/{doi}"
+                    'url': f"https://doi.org/{doi}" if doi else ""
                 }
     except Exception:
         pass
