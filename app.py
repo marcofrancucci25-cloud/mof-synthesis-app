@@ -156,14 +156,14 @@ COMMON_MOF_LIGANDS = {
     "4,4'-bipy": "c1cnc(-c2ccncc2)cc1"
 }
 
-# --- DATABASE DI MOF NOTI E PUBBLICAZIONI ---
+# --- DATABASE DI MOF NOTI E PUBBLICAZIONI (DOI PULITI SENZA PREFISSI) ---
 KNOWN_MOFS_DATABASE = [
     {
         "name": "UiO-66",
         "metal": "Zr",
         "ligand_smiles": "O=C(O)c1ccc(C(=O)O)cc1", # BDC
         "ligand_alias": ["bdc", "terephthalic acid", "acido tereftalico"],
-        "doi": "https://doi.org/10.1021/ja8057953",
+        "doi": "10.1021/ja8057953",
         "ref": "Cavka et al., J. Am. Chem. Soc. (2008)"
     },
     {
@@ -171,7 +171,7 @@ KNOWN_MOFS_DATABASE = [
         "metal": "Cu",
         "ligand_smiles": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1", # BTC
         "ligand_alias": ["btc", "trimesic acid", "acido trimesico"],
-        "doi": "https://doi.org/10.1126/science.283.5405.1148",
+        "doi": "10.1126/science.283.5405.1148",
         "ref": "Chui et al., Science (1999)"
     },
     {
@@ -179,7 +179,7 @@ KNOWN_MOFS_DATABASE = [
         "metal": "Zn",
         "ligand_smiles": "Cc1c[nH]cn1", # 2-mIM
         "ligand_alias": ["2-mim", "2-methylimidazole", "2-metilimidazolo"],
-        "doi": "https://doi.org/10.1073/pnas.0602439103",
+        "doi": "10.1073/pnas.0602439103",
         "ref": "Park et al., PNAS (2006)"
     },
     {
@@ -187,7 +187,7 @@ KNOWN_MOFS_DATABASE = [
         "metal": "Cr",
         "ligand_smiles": "O=C(O)c1ccc(C(=O)O)cc1", # BDC
         "ligand_alias": ["bdc", "terephthalic acid", "acido tereftalico"],
-        "doi": "https://doi.org/10.1126/science.1116275",
+        "doi": "10.1126/science.1116275",
         "ref": "Férey et al., Science (2005)"
     },
     {
@@ -195,7 +195,7 @@ KNOWN_MOFS_DATABASE = [
         "metal": "Zn",
         "ligand_smiles": "O=C(O)c1ccc(C(=O)O)cc1", # BDC
         "ligand_alias": ["bdc", "terephthalic acid", "acido tereftalico"],
-        "doi": "https://doi.org/10.1038/43341",
+        "doi": "10.1038/43341",
         "ref": "Li et al., Nature (1999)"
     },
     {
@@ -203,7 +203,7 @@ KNOWN_MOFS_DATABASE = [
         "metal": "Al",
         "ligand_smiles": "O=C(O)c1ccc(C(=O)O)cc1", # BDC
         "ligand_alias": ["bdc", "terephthalic acid", "acido tereftalico"],
-        "doi": "https://doi.org/10.1021/cm034360e",
+        "doi": "10.1021/cm034360e",
         "ref": "Loiseau et al., Chem. Mater. (2004)"
     },
     {
@@ -211,7 +211,7 @@ KNOWN_MOFS_DATABASE = [
         "metal": "Zr",
         "ligand_smiles": "O=C(O)c1ccc(C(=O)O)c(N)c1", # BDC-NH2
         "ligand_alias": ["bdc-nh2", "2-aminoterephthalic acid"],
-        "doi": "https://doi.org/10.1021/ic101229f",
+        "doi": "10.1021/ic101229f",
         "ref": "Kandiah et al., Inorg. Chem. (2010)"
     }
 ]
@@ -694,7 +694,7 @@ with tab1:
         
         mol = None
         if mode_legante == "SMILES":
-            smiles_input = st.text_input("SMILES del Legante:", value="c1cc(C(=O)O)cc(C(=O)O)c1")
+            smiles_input = st.text_input("SMILES del Legante:", value="O=C(O)c1ccc(C(=O)O)cc1")
             if smiles_input:
                 mol = Chem.MolFromSmiles(smiles_input)
                 
@@ -754,7 +754,7 @@ with tab1:
     with col2:
         st.markdown("### 2. Sale Metallico & Idratazione")
         metal_list = sorted(list(metal_props.keys()))
-        metallo_sel = st.selectbox("Metallo:", metal_list, index=metal_list.index('Cu') if 'Cu' in metal_list else 0)
+        metallo_sel = st.selectbox("Metallo:", metal_list, index=metal_list.index('Zr') if 'Zr' in metal_list else 0)
         anione_sel = st.selectbox("Anione / Precursore:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'])
         
         idratazione = st.selectbox(
@@ -769,7 +769,7 @@ with tab1:
                 "Esaidrato (6 H₂O)",
                 "Nonavidrato (9 H₂O)"
             ],
-            index=3
+            index=0
         )
         
         n_h2o = int(idratazione.split('(')[1].split(' ')[0])
@@ -839,11 +839,14 @@ with tab1:
             st.markdown("---")
             if known_matches:
                 for mof in known_matches:
+                    clean_doi = mof['doi'].replace("https://doi.org/", "")
+                    doi_url = f"https://doi.org/{clean_doi}"
+
                     st.info(
                         f"🟢 **Combinazione già nota e pubblicata in letteratura!**\n\n"
                         f"* **MOF Identificato:** `{mof['name']}`\n"
-                        f"* **Articolo di Riferimento:** {mof['ref']}\n"
-                        f"* 🔗 [Leggi la Pubblicazione Scientifico (DOI)]({mof['doi']})"
+                        f"* **Riferimento:** {mof['ref']}\n"
+                        f"* **DOI:** `{clean_doi}` *(🔗 [Apri su doi.org]({doi_url}))*"
                     )
             else:
                 st.success("✨ **Combinazione Inedita / Non presente a DB:** Nessun MOF classico censito direttamente per questa specifica coppia.")
@@ -955,11 +958,11 @@ with tab3:
     
     opt_col1, opt_col2 = st.columns(2)
     with opt_col1:
-        opt_smiles = st.text_input("SMILES Legante:", value="c1cc(C(=O)O)cc(C(=O)O)c1", key="opt_smiles")
+        opt_smiles = st.text_input("SMILES Legante:", value="O=C(O)c1ccc(C(=O)O)cc1", key="opt_smiles")
         opt_mol = Chem.MolFromSmiles(opt_smiles)
     with opt_col2:
         metal_list_opt = sorted(list(metal_props.keys()))
-        opt_metallo = st.selectbox("Metallo Desiderato:", metal_list_opt, index=metal_list_opt.index('Cu') if 'Cu' in metal_list_opt else 0, key="opt_met")
+        opt_metallo = st.selectbox("Metallo Desiderato:", metal_list_opt, index=metal_list_opt.index('Zr') if 'Zr' in metal_list_opt else 0, key="opt_met")
         opt_anione = st.selectbox("Anione:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'], key="opt_an")
 
     if st.button("🔍 Trova Ricetta Ottimale"):
