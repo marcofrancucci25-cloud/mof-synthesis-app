@@ -5,6 +5,7 @@ import joblib
 import os
 import re
 import requests
+import itertools
 import matplotlib.pyplot as plt
 
 # Import opzionale per SHAP (spiegabilità AI)
@@ -99,10 +100,6 @@ def search_tavily_for_ligand_smiles(query):
 
 # --- INTEGRAZIONE CROSSREF PER VERIFICA DOI REALI ---
 def fetch_real_doi_from_crossref(query_term):
-    """
-    Interroga l'API ufficiale di Crossref per recuperare il DOI reale, 
-    titolo dell'articolo, rivista ed anno di pubblicazione.
-    """
     url = f"https://api.crossref.org/works?query={requests.utils.quote(query_term)}&rows=1"
     headers = {'User-Agent': 'MOFSynthesisPredictor/1.0 (mailto:admin@example.com)'}
     
@@ -136,10 +133,6 @@ def fetch_real_doi_from_crossref(query_term):
     return None
 
 def check_known_mof(metal_symbol, mol_obj=None, ligand_query=""):
-    """
-    Verifica se la combinazione Metallo + Legante è nota e recupera
-    il DOI verificato tramite l'API di Crossref.
-    """
     known_mappings = {
         ("Zr", "O=C(O)c1ccc(C(=O)O)cc1"): "UiO-66 synthesis terephthalic acid",
         ("Cu", "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1"): "HKUST-1 MOF synthesis trimesic acid",
@@ -508,7 +501,7 @@ def load_or_train_model():
     if y.nunique() < 2:
         st.error(
             f"⚠️ **Errore Dataset:** La colonna del Target contiene un solo valore distinto ('{y.unique()}'). "
-            "Il modello richiede almeno 2 classi distinte (es. 0 per insuccesso e 1 o 2 per successo) nel file CSV."
+            "Il modello richiede almeno 2 classi distinte nel file CSV."
         )
         st.stop()
 
@@ -596,17 +589,6 @@ with st.sidebar.expander("🧪 Teoria HSAB di Pearson", expanded=False):
     **Acidi Intermediate ($\text{Cu}^{2+}, \text{Zn}^{2+}, \text{Ni}^{2+}, \text{Co}^{2+}$):**
     * Densità di carica media.
     * Prediligono **Azoti Aromatici** (Imidazoli, Piridine) o miscele $-\text{COOH}/\text{N}$.
-    """)
-
-with st.sidebar.expander("💧 Parametri Solventi Comuni", expanded=False):
-    st.markdown("""
-    * **DMF:** $\epsilon = 36.7$ | $T_{eb} = 153^\circ\text{C}$ *(Polare Aprotico)*
-    * **DEF:** $\epsilon = 32.1$ | $T_{eb} = 177^\circ\text{C}$ *(Polare Aprotico)*
-    * **DMSO:** $\epsilon = 46.7$ | $T_{eb} = 189^\circ\text{C}$ *(Alto punto di ebollizione)*
-    * **MeCN:** $\epsilon = 37.5$ | $T_{eb} = 82^\circ\text{C}$ *(Polare Aprotico)*
-    * **$\text{H}_2\text{O}$:** $\epsilon = 80.1$ | $T_{eb} = 100^\circ\text{C}$ *(Molto Polare)*
-    * **MeOH:** $\epsilon = 32.7$ | $T_{eb} = 64.7^\circ\text{C}$ *(Polare Protico)*
-    * **EtOH:** $\epsilon = 24.5$ | $T_{eb} = 78.3^\circ\text{C}$ *(Polare Protico)*
     """)
 
 # --- TAB INTERFACCIA MAIN ---
@@ -823,7 +805,6 @@ with tab1:
         if not mol:
             st.error("Inserisci una molecola valida prima di continuare.")
         else:
-            # --- VERIFICA SE COMBINAZIONE È GIÀ NOTA TRAMITE CROSSREF ---
             known_matches = check_known_mof(
                 metal_symbol=metallo_sel, 
                 mol_obj=mol, 
@@ -844,16 +825,6 @@ with tab1:
                     )
             else:
                 st.success("✨ **Combinazione Inedita / Non presente a DB:** Nessun MOF classico censito direttamente per questa specifica coppia.")
-                if TAVILY_API_KEY:
-                    with st.expander("🔎 Esegui ricerca bibliografica rapida su Tavily AI", expanded=False):
-                        query_search = f"{metallo_sel} MOF ligand synthesis structure doi paper"
-                        if st.button("Avvia Ricerca Web"):
-                            with st.spinner("Ricerca in corso..."):
-                                res = search_tavily_web(query_search, max_results=2)
-                                if res and "results" in res:
-                                    for r in res["results"]:
-                                        st.markdown(f"📄 **[{r.get('title')}]({r.get('url')})**")
-                                        st.write(r.get("content"))
 
             df_features = build_feature_row(
                 mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, 
@@ -883,17 +854,6 @@ with tab1:
                 st.warning("⚠️ **Risultato Parziale Atteso.** Possibile prodotto amorfo o miscela.")
             else:
                 st.error("❌ **Insuccesso Probabile.** Si consiglia di rivedere le condizioni di reazione.")
-
-            st.markdown("---")
-            st.subheader("🧬 Spiegabilità Chimica della Predizione")
-            
-            fig, ax = plt.subplots(figsize=(8, 3.5))
-            if len(importances) == len(feature_names):
-                feats_contrib = (df_features.iloc[0] * importances).sort_values(ascending=True).tail(8)
-                ax.barh(feats_contrib.index, feats_contrib.values, color='#3498db')
-                ax.set_xlabel("Punto di Impatto Relativo dei Parametri")
-                ax.set_title("Contributo dei Parametri Inseriti al Modello Stacking")
-                st.pyplot(fig)
 
 # --- TAB 2: PREDIZIONE BATCH ---
 with tab2:
@@ -945,12 +905,12 @@ with tab2:
         except Exception as e:
             st.error(f"Errore durante l'elaborazione del file: {e}")
 
-# --- TAB 3: OTTIMIZZATORE AUTOMATICO ---
+# --- TAB 3: OTTIMIZZATORE AUTOMATICO (VETTORIZZATO AD ALTA VELOCITÀ) ---
 with tab3:
     st.subheader("⚡ Ottimizzatore di Condizioni Sperimentali con Modulatori e Volumi")
-    st.markdown("L'IA cercherà la **combinazione ottimale di temperatura, volumi di solventi (mL) e modulatori** per massimizzare la cristalizzazione del MOF.")
+    st.markdown("L'IA simulerà ed esaminerà **centinaia di combinazioni fisico-chimiche in parallelo** per individuare la ricetta ad altissimo rendimento.")
     
-    opt_col1, opt_col2 = st.columns(2)
+    opt_col1, opt_col2, opt_col3 = st.columns([2, 2, 1])
     with opt_col1:
         opt_smiles = st.text_input("SMILES Legante:", value="O=C(O)c1ccc(C(=O)O)cc1", key="opt_smiles")
         opt_mol = Chem.MolFromSmiles(opt_smiles)
@@ -958,68 +918,122 @@ with tab3:
         metal_list_opt = sorted(list(metal_props.keys()))
         opt_metallo = st.selectbox("Metallo Desiderato:", metal_list_opt, index=metal_list_opt.index('Zr') if 'Zr' in metal_list_opt else 0, key="opt_met")
         opt_anione = st.selectbox("Anione:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'], key="opt_an")
+    with opt_col3:
+        opt_speed_mode = st.radio("Velocità Scansione:", ["Ultra-Veloce ⚡", "Completa 🔍"], index=0)
 
-    if st.button("🔍 Trova Ricetta Ottimale"):
+    if st.button("🚀 Avvia Scansione e Ottimizzazione Veloce", type="primary"):
         if not opt_mol:
             st.error("SMILES non valido.")
         else:
-            opt_mw = Descriptors.MolWt(opt_mol)
-            opt_logp = Descriptors.MolLogP(opt_mol)
-            opt_hbd = Descriptors.NumHDonors(opt_mol)
-            opt_hba = Descriptors.NumHAcceptors(opt_mol)
-            opt_tpsa = Descriptors.TPSA(opt_mol)
-            opt_rot = Descriptors.NumRotatableBonds(opt_mol)
+            # Calcolo proprietà invarianti del legante una sola volta
+            opt_mw = float(Descriptors.MolWt(opt_mol))
+            opt_logp = float(Descriptors.MolLogP(opt_mol))
+            opt_hbd = float(Descriptors.NumHDonors(opt_mol))
+            opt_hba = float(Descriptors.NumHAcceptors(opt_mol))
+            opt_tpsa = float(Descriptors.TPSA(opt_mol))
+            opt_rot = float(Descriptors.NumRotatableBonds(opt_mol))
             
-            temperatures = [100.0, 120.0, 140.0, 160.0]
-            times = [24.0, 48.0, 72.0]
-            solvents_p = ['DMF', 'DEF', 'DMSO', 'MeCN', 'EtOH', 'MeOH']
-            volumes_p = [5.0, 10.0]
-            cosolvents = [('Nessuno', 0.0), ('H2O', 1.0), ('MeOH', 2.0), ('EtOH', 2.0)]
-            additives = [('Nessuno', 0.0), ('Acido Acetico (AcOH)', 2.0), ('Trietilammina (TEA)', 1.0)]
-            
-            candidates = []
-            classes_list = [int(c) if str(c).isdigit() else c for c in model.classes_]
-            
-            if 2 in classes_list:
-                target_class_idx = classes_list.index(2)
-            elif 1 in classes_list:
-                target_class_idx = classes_list.index(1)
-            else:
-                target_class_idx = len(classes_list) - 1
+            smarts_f = extract_smarts_features(opt_mol)
+            metal_m = metal_props[opt_metallo]
+            hsab_match = float(calculate_hsab_match(metal_m['HSAB'], smarts_f['n_COOH'], smarts_f['n_Aromatic_N']))
 
-            with st.spinner("Simulazione dello spazio di reazione in corso..."):
-                for t in temperatures:
-                    for tm in times:
-                        for sp in solvents_p:
-                            for ml_sp in volumes_p:
-                                for cs, ml_cs in cosolvents:
-                                    for add_name, add_eq in additives:
-                                        feat = build_feature_row(
-                                            opt_mol, opt_mw, opt_logp, opt_hbd, opt_hba, opt_tpsa, opt_rot, 
-                                            t, tm, 0.1, 0.1, opt_metallo, opt_anione, 
-                                            sp, ml_sp, cs, ml_cs, add_name, add_eq
-                                        )
-                                        
-                                        prob_array = model.predict_proba(feat)[0]
-                                        p_success = prob_array[target_class_idx] * 100.0
-                                        
-                                        candidates.append({
-                                            'Temperatura (°C)': t,
-                                            'Tempo (h)': tm,
-                                            'Solvente Principal': sp,
-                                            'mL Solvente P.': ml_sp,
-                                            'Co-Solvente': cs,
-                                            'mL Co-Solvente': ml_cs,
-                                            'Additivo': add_name,
-                                            'Eq. Additivo': add_eq,
-                                            'Probabilità Successo (%)': round(p_success, 1)
-                                        })
-            
-            df_cand = pd.DataFrame(candidates).sort_values(by='Probabilità Successo (%)', ascending=False)
-            
-            st.success("✨ Scansione completata!")
+            # Definizione della griglia di ricerca in base alla velocità scelta
+            if "Ultra-Veloce" in opt_speed_mode:
+                temperatures = [100.0, 120.0, 140.0]
+                times = [24.0, 48.0]
+                solvents_p = ['DMF', 'DEF', 'DMSO', 'MeCN', 'MeOH']
+                volumes_p = [10.0]
+                cosolvents = [('Nessuno', 0.0), ('H2O', 1.0), ('MeOH', 2.0)]
+                additives = [('Nessuno', 0.0), ('Acido Acetico (AcOH)', 2.0), ('Trietilammina (TEA)', 1.0)]
+            else:
+                temperatures = [80.0, 100.0, 120.0, 140.0, 160.0]
+                times = [12.0, 24.0, 48.0, 72.0]
+                solvents_p = ['DMF', 'DEF', 'DMSO', 'MeCN', 'H2O', 'MeOH', 'EtOH']
+                volumes_p = [5.0, 10.0, 15.0]
+                cosolvents = [('Nessuno', 0.0), ('H2O', 1.0), ('MeOH', 2.0), ('EtOH', 2.0)]
+                additives = [('Nessuno', 0.0), ('Acido Acetico (AcOH)', 2.0), ('Acido Formico (HCOOH)', 2.0), ('Trietilammina (TEA)', 1.0)]
+
+            with st.spinner("⚡ Simulazione vettorizzata di centinaia di condizioni in corso..."):
+                # Generazione combinazioni cartesiane veloci con itertools
+                grid_combos = list(itertools.product(
+                    temperatures, times, solvents_p, volumes_p, cosolvents, additives
+                ))
+                
+                rows_list = []
+                display_info = []
+
+                # Costruzione veloce del DataFrame vettorizzato
+                for temp, tempo, solv_p, ml_solv_p, (cosolv, ml_cosolv), (add_name, add_eq) in grid_combos:
+                    add_info = ADDITIVES_DATABASE.get(add_name, ADDITIVES_DATABASE['Nessuno'])
+                    add_type = add_info['type']
+                    
+                    total_vol = ml_solv_p + ml_cosolv
+                    cosolv_pct = (ml_cosolv / total_vol * 100.0) if total_vol > 0 else 0.0
+                    mix_props = calculate_solvent_mix_properties(solv_p, ml_solv_p, cosolv, ml_cosolv)
+                    
+                    rows_list.append({
+                        'MW_Legante': opt_mw, 'LogP_Legante': opt_logp, 'HBD_Legante': opt_hbd, 'HBA_Legante': opt_hba,
+                        'TPSA_Legante': opt_tpsa, 'RotatableBonds_Legante': opt_rot,
+                        'SMARTS_n_COOH': smarts_f['n_COOH'], 'SMARTS_n_Aromatic_N': smarts_f['n_Aromatic_N'],
+                        'SMARTS_fraction_sp2': smarts_f['fraction_sp2'], 'HSAB_Match_Index': hsab_match,
+                        'Temperatura_num': temp, 'Tempo_ore_num': tempo,
+                        'mmol legante': 0.1, 'mmol sale': 0.1, 'Rapporto L/M': 1.0,
+                        'Metallo_Z': metal_m['Z'], 'Metallo_Electronegativity': metal_m['Electronegativity'],
+                        'Metallo_Radius_pm': metal_m['Radius_pm'], 'Metallo_Group': metal_m['Group'], 'Metallo_Period': metal_m['Period'],
+                        'Anion_Acetato': 1 if opt_anione == 'Acetato' else 0,
+                        'Anion_Cloruro': 1 if opt_anione == 'Cloruro' else 0,
+                        'Anion_Nitrato': 1 if opt_anione == 'Nitrato' else 0,
+                        'Anion_Altro': 1 if opt_anione == 'Altro' else 0,
+                        'mL_Solvente_P': ml_solv_p, 'mL_CoSolvente': ml_cosolv, 'Total_Volume_mL': total_vol,
+                        'CoSolvent_Pct': cosolv_pct,
+                        'Solvent_Mix_Alpha': mix_props['mix_alpha'], 'Solvent_Mix_Beta': mix_props['mix_beta'],
+                        'Solvent_Mix_PiStar': mix_props['mix_pi_star'], 'Solvent_Mix_Dielectric': mix_props['mix_dielectric'],
+                        'Solvent_Mix_BoilingPt': mix_props['mix_boiling_pt'],
+                        'Additive_Eq': add_eq,
+                        'Additive_Is_Acid': 1 if add_type == 'Acid' else 0,
+                        'Additive_Is_Base': 1 if add_type == 'Base' else 0,
+                        'Additive_Is_Neutral': 1 if add_type == 'Neutral' else 0,
+                    })
+                    
+                    display_info.append({
+                        'Temperatura (°C)': temp,
+                        'Tempo (h)': tempo,
+                        'Solvente Principale': solv_p,
+                        'mL Solvente P.': ml_solv_p,
+                        'Co-Solvente': cosolv,
+                        'mL Co-Solvente': ml_cosolv,
+                        'Additivo': add_name,
+                        'Eq. Additivo': add_eq
+                    })
+
+                # Generazione matrice unica per scikit-learn
+                df_simulation = pd.DataFrame(rows_list)
+                for col in feature_names:
+                    if col not in df_simulation.columns:
+                        df_simulation[col] = 0.0
+                df_simulation = df_simulation[feature_names]
+
+                # Predizione Vettorizzata ISTANTANEA di tutte le combinazioni in una sola chiamata
+                probs_matrix = model.predict_proba(df_simulation)
+                
+                classes_list = [int(c) if str(c).isdigit() else c for c in model.classes_]
+                if 2 in classes_list:
+                    target_class_idx = classes_list.index(2)
+                elif 1 in classes_list:
+                    target_class_idx = classes_list.index(1)
+                else:
+                    target_class_idx = len(classes_list) - 1
+
+                success_probs = (probs_matrix[:, target_class_idx] * 100.0).round(1)
+
+                # Unione dei risultati
+                df_results = pd.DataFrame(display_info)
+                df_results['Probabilità Successo (%)'] = success_probs
+                df_results = df_results.sort_values(by='Probabilità Successo (%)', ascending=False).reset_index(drop=True)
+
+            st.success(f"⚡ **{len(df_results)} combinazioni simulate in un istante!**")
             st.markdown("### 🏆 Migliori Condizioni Sperimentali Trovate")
-            st.dataframe(df_cand.head(10))
+            st.dataframe(df_results.head(10))
 
 # --- TAB 4: RICERCA WEB TAVILY AI ---
 with tab4:
