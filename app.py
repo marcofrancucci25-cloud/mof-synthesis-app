@@ -40,6 +40,50 @@ st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="
 st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
 st.markdown("Strumento avanzato di Machine Learning per la predizione, ottimizzazione e **spiegabilità chimica** della sintesi di MOF.")
 
+# --- CONFIGURAZIONE TAVILY AI ---
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
+
+# Sidebar setup per Tavily API Key
+with st.sidebar.expander("🌐 Configurazione Agent Web (Tavily)", expanded=False):
+    tavily_input_key = st.text_input("Tavily API Key:", value=TAVILY_API_KEY, type="password")
+    if tavily_input_key:
+        TAVILY_API_KEY = tavily_input_key
+
+def search_tavily_web(query, max_results=3):
+    """Esegue una ricerca web tramite l'API REST di Tavily."""
+    if not TAVILY_API_KEY:
+        return None
+    try:
+        url = "https://api.tavily.com/search"
+        payload = {
+            "api_key": TAVILY_API_KEY,
+            "query": query,
+            "search_depth": "advanced",
+            "include_answer": True,
+            "max_results": max_results
+        }
+        response = requests.post(url, json=payload, timeout=5)
+        if response.status_code == 200:
+            return response.json()
+    except Exception as e:
+        st.warning(f"Errore ricerca Tavily: {e}")
+    return None
+
+def search_tavily_for_ligand_smiles(query):
+    """Usa l'agente Tavily per cercare lo SMILES di un legante insolito o complesso."""
+    search_prompt = f"chemical SMILES string for {query} MOF ligand"
+    res = search_tavily_web(search_prompt)
+    if res and "results" in res:
+        for item in res["results"]:
+            content = item.get("content", "")
+            # Semplice euristica per estrarre uno SMILES valido dalla risposta
+            words = content.replace(";", " ").replace("\n", " ").split(" ")
+            for w in words:
+                w_clean = w.strip(".,()[]{}")
+                if len(w_clean) > 3 and Chem.MolFromSmiles(w_clean):
+                    return w_clean
+    return None
+
 # --- DATABASE SOLVENTI CON PARAMETRI FISICO-CHIMICI ---
 SOLVENT_PROPERTIES = {
     'DMF':  {'alpha': 0.00, 'beta': 0.69, 'pi_star': 0.88, 'dielectric': 36.7, 'boiling_pt': 153.0},
@@ -176,10 +220,13 @@ def resolve_molecule_to_smiles(query):
     if not clean_query:
         return None
     
+    # 1. Dizionario locale
     if clean_query in COMMON_MOF_LIGANDS:
         return COMMON_MOF_LIGANDS[clean_query]
 
     headers = {'User-Agent': 'MOF_Predictor_App/1.0'}
+    
+    # 2. CACTUS NIH API
     try:
         url_nih = f"https://cactus.nci.nih.gov/chemical/structure/{requests.utils.quote(query)}/smiles"
         res = requests.get(url_nih, headers=headers, timeout=3)
@@ -190,6 +237,7 @@ def resolve_molecule_to_smiles(query):
     except Exception:
         pass
 
+    # 3. PubChem API
     try:
         url_name = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{requests.utils.quote(query)}/property/IsomericSMILES/JSON"
         res = requests.get(url_name, headers=headers, timeout=3)
@@ -197,6 +245,12 @@ def resolve_molecule_to_smiles(query):
             return res.json()['PropertyTable']['Properties'][0]['IsomericSMILES']
     except Exception:
         pass
+
+    # 4. Fallback con Tavily AI Web Agent
+    if TAVILY_API_KEY:
+        tavily_smiles = search_tavily_for_ligand_smiles(query)
+        if tavily_smiles:
+            return tavily_smiles
 
     return None
 
@@ -463,7 +517,7 @@ with st.sidebar.expander("💧 Parametri Solventi Comuni", expanded=False):
     """)
 
 # --- TAB INTERFACCIA MAIN ---
-tab1, tab2, tab3 = st.tabs(["🔮 Predizione Singola", "📂 Predizione Batch", "⚡ Ottimizzatore Automatico"])
+tab1, tab2, tab3, tab4 = st.tabs(["🔮 Predizione Singola", "📂 Predizione Batch", "⚡ Ottimizzatore Automatico", "🌐 Ricerca Web (Tavily AI)"])
 
 def build_feature_row(mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_p, ml_solv_p, cosolvente, ml_cosolv, additivo_sel, add_eq):
     add_info = ADDITIVES_DATABASE.get(additivo_sel, ADDITIVES_DATABASE['Nessuno'])
@@ -547,7 +601,7 @@ with tab1:
         elif mode_legante == "Nome / Formula / CAS":
             query_input = st.text_input("Nome, Formula o CAS:", value="Benzoic acid")
             if query_input:
-                with st.spinner("Ricerca molecola nei database..."):
+                with st.spinner("Ricerca molecola nei database e sul Web..."):
                     found_smiles = resolve_molecule_to_smiles(query_input)
                     if found_smiles:
                         mol = Chem.MolFromSmiles(found_smiles)
@@ -840,3 +894,32 @@ with tab3:
             st.success("✨ Scansione completata!")
             st.markdown("### 🏆 Migliori Condizioni Sperimentali Trovate")
             st.dataframe(df_cand.head(10))
+
+# --- TAB 4: RICERCA WEB TAVILY AI ---
+with tab4:
+    st.subheader("🌐 Agente Web Tavily per Sintesi & Letteratura MOF")
+    st.markdown("Effettua ricerche live per verificare protocolli di sintesi, informazioni sui leganti o pubblicazioni scientifiche correlate.")
+    
+    if not TAVILY_API_KEY:
+        st.warning("⚠️ Per utilizzare l'Agente Tavily, inserisci la tua **Tavily API Key** nel menu laterale (Sidebar).")
+    
+    query_tavily = st.text_input("Inserisci la query di ricerca chimica:", value="UiO-66 synthesis conditions modulator benzoic acid")
+    num_res = st.slider("Numero di risultati:", min_value=1, max_value=5, value=3)
+    
+    if st.button("🔎 Cerca sul Web con Tavily"):
+        if not TAVILY_API_KEY:
+            st.error("API Key Tavily mancante.")
+        else:
+            with st.spinner("Ricerca informazioni sul web in corso..."):
+                tavily_res = search_tavily_web(query_tavily, max_results=num_res)
+                if tavily_res:
+                    if tavily_res.get("answer"):
+                        st.info(f"💡 **Sintesi Risposta AI Tavily:**\n\n{tavily_res['answer']}")
+                    
+                    st.markdown("### 📚 Risultati della Ricerca")
+                    for r in tavily_res.get("results", []):
+                        st.markdown(f"#### [{r.get('title')}]({r.get('url')})")
+                        st.write(r.get("content"))
+                        st.markdown("---")
+                else:
+                    st.error("Nessun risultato trovato o errore nella richiesta.")
