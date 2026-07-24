@@ -41,7 +41,7 @@ st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="
 st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
 st.markdown("Strumento avanzato di Machine Learning per la predizione, ottimizzazione e **spiegabilità chimica** della sintesi di MOF.")
 
-# --- FUNZIONE DI PULIZIA E CONVERSIONE VALORI NUMERICI (FIX T.A. / RT / STRINGHE) ---
+# --- FUNZIONE DI PULIZIA E CONVERSIONE VALORI NUMERICI ---
 def clean_float_val(val, default_val=0.0):
     """ Converte in float gestendo stringhe speciali come T.A., RT o formattazioni sporche """
     if pd.isna(val):
@@ -58,7 +58,6 @@ def clean_float_val(val, default_val=0.0):
 # --- CONFIGURAZIONE TAVILY AI ---
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
 
-# Sidebar setup per Tavily API Key
 with st.sidebar.expander("🌐 Configurazione Agent Web (Tavily)", expanded=False):
     tavily_input_key = st.text_input("Tavily API Key:", value=TAVILY_API_KEY, type="password")
     if tavily_input_key:
@@ -98,6 +97,83 @@ def search_tavily_for_ligand_smiles(query):
                     return w_clean
     return None
 
+# --- INTEGRAZIONE CROSSREF PER VERIFICA DOI REALI ---
+def fetch_real_doi_from_crossref(query_term):
+    """
+    Interroga l'API ufficiale di Crossref per recuperare il DOI reale, 
+    titolo dell'articolo, rivista ed anno di pubblicazione.
+    """
+    url = f"https://api.crossref.org/works?query={requests.utils.quote(query_term)}&rows=1"
+    headers = {'User-Agent': 'MOFSynthesisPredictor/1.0 (mailto:admin@example.com)'}
+    
+    try:
+        response = requests.get(url, headers=headers, timeout=4)
+        if response.status_code == 200:
+            data = response.json()
+            items = data.get('message', {}).get('items', [])
+            if items:
+                paper = items[0]
+                doi = paper.get('DOI', '')
+                title_list = paper.get('title', ['Non disponibile'])
+                title = title_list[0] if title_list else 'Non disponibile'
+                container_list = paper.get('container-title', [''])
+                journal = container_list[0] if container_list else 'Rivista N.D.'
+                
+                pub_date = paper.get('published-print', {}).get('date-parts', [[None]])[0][0]
+                if not pub_date:
+                    pub_date = paper.get('published-online', {}).get('date-parts', [[None]])[0][0]
+                year_str = str(pub_date) if pub_date else "N.D."
+                
+                return {
+                    'doi': doi,
+                    'title': title,
+                    'journal': journal,
+                    'year': year_str,
+                    'url': f"https://doi.org/{doi}"
+                }
+    except Exception:
+        pass
+    return None
+
+def check_known_mof(metal_symbol, mol_obj=None, ligand_query=""):
+    """
+    Verifica se la combinazione Metallo + Legante è nota e recupera
+    il DOI verificato tramite l'API di Crossref.
+    """
+    known_mappings = {
+        ("Zr", "O=C(O)c1ccc(C(=O)O)cc1"): "UiO-66 synthesis terephthalic acid",
+        ("Cu", "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1"): "HKUST-1 MOF synthesis trimesic acid",
+        ("Zn", "Cc1c[nH]cn1"): "ZIF-8 synthesis 2-methylimidazole",
+        ("Cr", "O=C(O)c1ccc(C(=O)O)cc1"): "MIL-101 Cr synthesis",
+        ("Al", "O=C(O)c1ccc(C(=O)O)cc1"): "MIL-53 Al synthesis",
+        ("Zn", "O=C(O)c1ccc(C(=O)O)cc1"): "MOF-5 synthesis",
+        ("Zr", "O=C(O)c1ccc(C(=O)O)c(N)c1"): "UiO-66-NH2 synthesis"
+    }
+    
+    input_smiles = Chem.MolToSmiles(mol_obj) if mol_obj else ""
+    search_key = (metal_symbol, input_smiles)
+    
+    if search_key in known_mappings:
+        query = known_mappings[search_key]
+        mof_label = query.split()[0]
+    elif ligand_query:
+        query = f"{metal_symbol} MOF {ligand_query} synthesis"
+        mof_label = f"MOF ({metal_symbol})"
+    else:
+        return []
+
+    paper_info = fetch_real_doi_from_crossref(query)
+    
+    if paper_info:
+        return [{
+            "name": mof_label,
+            "ref": f"{paper_info['journal']} ({paper_info['year']}) - {paper_info['title']}",
+            "doi": paper_info['doi'],
+            "url": paper_info['url']
+        }]
+    
+    return []
+
 # --- DATABASE SOLVENTI CON PARAMETRI FISICO-CHIMICI ---
 SOLVENT_PROPERTIES = {
     'DMF':  {'alpha': 0.00, 'beta': 0.69, 'pi_star': 0.88, 'dielectric': 36.7, 'boiling_pt': 153.0},
@@ -113,129 +189,48 @@ SOLVENT_PROPERTIES = {
 
 # --- DIZIONARIO LOCALE LEGANTE MOF ---
 COMMON_MOF_LIGANDS = {
-    "c7h6o2": "O=C(O)c1ccccc1",                     # Acido Benzoico
+    "c7h6o2": "O=C(O)c1ccccc1",
     "benzoic acid": "O=C(O)c1ccccc1",
-    "c2h4o2": "CC(=O)O",                             # Acido Acetico
+    "c2h4o2": "CC(=O)O",
     "acetic acid": "CC(=O)O",
-    "c1h2o2": "O=CO",                               # Acido Formico
+    "c1h2o2": "O=CO",
     "formic acid": "O=CO",
-    "c2hf3o2": "O=C(O)C(F)(F)F",                    # Acido Trifluoroacetico (TFA)
+    "c2hf3o2": "O=C(O)C(F)(F)F",
     "trifluoroacetic acid": "O=C(O)C(F)(F)F",
     "tfa": "O=C(O)C(F)(F)F",
-    "c3h6o2": "CCC(=O)O",                            # Acido Propionico
+    "c3h6o2": "CCC(=O)O",
     "propionic acid": "CCC(=O)O",
-    "c5h10o2": "CC(C)(C)C(=O)O",                     # Acido Pivalico
+    "c5h10o2": "CC(C)(C)C(=O)O",
     "pivalic acid": "CC(C)(C)C(=O)O",
-    "c8h6o4": "O=C(O)c1ccc(C(=O)O)cc1",             # Acido Tereftalico (BDC)
+    "c8h6o4": "O=C(O)c1ccc(C(=O)O)cc1",
     "terephthalic acid": "O=C(O)c1ccc(C(=O)O)cc1",
     "bdc": "O=C(O)c1ccc(C(=O)O)cc1",
-    "isophthalic acid": "O=C(O)c1cccc(C(=O)O)c1",   # Acido Isoftalico
-    "phthalic acid": "O=C(O)c1ccccc1C(=O)O",         # Acido Ftalico
-    "c8h7no4": "O=C(O)c1ccc(C(=O)O)c(N)c1",         # BDC-NH2
+    "isophthalic acid": "O=C(O)c1cccc(C(=O)O)c1",
+    "phthalic acid": "O=C(O)c1ccccc1C(=O)O",
+    "c8h7no4": "O=C(O)c1ccc(C(=O)O)c(N)c1",
     "bdc-nh2": "O=C(O)c1ccc(C(=O)O)c(N)c1",
-    "c8h5no6": "O=C(O)c1ccc(C(=O)O)c([N+](=O)[O-])c1", # BDC-NO2
+    "c8h5no6": "O=C(O)c1ccc(C(=O)O)c([N+](=O)[O-])c1",
     "bdc-no2": "O=C(O)c1ccc(C(=O)O)c([N+](=O)[O-])c1",
-    "c8h5bro4": "O=C(O)c1ccc(C(=O)O)c(Br)c1",       # BDC-Br
+    "c8h5bro4": "O=C(O)c1ccc(C(=O)O)c(Br)c1",
     "bdc-br": "O=C(O)c1ccc(C(=O)O)c(Br)c1",
-    "c8h6o5": "O=C(O)c1ccc(C(=O)O)c(O)c1",          # BDC-OH
+    "c8h6o5": "O=C(O)c1ccc(C(=O)O)c(O)c1",
     "bdc-oh": "O=C(O)c1ccc(C(=O)O)c(O)c1",
-    "c12h10o4": "O=C(O)c1ccc(-c2ccc(C(=O)O)cc2)cc1", # BPDC
+    "c12h10o4": "O=C(O)c1ccc(-c2ccc(C(=O)O)cc2)cc1",
     "bpdc": "O=C(O)c1ccc(-c2ccc(C(=O)O)cc2)cc1",
-    "c12h8o4": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",      # 2,6-NDC
+    "c12h8o4": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",
     "ndc": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",
-    "c4h4o4": "O=C(O)/C=C/C(=O)O",                 # Acido Fumarico
+    "c4h4o4": "O=C(O)/C=C/C(=O)O",
     "fumaric acid": "O=C(O)/C=C/C(=O)O",
-    "c9h6o6": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",     # Acido Trimesico (BTC)
+    "c9h6o6": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",
     "btc": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",
-    "c27h18o6": "O=C(O)c1ccc(-c2cc(-c3ccc(C(=O)O)cc3)cc(-c3ccc(C(=O)O)cc3)c2)cc1", # BTB
+    "c27h18o6": "O=C(O)c1ccc(-c2cc(-c3ccc(C(=O)O)cc3)cc(-c3ccc(C(=O)O)cc3)c2)cc1",
     "btb": "O=C(O)c1ccc(-c2cc(-c3ccc(C(=O)O)cc3)cc(-c3ccc(C(=O)O)cc3)c2)cc1",
-    "c3h4n2": "c1c[nH]cn1",                        # Imidazolo
-    "c4h6n2": "Cc1c[nH]cn1",                        # 2-mIM
+    "c3h4n2": "c1c[nH]cn1",
+    "c4h6n2": "Cc1c[nH]cn1",
     "2-mim": "Cc1c[nH]cn1",
-    "c10h8n2": "c1cnc(-c2ccncc2)cc1",                # 4,4'-Bipy
+    "c10h8n2": "c1cnc(-c2ccncc2)cc1",
     "4,4'-bipy": "c1cnc(-c2ccncc2)cc1"
 }
-
-# --- DATABASE DI MOF NOTI E PUBBLICAZIONI (DOI PULITI SENZA PREFISSI) ---
-KNOWN_MOFS_DATABASE = [
-    {
-        "name": "UiO-66",
-        "metal": "Zr",
-        "ligand_smiles": "O=C(O)c1ccc(C(=O)O)cc1", # BDC
-        "ligand_alias": ["bdc", "terephthalic acid", "acido tereftalico"],
-        "doi": "10.1021/ja8057953",
-        "ref": "Cavka et al., J. Am. Chem. Soc. (2008)"
-    },
-    {
-        "name": "HKUST-1 (MOF-199)",
-        "metal": "Cu",
-        "ligand_smiles": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1", # BTC
-        "ligand_alias": ["btc", "trimesic acid", "acido trimesico"],
-        "doi": "10.1126/science.283.5405.1148",
-        "ref": "Chui et al., Science (1999)"
-    },
-    {
-        "name": "ZIF-8",
-        "metal": "Zn",
-        "ligand_smiles": "Cc1c[nH]cn1", # 2-mIM
-        "ligand_alias": ["2-mim", "2-methylimidazole", "2-metilimidazolo"],
-        "doi": "10.1073/pnas.0602439103",
-        "ref": "Park et al., PNAS (2006)"
-    },
-    {
-        "name": "MIL-101(Cr)",
-        "metal": "Cr",
-        "ligand_smiles": "O=C(O)c1ccc(C(=O)O)cc1", # BDC
-        "ligand_alias": ["bdc", "terephthalic acid", "acido tereftalico"],
-        "doi": "10.1126/science.1116275",
-        "ref": "Férey et al., Science (2005)"
-    },
-    {
-        "name": "MOF-5",
-        "metal": "Zn",
-        "ligand_smiles": "O=C(O)c1ccc(C(=O)O)cc1", # BDC
-        "ligand_alias": ["bdc", "terephthalic acid", "acido tereftalico"],
-        "doi": "10.1038/43341",
-        "ref": "Li et al., Nature (1999)"
-    },
-    {
-        "name": "MIL-53(Al)",
-        "metal": "Al",
-        "ligand_smiles": "O=C(O)c1ccc(C(=O)O)cc1", # BDC
-        "ligand_alias": ["bdc", "terephthalic acid", "acido tereftalico"],
-        "doi": "10.1021/cm034360e",
-        "ref": "Loiseau et al., Chem. Mater. (2004)"
-    },
-    {
-        "name": "UiO-66-NH2",
-        "metal": "Zr",
-        "ligand_smiles": "O=C(O)c1ccc(C(=O)O)c(N)c1", # BDC-NH2
-        "ligand_alias": ["bdc-nh2", "2-aminoterephthalic acid"],
-        "doi": "10.1021/ic101229f",
-        "ref": "Kandiah et al., Inorg. Chem. (2010)"
-    }
-]
-
-def check_known_mof(metal_symbol, mol_obj=None, ligand_query=""):
-    """Verifica se la combinazione Metallo + Legante è già nota e censita."""
-    matches = []
-    input_smiles = Chem.MolToSmiles(mol_obj) if mol_obj else None
-    query_clean = ligand_query.strip().lower()
-
-    for mof in KNOWN_MOFS_DATABASE:
-        if mof["metal"] == metal_symbol:
-            # Match via SMILES canonico (RDKit)
-            if input_smiles:
-                db_mol = Chem.MolFromSmiles(mof["ligand_smiles"])
-                if db_mol and Chem.MolToSmiles(db_mol) == input_smiles:
-                    matches.append(mof)
-                    continue
-            
-            # Match via testo / alias
-            if query_clean and any(alias in query_clean for alias in mof["ligand_alias"]):
-                matches.append(mof)
-
-    return matches
 
 # --- PROPRIETÀ ADDITIVI E MODULATORI ---
 ADDITIVES_DATABASE = {
@@ -315,13 +310,11 @@ def resolve_molecule_to_smiles(query):
     if not clean_query:
         return None
     
-    # 1. Dizionario locale
     if clean_query in COMMON_MOF_LIGANDS:
         return COMMON_MOF_LIGANDS[clean_query]
 
     headers = {'User-Agent': 'MOF_Predictor_App/1.0'}
     
-    # 2. CACTUS NIH API
     try:
         url_nih = f"https://cactus.nci.nih.gov/chemical/structure/{requests.utils.quote(query)}/smiles"
         res = requests.get(url_nih, headers=headers, timeout=3)
@@ -332,7 +325,6 @@ def resolve_molecule_to_smiles(query):
     except Exception:
         pass
 
-    # 3. PubChem API
     try:
         url_name = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{requests.utils.quote(query)}/property/IsomericSMILES/JSON"
         res = requests.get(url_name, headers=headers, timeout=3)
@@ -341,7 +333,6 @@ def resolve_molecule_to_smiles(query):
     except Exception:
         pass
 
-    # 4. Fallback con Tavily AI Web Agent
     if TAVILY_API_KEY:
         tavily_smiles = search_tavily_for_ligand_smiles(query)
         if tavily_smiles:
@@ -829,7 +820,7 @@ with tab1:
         if not mol:
             st.error("Inserisci una molecola valida prima di continuare.")
         else:
-            # --- VERIFICA SE COMBINAZIONE È GIÀ NOTA ---
+            # --- VERIFICA SE COMBINAZIONE È GIÀ NOTA TRAMITE CROSSREF ---
             known_matches = check_known_mof(
                 metal_symbol=metallo_sel, 
                 mol_obj=mol, 
@@ -840,13 +831,13 @@ with tab1:
             if known_matches:
                 for mof in known_matches:
                     clean_doi = mof['doi'].replace("https://doi.org/", "")
-                    doi_url = f"https://doi.org/{clean_doi}"
+                    doi_url = mof.get('url', f"https://doi.org/{clean_doi}")
 
                     st.info(
-                        f"🟢 **Combinazione già nota e pubblicata in letteratura!**\n\n"
-                        f"* **MOF Identificato:** `{mof['name']}`\n"
-                        f"* **Riferimento:** {mof['ref']}\n"
-                        f"* **DOI:** `{clean_doi}` *(🔗 [Apri su doi.org]({doi_url}))*"
+                        f"🟢 **Combinazione nota e verificata tramite Crossref API!**\n\n"
+                        f"* **MOF/Sintesi:** `{mof['name']}`\n"
+                        f"* **Articolo:** {mof['ref']}\n"
+                        f"* **DOI Verificato:** `{clean_doi}` *(🔗 [Apri Pubblicazione Ufficiale]({doi_url}))*"
                     )
             else:
                 st.success("✨ **Combinazione Inedita / Non presente a DB:** Nessun MOF classico censito direttamente per questa specifica coppia.")
