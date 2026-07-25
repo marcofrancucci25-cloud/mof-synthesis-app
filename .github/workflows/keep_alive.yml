@@ -1,0 +1,15 @@
+name: Keep Streamlit Alive
+
+on:
+  schedule:
+    # Esegue il controllo ogni 4 ore
+    - cron: "0 */4 * * *"
+  workflow_dispatch: # Permette di avviarlo anche manualmente da GitHub
+
+jobs:
+  ping-app:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Invia richiesta HTTP all'app Streamlit
+        run: |
+          curl -s -o /dev/null -w "Status code: %{http_code}\n" https://mof-synthesis.streamlit.app/
