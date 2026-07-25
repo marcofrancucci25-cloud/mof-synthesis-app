@@ -101,83 +101,51 @@ def search_tavily_for_ligand_smiles(query):
                     return w_clean
     return None
 
-# --- DATABASE RELAZIONALE DETERMINISTICO METALLO-LEGANTE-MOF ---
-KNOWN_MOF_DATABASE = {
-    ("Zr", "O=C(O)c1ccc(C(=O)O)cc1"): {
-        "mof_name": "UiO-66",
-        "ligand_name": "terephthalic acid",
-        "doi": "10.1021/ja8037986",
-        "title": "A Robust Metal-Organic Framework Combination of Zr6O4(OH)4 Nodes and Terephthalate Linkers",
-        "journal_ref": "Cavka et al. (2008) - J. Am. Chem. Soc.",
-        "url": "https://doi.org/10.1021/ja8037986",
-        "is_oa": False
-    },
-    ("Zr", "O=C(O)c1ccc(C(=O)O)c(N)c1"): {
-        "mof_name": "UiO-66-NH2",
-        "ligand_name": "2-aminoterephthalic acid",
-        "doi": "10.1021/ic1002278",
-        "title": "Synthesis, Characterization and Post-synthetic Modification of UiO-66-NH2",
-        "journal_ref": "Kandiah et al. (2010) - Inorg. Chem.",
-        "url": "https://doi.org/10.1021/ic1002278",
-        "is_oa": True
-    },
-    ("Cu", "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1"): {
-        "mof_name": "HKUST-1",
-        "ligand_name": "trimesic acid",
-        "doi": "10.1126/science.283.5405.1148",
-        "title": "A Chemically Functionalizable Nanoporous Material [Cu3(TMC)2(H2O)3]n",
-        "journal_ref": "Chui et al. (1999) - Science",
-        "url": "https://doi.org/10.1126/science.283.5405.1148",
-        "is_oa": False
-    },
-    ("Zn", "Cc1c[nH]cn1"): {
-        "mof_name": "ZIF-8",
-        "ligand_name": "2-methylimidazole",
-        "doi": "10.1073/pnas.0602439103",
-        "title": "Exceptional chemical and thermal stability of zeolitic imidazolate frameworks",
-        "journal_ref": "Park et al. (2006) - PNAS",
-        "url": "https://doi.org/10.1073/pnas.0602439103",
-        "is_oa": True
-    },
-    ("Cr", "O=C(O)c1ccc(C(=O)O)cc1"): {
-        "mof_name": "MIL-101(Cr)",
-        "ligand_name": "terephthalic acid",
-        "doi": "10.1126/science.1116275",
-        "title": "A Chromium Terephthalate Based Mesoporous Solid with Very Large Pore Volume",
-        "journal_ref": "Férey et al. (2005) - Science",
-        "url": "https://doi.org/10.1126/science.1116275",
-        "is_oa": False
-    },
-    ("Al", "O=C(O)c1ccc(C(=O)O)cc1"): {
-        "mof_name": "MIL-53(Al)",
-        "ligand_name": "terephthalic acid",
-        "doi": "10.1021/ja0292353",
-        "title": "Hydrogen Adsorption in the Porous Metal-Organic Framework MIL-53(Al)",
-        "journal_ref": "Loiseau et al. (2004) - Chem. Eur. J.",
-        "url": "https://doi.org/10.1021/ja0292353",
-        "is_oa": False
-    },
-    ("Zn", "O=C(O)c1ccc(C(=O)O)cc1"): {
-        "mof_name": "MOF-5",
-        "ligand_name": "terephthalic acid",
-        "doi": "10.1038/43341",
-        "title": "Design and synthesis of an exceptionally stable and highly porous metal-organic framework",
-        "journal_ref": "Li et al. (1999) - Nature",
-        "url": "https://doi.org/10.1038/43341",
-        "is_oa": False
-    }
+# --- DATABASE METALLI AMPLIATO (30 METALLI) E HSAB ---
+metal_props = {
+    'Zr': {'Z': 40, 'Electronegativity': 1.33, 'Radius_pm': 160, 'Group': 4, 'Period': 5, 'MW': 91.22, 'HSAB': 'Hard', 'Name': 'Zirconio'},
+    'Hf': {'Z': 72, 'Electronegativity': 1.30, 'Radius_pm': 159, 'Group': 4, 'Period': 6, 'MW': 178.49, 'HSAB': 'Hard', 'Name': 'Afnio'},
+    'Ti': {'Z': 22, 'Electronegativity': 1.54, 'Radius_pm': 147, 'Group': 4, 'Period': 4, 'MW': 47.87, 'HSAB': 'Hard', 'Name': 'Titanio'},
+    'Cu': {'Z': 29, 'Electronegativity': 1.90, 'Radius_pm': 132, 'Group': 11, 'Period': 4, 'MW': 63.55, 'HSAB': 'Intermediate', 'Name': 'Rame'},
+    'Zn': {'Z': 30, 'Electronegativity': 1.65, 'Radius_pm': 122, 'Group': 12, 'Period': 4, 'MW': 65.38, 'HSAB': 'Intermediate', 'Name': 'Zinco'},
+    'Fe': {'Z': 26, 'Electronegativity': 1.83, 'Radius_pm': 126, 'Group': 8, 'Period': 4, 'MW': 55.85, 'HSAB': 'Hard', 'Name': 'Ferro'},
+    'Co': {'Z': 27, 'Electronegativity': 1.88, 'Radius_pm': 126, 'Group': 9, 'Period': 4, 'MW': 58.93, 'HSAB': 'Intermediate', 'Name': 'Cobalto'},
+    'Ni': {'Z': 28, 'Electronegativity': 1.91, 'Radius_pm': 124, 'Group': 10, 'Period': 4, 'MW': 58.69, 'HSAB': 'Intermediate', 'Name': 'Nichel'},
+    'Mn': {'Z': 25, 'Electronegativity': 1.55, 'Radius_pm': 139, 'Group': 7, 'Period': 4, 'MW': 54.94, 'HSAB': 'Intermediate', 'Name': 'Manganese'},
+    'Cr': {'Z': 24, 'Electronegativity': 1.66, 'Radius_pm': 128, 'Group': 6, 'Period': 4, 'MW': 51.99, 'HSAB': 'Hard', 'Name': 'Cromo'},
+    'V':  {'Z': 23, 'Electronegativity': 1.63, 'Radius_pm': 134, 'Group': 5, 'Period': 4, 'MW': 50.94, 'HSAB': 'Hard', 'Name': 'Vanadio'},
+    'Al': {'Z': 13, 'Electronegativity': 1.61, 'Radius_pm': 121, 'Group': 13, 'Period': 3, 'MW': 26.98, 'HSAB': 'Hard', 'Name': 'Alluminio'},
+    'Ga': {'Z': 31, 'Electronegativity': 1.81, 'Radius_pm': 122, 'Group': 13, 'Period': 4, 'MW': 69.72, 'HSAB': 'Hard', 'Name': 'Gallio'},
+    'In': {'Z': 49, 'Electronegativity': 1.78, 'Radius_pm': 142, 'Group': 13, 'Period': 5, 'MW': 114.82, 'HSAB': 'Hard', 'Name': 'Indio'},
+    'Mg': {'Z': 12, 'Electronegativity': 1.31, 'Radius_pm': 141, 'Group': 2, 'Period': 3, 'MW': 24.31, 'HSAB': 'Hard', 'Name': 'Magnesio'},
+    'Ca': {'Z': 20, 'Electronegativity': 1.00, 'Radius_pm': 174, 'Group': 2, 'Period': 4, 'MW': 40.08, 'HSAB': 'Hard', 'Name': 'Calcio'},
+    'Sr': {'Z': 38, 'Electronegativity': 0.95, 'Radius_pm': 192, 'Group': 2, 'Period': 5, 'MW': 87.62, 'HSAB': 'Hard', 'Name': 'Stronzio'},
+    'Ba': {'Z': 56, 'Electronegativity': 0.89, 'Radius_pm': 198, 'Group': 2, 'Period': 6, 'MW': 137.33, 'HSAB': 'Hard', 'Name': 'Bario'},
+    'Ce': {'Z': 58, 'Electronegativity': 1.12, 'Radius_pm': 181, 'Group': 3, 'Period': 6, 'MW': 140.12, 'HSAB': 'Hard', 'Name': 'Cerio'},
+    'La': {'Z': 57, 'Electronegativity': 1.10, 'Radius_pm': 187, 'Group': 3, 'Period': 6, 'MW': 138.91, 'HSAB': 'Hard', 'Name': 'Lantanio'},
+    'Nd': {'Z': 60, 'Electronegativity': 1.14, 'Radius_pm': 182, 'Group': 3, 'Period': 6, 'MW': 144.24, 'HSAB': 'Hard', 'Name': 'Neodimio'},
+    'Eu': {'Z': 63, 'Electronegativity': 1.20, 'Radius_pm': 180, 'Group': 3, 'Period': 6, 'MW': 151.96, 'HSAB': 'Hard', 'Name': 'Europio'},
+    'Gd': {'Z': 64, 'Electronegativity': 1.20, 'Radius_pm': 180, 'Group': 3, 'Period': 6, 'MW': 157.25, 'HSAB': 'Hard', 'Name': 'Gadolinio'},
+    'Tb': {'Z': 65, 'Electronegativity': 1.20, 'Radius_pm': 177, 'Group': 3, 'Period': 6, 'MW': 158.93, 'HSAB': 'Hard', 'Name': 'Terbio'},
+    'Y':  {'Z': 39, 'Electronegativity': 1.22, 'Radius_pm': 180, 'Group': 3, 'Period': 5, 'MW': 88.91,  'HSAB': 'Hard', 'Name': 'Ittrio'},
+    'Cd': {'Z': 48, 'Electronegativity': 1.69, 'Radius_pm': 151, 'Group': 12, 'Period': 5, 'MW': 112.41, 'HSAB': 'Soft', 'Name': 'Cadmio'},
+    'Bi': {'Z': 83, 'Electronegativity': 2.02, 'Radius_pm': 156, 'Group': 15, 'Period': 6, 'MW': 208.98, 'HSAB': 'Intermediate', 'Name': 'Bismuto'},
+    'Sn': {'Z': 50, 'Electronegativity': 1.96, 'Radius_pm': 140, 'Group': 14, 'Period': 5, 'MW': 118.71, 'HSAB': 'Hard', 'Name': 'Stagno'},
+    'Pd': {'Z': 46, 'Electronegativity': 2.20, 'Radius_pm': 137, 'Group': 10, 'Period': 5, 'MW': 106.42, 'HSAB': 'Soft', 'Name': 'Palladio'},
+    'Ag': {'Z': 47, 'Electronegativity': 1.93, 'Radius_pm': 144, 'Group': 11, 'Period': 5, 'MW': 107.87, 'HSAB': 'Soft', 'Name': 'Argento'},
+    'Ru': {'Z': 44, 'Electronegativity': 2.20, 'Radius_pm': 134, 'Group': 8, 'Period': 5, 'MW': 101.07, 'HSAB': 'Intermediate', 'Name': 'Rutenio'},
+    'Au': {'Z': 79, 'Electronegativity': 2.54, 'Radius_pm': 144, 'Group': 11, 'Period': 6, 'MW': 196.97, 'HSAB': 'Soft', 'Name': 'Oro'}
 }
 
-# --- VALIDAZIONE RIGOROSA METALLO-LEGANTE (RIGOROSA) ---
-def valida_articolo_metallo_legante(testo_articolo, metal_symbol, ligand_query="", mof_expected=""):
+# --- VALIDAZIONE RIGOROSA METALLO-LEGANTE ---
+def valida_articolo_metallo_legante(testo_articolo, metal_symbol, ligand_query=""):
     """
-    Verifica con rigorosa coerenza che il testo/titolo dell'articolo contenga
-    sia il metallo selezionato sia riferimenti al legante/MOF cercato,
-    prevenendo mismatch di nodo metallico e strutture scorrette (es. CAU-28 al posto di UiO-66).
+    Verifica che il testo/titolo dell'articolo contenga sia il metallo selezionato
+    sia riferimenti al legante ricercato, evitando mismatch di nodo metallico.
     """
     testo_lower = testo_articolo.lower()
     
-    # 1. Verifica presenza esplicita del metallo
+    # 1. Verifica la presenza esplicita del metallo
     m_info = metal_props.get(metal_symbol, {})
     nome_metallo = m_info.get('Name', '').lower()
     
@@ -187,19 +155,10 @@ def valida_articolo_metallo_legante(testo_articolo, metal_symbol, ligand_query="
     if not ha_metallo:
         return False
         
-    # 2. Se è specificato un MOF atteso, la presenza del nome nel testo dà validazione
-    if mof_expected and mof_expected.lower() in testo_lower:
-        return True
-
-    # 3. Esclusione esplicita di MOF/Leganti noti per mismatch
-    if "cau-28" in testo_lower or "furandicarboxylic" in testo_lower or "fdca" in testo_lower:
-        if mof_expected.lower() != "cau-28" and "furandicarbox" not in ligand_query.lower():
-            return False
-
-    # 4. Verifica presenza di keyword relative al legante
+    # 2. Se è specificato un legante, verifica la presenza di keyword
     if ligand_query:
         legante_clean = ligand_query.lower().strip()
-        keywords = [k for k in re.split(r'[\s,_\-\(\)]+', legante_clean) if len(k) > 2]
+        keywords = [k for k in legante_clean.split() if len(k) > 2]
         ha_legante = any(k in testo_lower for k in keywords)
         if not ha_legante:
             return False
@@ -207,14 +166,13 @@ def valida_articolo_metallo_legante(testo_articolo, metal_symbol, ligand_query="
     return True
 
 # --- API SEMANTIC SCHOLAR PER ARTICOLI OPEN ACCESS ---
-def fetch_open_access_paper(metal_symbol, ligand_term="", mof_expected=""):
+def fetch_open_access_paper(metal_symbol, ligand_term=""):
     """
     Interroga l'API di Semantic Scholar richiedendo specificamente articoli Open Access
-    relativi alla combinazione Metallo + Legante / MOF.
+    relativi alla combinazione Metallo + Legante.
     """
     metal_name = metal_props.get(metal_symbol, {}).get('Name', '')
-    search_target = mof_expected if mof_expected else ligand_term
-    query_term = f'"{metal_symbol}" "{metal_name}" "{search_target}" MOF synthesis' if search_target else f'"{metal_symbol}" "{metal_name}" MOF synthesis'
+    query_term = f'"{metal_symbol}" "{metal_name}" "{ligand_term}" MOF synthesis' if ligand_term else f'"{metal_symbol}" "{metal_name}" MOF synthesis'
     
     url = "https://api.semanticscholar.org/graph/v1/paper/search"
     params = {
@@ -231,7 +189,7 @@ def fetch_open_access_paper(metal_symbol, ligand_term="", mof_expected=""):
             papers = data.get('data', [])
             for paper in papers:
                 title = paper.get('title', 'Titolo Non Disponibile')
-                if valida_articolo_metallo_legante(title, metal_symbol, ligand_term, mof_expected):
+                if valida_articolo_metallo_legante(title, metal_symbol, ligand_term):
                     oa_info = paper.get('openAccessPdf')
                     is_oa = paper.get('isOpenAccess', False)
                     
@@ -262,10 +220,9 @@ def fetch_open_access_paper(metal_symbol, ligand_term="", mof_expected=""):
     return None
 
 # --- INTEGRAZIONE CROSSREF COME FALLBACK ---
-def fetch_real_doi_from_crossref(metal_symbol, ligand_term="", mof_expected=""):
+def fetch_real_doi_from_crossref(metal_symbol, ligand_term=""):
     metal_name = metal_props.get(metal_symbol, {}).get('Name', '')
-    search_target = mof_expected if mof_expected else ligand_term
-    query_term = f'"{metal_symbol}" "{metal_name}" "{search_target}" MOF synthesis' if search_target else f'"{metal_symbol}" "{metal_name}" MOF synthesis'
+    query_term = f'"{metal_symbol}" "{metal_name}" "{ligand_term}" MOF synthesis' if ligand_term else f'"{metal_symbol}" "{metal_name}" MOF synthesis'
     
     url = f"https://api.crossref.org/works?query={requests.utils.quote(query_term)}&rows=5"
     headers = {'User-Agent': 'MOFSynthesisPredictor/1.0 (mailto:admin@example.com)'}
@@ -283,7 +240,7 @@ def fetch_real_doi_from_crossref(metal_symbol, ligand_term="", mof_expected=""):
                 journal = container_list[0] if container_list else 'Rivista N.D.'
                 
                 testo_completo = f"{title} {journal}"
-                if valida_articolo_metallo_legante(testo_completo, metal_symbol, ligand_term, mof_expected):
+                if valida_articolo_metallo_legante(testo_completo, metal_symbol, ligand_term):
                     pub_date = paper.get('published-print', {}).get('date-parts', [[None]])[0][0]
                     if not pub_date:
                         pub_date = paper.get('published-online', {}).get('date-parts', [[None]])[0][0]
@@ -302,26 +259,29 @@ def fetch_real_doi_from_crossref(metal_symbol, ligand_term="", mof_expected=""):
     return None
 
 def check_known_mof(metal_symbol, mol_obj=None, ligand_query=""):
+    known_mappings = {
+        ("Zr", "O=C(O)c1ccc(C(=O)O)cc1"): ("UiO-66", "terephthalic acid"),
+        ("Cu", "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1"): ("HKUST-1", "trimesic acid"),
+        ("Zn", "Cc1c[nH]cn1"): ("ZIF-8", "2-methylimidazole"),
+        ("Cr", "O=C(O)c1ccc(C(=O)O)cc1"): ("MIL-101(Cr)", "terephthalic acid"),
+        ("Al", "O=C(O)c1ccc(C(=O)O)cc1"): ("MIL-53(Al)", "terephthalic acid"),
+        ("Zn", "O=C(O)c1ccc(C(=O)O)cc1"): ("MOF-5", "terephthalic acid"),
+        ("Zr", "O=C(O)c1ccc(C(=O)O)c(N)c1"): ("UiO-66-NH2", "2-aminoterephthalic acid")
+    }
+    
     input_smiles = Chem.MolToSmiles(mol_obj) if mol_obj else ""
     search_key = (metal_symbol, input_smiles)
     
-    mof_expected = ""
-    ligand_term = ligand_query
-    verified_entry = None
-
-    # Check deterministico nel DB verificato
-    if search_key in KNOWN_MOF_DATABASE:
-        verified_entry = KNOWN_MOF_DATABASE[search_key]
-        mof_label = verified_entry["mof_name"]
-        ligand_term = verified_entry["ligand_name"]
-        mof_expected = mof_label
+    if search_key in known_mappings:
+        mof_label, ligand_term = known_mappings[search_key]
     elif ligand_query:
         mof_label = f"MOF ({metal_symbol})"
+        ligand_term = ligand_query
     else:
         return []
 
     # 1. Ricerca prioritaria su Semantic Scholar (filtro Open Access)
-    oa_paper = fetch_open_access_paper(metal_symbol, ligand_term, mof_expected)
+    oa_paper = fetch_open_access_paper(metal_symbol, ligand_term)
     if oa_paper:
         return [{
             "name": mof_label,
@@ -332,7 +292,7 @@ def check_known_mof(metal_symbol, mol_obj=None, ligand_query=""):
         }]
 
     # 2. Fallback su Crossref
-    paper_info = fetch_real_doi_from_crossref(metal_symbol, ligand_term, mof_expected)
+    paper_info = fetch_real_doi_from_crossref(metal_symbol, ligand_term)
     if paper_info:
         return [{
             "name": mof_label,
@@ -342,17 +302,7 @@ def check_known_mof(metal_symbol, mol_obj=None, ligand_query=""):
             "is_oa": False
         }]
 
-    # 3. Fallback deterministico verified dal DB interno
-    if verified_entry:
-        return [{
-            "name": verified_entry["mof_name"],
-            "ref": f"{verified_entry['journal_ref']} — {verified_entry['title']}",
-            "doi": verified_entry["doi"],
-            "url": verified_entry["url"],
-            "is_oa": verified_entry["is_oa"]
-        }]
-
-    # 4. Fallback finale su Tavily AI
+    # 3. Fallback finale su Tavily AI
     if TAVILY_API_KEY:
         m_name = metal_props.get(metal_symbol, {}).get('Name', '')
         tavily_query = f'"{metal_symbol}" "{m_name}" AND "{ligand_term}" MOF synthesis paper doi open access'
@@ -363,7 +313,7 @@ def check_known_mof(metal_symbol, mol_obj=None, ligand_query=""):
                 snippet = item.get("content", "")
                 url = item.get("url", "")
                 
-                if valida_articolo_metallo_legante(f"{title} {snippet}", metal_symbol, ligand_term, mof_expected):
+                if valida_articolo_metallo_legante(f"{title} {snippet}", metal_symbol, ligand_term):
                     return [{
                         "name": mof_label,
                         "ref": f"{title}",
@@ -449,42 +399,6 @@ ADDITIVES_DATABASE = {
     'Piridinetilammina / Piridina': {'type': 'Base', 'MW': 79.10, 'pKa': 5.25},
     'Acqua (H2O Modulatore)': {'type': 'Neutral', 'MW': 18.015, 'pKa': 14.0},
     'HF (Acido Fluoridrico)': {'type': 'Acid', 'MW': 20.01, 'pKa': 3.17}
-}
-
-# --- DATABASE METALLI AMPLIATO (30 METALLI) E HSAB ---
-metal_props = {
-    'Zr': {'Z': 40, 'Electronegativity': 1.33, 'Radius_pm': 160, 'Group': 4, 'Period': 5, 'MW': 91.22, 'HSAB': 'Hard', 'Name': 'Zirconio'},
-    'Hf': {'Z': 72, 'Electronegativity': 1.30, 'Radius_pm': 159, 'Group': 4, 'Period': 6, 'MW': 178.49, 'HSAB': 'Hard', 'Name': 'Afnio'},
-    'Ti': {'Z': 22, 'Electronegativity': 1.54, 'Radius_pm': 147, 'Group': 4, 'Period': 4, 'MW': 47.87, 'HSAB': 'Hard', 'Name': 'Titanio'},
-    'Cu': {'Z': 29, 'Electronegativity': 1.90, 'Radius_pm': 132, 'Group': 11, 'Period': 4, 'MW': 63.55, 'HSAB': 'Intermediate', 'Name': 'Rame'},
-    'Zn': {'Z': 30, 'Electronegativity': 1.65, 'Radius_pm': 122, 'Group': 12, 'Period': 4, 'MW': 65.38, 'HSAB': 'Intermediate', 'Name': 'Zinco'},
-    'Fe': {'Z': 26, 'Electronegativity': 1.83, 'Radius_pm': 126, 'Group': 8, 'Period': 4, 'MW': 55.85, 'HSAB': 'Hard', 'Name': 'Ferro'},
-    'Co': {'Z': 27, 'Electronegativity': 1.88, 'Radius_pm': 126, 'Group': 9, 'Period': 4, 'MW': 58.93, 'HSAB': 'Intermediate', 'Name': 'Cobalto'},
-    'Ni': {'Z': 28, 'Electronegativity': 1.91, 'Radius_pm': 124, 'Group': 10, 'Period': 4, 'MW': 58.69, 'HSAB': 'Intermediate', 'Name': 'Nichel'},
-    'Mn': {'Z': 25, 'Electronegativity': 1.55, 'Radius_pm': 139, 'Group': 7, 'Period': 4, 'MW': 54.94, 'HSAB': 'Intermediate', 'Name': 'Manganese'},
-    'Cr': {'Z': 24, 'Electronegativity': 1.66, 'Radius_pm': 128, 'Group': 6, 'Period': 4, 'MW': 51.99, 'HSAB': 'Hard', 'Name': 'Cromo'},
-    'V':  {'Z': 23, 'Electronegativity': 1.63, 'Radius_pm': 134, 'Group': 5, 'Period': 4, 'MW': 50.94, 'HSAB': 'Hard', 'Name': 'Vanadio'},
-    'Al': {'Z': 13, 'Electronegativity': 1.61, 'Radius_pm': 121, 'Group': 13, 'Period': 3, 'MW': 26.98, 'HSAB': 'Hard', 'Name': 'Alluminio'},
-    'Ga': {'Z': 31, 'Electronegativity': 1.81, 'Radius_pm': 122, 'Group': 13, 'Period': 4, 'MW': 69.72, 'HSAB': 'Hard', 'Name': 'Gallio'},
-    'In': {'Z': 49, 'Electronegativity': 1.78, 'Radius_pm': 142, 'Group': 13, 'Period': 5, 'MW': 114.82, 'HSAB': 'Hard', 'Name': 'Indio'},
-    'Mg': {'Z': 12, 'Electronegativity': 1.31, 'Radius_pm': 141, 'Group': 2, 'Period': 3, 'MW': 24.31, 'HSAB': 'Hard', 'Name': 'Magnesio'},
-    'Ca': {'Z': 20, 'Electronegativity': 1.00, 'Radius_pm': 174, 'Group': 2, 'Period': 4, 'MW': 40.08, 'HSAB': 'Hard', 'Name': 'Calcio'},
-    'Sr': {'Z': 38, 'Electronegativity': 0.95, 'Radius_pm': 192, 'Group': 2, 'Period': 5, 'MW': 87.62, 'HSAB': 'Hard', 'Name': 'Stronzio'},
-    'Ba': {'Z': 56, 'Electronegativity': 0.89, 'Radius_pm': 198, 'Group': 2, 'Period': 6, 'MW': 137.33, 'HSAB': 'Hard', 'Name': 'Bario'},
-    'Ce': {'Z': 58, 'Electronegativity': 1.12, 'Radius_pm': 181, 'Group': 3, 'Period': 6, 'MW': 140.12, 'HSAB': 'Hard', 'Name': 'Cerio'},
-    'La': {'Z': 57, 'Electronegativity': 1.10, 'Radius_pm': 187, 'Group': 3, 'Period': 6, 'MW': 138.91, 'HSAB': 'Hard', 'Name': 'Lantanio'},
-    'Nd': {'Z': 60, 'Electronegativity': 1.14, 'Radius_pm': 182, 'Group': 3, 'Period': 6, 'MW': 144.24, 'HSAB': 'Hard', 'Name': 'Neodimio'},
-    'Eu': {'Z': 63, 'Electronegativity': 1.20, 'Radius_pm': 180, 'Group': 3, 'Period': 6, 'MW': 151.96, 'HSAB': 'Hard', 'Name': 'Europio'},
-    'Gd': {'Z': 64, 'Electronegativity': 1.20, 'Radius_pm': 180, 'Group': 3, 'Period': 6, 'MW': 157.25, 'HSAB': 'Hard', 'Name': 'Gadolinio'},
-    'Tb': {'Z': 65, 'Electronegativity': 1.20, 'Radius_pm': 177, 'Group': 3, 'Period': 6, 'MW': 158.93, 'HSAB': 'Hard', 'Name': 'Terbio'},
-    'Y':  {'Z': 39, 'Electronegativity': 1.22, 'Radius_pm': 180, 'Group': 3, 'Period': 5, 'MW': 88.91,  'HSAB': 'Hard', 'Name': 'Ittrio'},
-    'Cd': {'Z': 48, 'Electronegativity': 1.69, 'Radius_pm': 151, 'Group': 12, 'Period': 5, 'MW': 112.41, 'HSAB': 'Soft', 'Name': 'Cadmio'},
-    'Bi': {'Z': 83, 'Electronegativity': 2.02, 'Radius_pm': 156, 'Group': 15, 'Period': 6, 'MW': 208.98, 'HSAB': 'Intermediate', 'Name': 'Bismuto'},
-    'Sn': {'Z': 50, 'Electronegativity': 1.96, 'Radius_pm': 140, 'Group': 14, 'Period': 5, 'MW': 118.71, 'HSAB': 'Hard', 'Name': 'Stagno'},
-    'Pd': {'Z': 46, 'Electronegativity': 2.20, 'Radius_pm': 137, 'Group': 10, 'Period': 5, 'MW': 106.42, 'HSAB': 'Soft', 'Name': 'Palladio'},
-    'Ag': {'Z': 47, 'Electronegativity': 1.93, 'Radius_pm': 144, 'Group': 11, 'Period': 5, 'MW': 107.87, 'HSAB': 'Soft', 'Name': 'Argento'},
-    'Ru': {'Z': 44, 'Electronegativity': 2.20, 'Radius_pm': 134, 'Group': 8, 'Period': 5, 'MW': 101.07, 'HSAB': 'Intermediate', 'Name': 'Rutenio'},
-    'Au': {'Z': 79, 'Electronegativity': 2.54, 'Radius_pm': 144, 'Group': 11, 'Period': 6, 'MW': 196.97, 'HSAB': 'Soft', 'Name': 'Oro'}
 }
 
 anion_mw = {
