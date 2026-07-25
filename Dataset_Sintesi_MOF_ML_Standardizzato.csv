@@ -1,0 +1,1001 @@
+ID,Legante,Famiglia_Legante,Metallo,Sale_Metallico,Solvente,Additivo_Colinker,Temperatura_C,Tempo_ore,mmol_Legante,mmol_Sale,Rapporto_LM,Procedura_Sintetica,Esito_ML
+1,curc-ind,Curcumina,Zn,Zn(OAc)2*2H2O,DMF,Nessuno,80.0,72.0,0.1,0.05,2.0,no precipitato,1
+2,curc(III),Curcumina,Zn,Zn(OAc)2*2H2O,DMF,Nessuno,80.0,72.0,0.1,0.05,2.0,Solvothermal,2
+3,curc-ind,Curcumina,Cu,Cu(OAc)2*H2O,DMF,Nessuno,80.0,72.0,0.1,0.05,2.0,no precipitato,1
+4,curc(III),Curcumina,Cu,Cu(OAc)2*H2O,DMF,Nessuno,80.0,72.0,0.1,0.05,2.0,no precipitato,1
+5,curc(III),Curcumina,Zn,Zn(OAc)2*2H2O,DMF/MeOH,Nessuno,80.0,24.0,0.1,0.05,2.0,Solvothermal,2
+6,curc(III),Curcumina,Zn,Zn(OAc)2*2H2O,DMF/MeOH,Nessuno,80.0,24.0,0.3,0.15,2.0,118 mg finali,1
+7,curc(III),Curcumina,Zn,Zn(NO3)2*6H2O,DMF/MeOH,Nessuno,80.0,24.0,0.2,0.1,2.0,Solvothermal,2
+8,curc-ind,Curcumina,Zn,Zn(OAc)2*2H2O,MeOH,Nessuno,80.0,72.0,0.1,0.05,2.0,precipitato nero,0
+9,curc-ind,Curcumina,Zn,Zn(NO3)2*6H2O,DMF,Nessuno,120.0,72.0,0.1,0.05,2.0,nessun precipitato,1
+10,curc(III),Curcumina,Ni,Ni(NO3)2*6H2O,DMF,Nessuno,120.0,72.0,0.1,0.05,2.0,nessun preciiptato,1
+11,B5,Altro,Ru,[Ru(p-cymene)Cl2]2,DCM,Nessuno,120.0,48.0,0.25,0.1,2.5,separato il solido per centrifugazione. Lavato con diclorometano 2 volte sempre tramite centrifuga,1
+12,curc(III)_KC,Curcumina,Zn,Zn(NO3)2*6H2O,DMF,Nessuno,80.0,48.0,0.1,0.05,2.0,"dopo 48 ore nessun precipitato, posto nella stufa a 100°C per 72h, ma ancora nessun precipitato, allora trasferito nella stufa a 120°, dopo 48h si è formato poco precipitato, filtrato e lavato con acetone.",1
+13,curc(III)_KC,Curcumina,Zn,Zn(OAc)2*2H2O,DMF,Nessuno,120.0,16.0,0.05,0.05,1.0,dopo 16 ore si è formato già il precipitato nella vial,0
+14,curc(III),Curcumina,Ni,Ni(NO3)2*6H2O,DMF/H2O,Nessuno,80.0,48.0,0.02,0.02,1.0,nessun precipitato,1
+15,curc(III),Curcumina,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,80.0,16.0,0.02,0.02,1.0,"Precipitato dopo già 16h, procedo con la caratterizzazione",2
+16,curc(III),Curcumina,Ag,AgNO3,DMF/H2O,Nessuno,80.0,48.0,0.02,0.02,1.0,"Argento metallizzato sulle pareti della vial dopo 16h, riprovo con ossido d'argento e vial scura",1
+17,curc(III),Curcumina,Ag,Ag2O,DMF/H2O,Nessuno,80.0,48.0,0.02,0.02,1.0,nessun precipitato,1
+18,curc(III),Curcumina,Co,Co(Ac)2*4H2O,DMF,Nessuno,80.0,24.0,0.02,0.04,0.5,"Precipitato fine, probabilmente meglio il nitro.",0
+19,curc(III),Curcumina,Ni,Ni(Ac)2*4H2O,DMF/EtOH,Nessuno,100.0,48.0,0.02,0.02,1.0,precipitato amorfo,1
+20,curc(III),Curcumina,Ni,Ni(Ac)2*4H2O,DMF/MeOH,Nessuno,100.0,48.0,0.02,0.02,1.0,precipitato amorfo,1
+21,curc(III),Curcumina,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,100.0,24.0,0.02,0.02,1.0,"non credo sia un MOF, sembrava sciogliersi in acetone, procedo con le varie caratterizzazioni. Precipitato tropppo poco per caratterizzazione",1
+22,curc(III),Curcumina,Cu,Cu(NO3)2*3H2O,DMF/H2O,Nessuno,100.0,24.0,0.02,0.02,1.0,"Precipitato verdastro, ma molto amorfo",1
+23,curc(III),Curcumina,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,80.0,72.0,0.02,0.04,0.5,Solvothermal,1
+24,curc(III),Curcumina,Co,Co(NO3)2*6H2O,DMSO,Nessuno,80.0,72.0,0.02,0.02,1.0,nessun precipitato,1
+25,curc(III),Curcumina,Co,Co(NO3)2*6H2O,DMF,Nessuno,80.0,72.0,0.02,0.02,1.0,nessun precipitato,1
+26,curc(III),Curcumina,Zr,ZrCl4,DMF/MeOH,Nessuno,120.0,48.0,0.02,0.02,1.0,nessun precipitato,1
+27,curc(III),Curcumina,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,120.0,24.0,0.05,0.05,1.0,Solvothermal,2
+28,curc(III),Curcumina,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,120.0,24.0,0.1,0.1,1.0,Solvothermal,1
+29,"3-nitro-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,150.0,24.0,0.1,0.1,1.0,Solvothermal,1
+30,"3-nitro-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,150.0,24.0,0.1,0.2,0.5,Solvothermal,1
+31,"3-nitro-4,4'-bipyrazole",Bipyrazole,Ni,Ni(NO3)2,CH3CN,Et3N,120.0,48.0,0.1,0.1,1.0,Solvothermal,0
+32,"3-nitro-4,4'-bipyrazole",Bipyrazole,Ni,Ni(OAc)2*4H2O,CH3CN,Nessuno,120.0,48.0,0.2,0.2,1.0,Solvothermal,0
+33,"3-nitro-4,4'-bipyrazole",Bipyrazole,Ni,Ni(OAc)2*4H2O,CH3CN,Et3N,120.0,48.0,0.2,0.4,0.5,Solvothermal,1
+34,"3-(3,5-DiMePz4-yl)pentane-2,4-dione",Altro,Zr,Zr(OCH3)4,Et3N,Nessuno,120.0,30.0,0.25,0.4,0.625,Solvothermal,1
+35,"3-(3,5-DiMePz4-yl)pentane-2,4-dione",Altro,Zr,ZrCl4,MeOH,Nessuno,110.0,94.0,0.3,0.3,1.0,Solvothermal,1
+36,"3-(3,5-DiMePz4-yl)pentane-2,4-dione",Altro,Zr,ZrCl4,MeOH,Nessuno,100.0,24.0,0.3,0.3,1.0,Solvothermal,1
+37,"3-(3,5-DiMePz4-yl)pentane-2,4-dione",Altro,Zr,ZrCl4,MeOH,Nessuno,110.0,48.0,0.15,0.15,1.0,Solvothermal,1
+38,"3-(3,5-DiMePz4-yl)pentane-2,4-dione",Altro,Zr,ZrCl4,MeOH,Nessuno,110.0,72.0,0.15,0.15,1.0,Solvothermal,1
+39,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,Ag2O,MetOH,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+40,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,ButOH,Triethylamine,120.0,36.0,0.15,0.15,1.0,Solvothermal,1
+41,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Nessuno,110.0,48.0,0.2,0.2,1.0,Solvothermal,1
+42,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,MetOH,Triethylamine,70.0,72.0,0.15,0.15,1.0,Solvothermal,1
+43,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,MetOH,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+44,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Nessuno,120.0,24.0,0.2,0.4,0.5,Solvothermal,1
+45,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,Ag2O,NH3 28%,Nessuno,60.0,24.0,0.2,0.2,1.0,Solvothermal,1
+46,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF/H2O,Nessuno,100.0,96.0,0.2,0.2,1.0,Solvothermal,1
+47,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Nessuno,100.0,24.0,0.4,0.4,1.0,Solvothermal,1
+48,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Nessuno,100.0,5.0,0.2,0.2,1.0,Solvothermal,1
+49,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Nessuno,90.0,2.0,0.2,0.2,1.0,Solvothermal,1
+50,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Nessuno,100.0,1.0,0.4,0.4,1.0,Solvothermal,1
+51,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Nessuno,120.0,72.0,0.15,2.0,0.075,Solvothermal,1
+52,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF/EtOH/H2O,Nessuno,100.0,1.0,0.15,0.15,1.0,Solvothermal,1
+53,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMA,Nessuno,100.0,4.0,0.15,0.15,1.0,Solvothermal,1
+54,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Acido benzoico,90.0,1.0,0.15,0.15,1.0,Solvothermal,1
+55,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Nessuno,100.0,1.5,0.15,0.15,1.0,Solvothermal,1
+56,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF/ MeCN,Nessuno,100.0,1.0,0.15,0.15,1.0,Solvothermal,1
+57,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF/ MeCN,Nessuno,80.0,24.0,0.15,0.15,1.0,Solvothermal,1
+58,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF/ MeCN,Nessuno,100.0,1.5,0.15,0.15,1.0,Solvothermal,1
+59,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,Et3N,Nessuno,120.0,24.0,0.3,0.3,1.0,Solvothermal,1
+60,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Nessuno,100.0,48.0,0.2,0.2,1.0,Solvothermal,1
+61,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Nessuno,120.0,72.0,0.3,0.3,1.0,Solvothermal,1
+62,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,Et3N,Nessuno,120.0,60.0,0.25,0.4,0.625,Solvothermal,1
+63,"3-amino-4,4'-bipyrazole",Bipyrazole,Ag,Ag2O,Non specificato,Nessuno,120.0,60.0,0.25,0.4,0.625,Solvothermal,1
+64,"3-amino-4,4'-bipyrazole",Bipyrazole,Au,Cloro(tri-tert-butilfosfina)Au(I),DMF,Nessuno,120.0,72.0,0.2,0.2,1.0,Solvothermal,1
+65,"3-amino-4,4'-bipyrazole",Bipyrazole,Au,Chlorotriphenylphosphine gold(I),Non specificato,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+66,"3-amino-4,4'-bipyrazole",Bipyrazole,Au,Cloro(tri-tert-butilfosfina)Au(I),MetOH,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+67,"3-amino-4,4'-bipyrazole",Bipyrazole,Au,Cloro(tri-tert-butilfosfina)Au(I),DMF,Nessuno,100.0,48.0,0.2,0.2,1.0,Solvothermal,1
+68,"3-amino-4,4'-bipyrazole",Bipyrazole,Au,Chlorotriphenylphosphine gold(I),Non specificato,Nessuno,120.0,60.0,0.25,0.4,0.625,Solvothermal,1
+69,"3-amino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF/H2O,Nessuno,160.0,72.0,0.3,0.3,1.0,Solvothermal,1
+70,"3-amino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,140.0,72.0,0.2,0.2,1.0,Solvothermal,1
+71,"3-amino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(OAc)2*2H2O,DMF/H2O,Nessuno,140.0,48.0,0.2,0.1,2.0,Solvothermal,1
+72,"3-amino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,MeOH,Nessuno,120.0,48.0,0.2,0.1,2.0,Solvothermal,1
+73,"3-amino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF/H2O,Nessuno,140.0,120.0,0.2,0.1,2.0,Solvothermal,1
+74,"3-amino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,140.0,48.0,0.2,0.1,2.0,Solvothermal,1
+75,"3-amino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,140.0,48.0,0.8,0.4,2.0,Solvothermal,1
+76,"3-amino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,160.0,24.0,0.2,0.1,2.0,Solvothermal,2
+77,"3-amino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,160.0,48.0,0.1,0.1,1.0,Solvothermal,1
+78,"3-amino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,160.0,48.0,0.1,0.2,0.5,Solvothermal,1
+79,"3-amino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(OAc)2*2H2O,DMF,Nessuno,140.0,48.0,0.2,0.1,2.0,Solvothermal,1
+80,"3-amino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF/EtOH,Nessuno,140.0,48.0,0.2,0.1,2.0,Solvothermal,1
+81,"3-amino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF/MeOH,Nessuno,140.0,72.0,0.2,0.1,2.0,Solvothermal,1
+82,"3-amino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,Non specificato,Nessuno,120.0,48.0,0.15,0.15,1.0,Solvothermal,1
+83,"3-amino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(OAc)2*2H2O,Non specificato,Nessuno,120.0,48.0,0.15,0.15,1.0,Solvothermal,1
+84,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,CuOAc,MetOH,Mesitilene,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+85,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,CuOAc,ButOH,Nessuno,120.0,36.0,0.15,0.15,1.0,Solvothermal,1
+86,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,CuOAc,DMF,Nessuno,110.0,48.0,0.2,0.2,1.0,Solvothermal,1
+87,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,CuOAc,MetOH,Nessuno,70.0,72.0,0.15,0.15,1.0,Solvothermal,1
+88,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,CuOAc,DMF,Nessuno,120.0,24.0,0.2,0.4,0.5,Solvothermal,1
+89,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,CuCl,NH3 28%,Nessuno,60.0,24.0,0.3,0.3,1.0,Solvothermal,1
+90,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,CuI,Non specificato,Nessuno,100.0,24.0,0.2,0.2,1.0,Solvothermal,1
+91,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,CuI,Non specificato,Nessuno,100.0,24.0,0.2,0.2,1.0,Solvothermal,1
+92,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,CuOAc,Met/H2O,Nessuno,160.0,72.0,0.5,0.5,1.0,Solvothermal,1
+93,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,CuOAc,DMF,Nessuno,100.0,48.0,0.2,0.2,1.0,Solvothermal,1
+94,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,CuOAc,DMF,Nessuno,120.0,72.0,0.3,0.3,1.0,Solvothermal,1
+95,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2*H2O,Non specificato,Nessuno,120.0,60.0,0.25,0.4,0.625,Solvothermal,1
+96,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc),Non specificato,Nessuno,120.0,60.0,0.25,0.4,0.625,Solvothermal,1
+97,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,Cu2O,Non specificato,Nessuno,120.0,60.0,0.25,0.4,0.625,Solvothermal,1
+98,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,CuCl,Na(OAc),Nessuno,120.0,60.0,0.25,0.4,0.625,Solvothermal,1
+99,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,CuCl,Na(OAc),Nessuno,120.0,60.0,0.25,0.4,0.625,Solvothermal,1
+100,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,CuI,Non specificato,Nessuno,120.0,180.0,0.25,0.4,0.625,Solvothermal,1
+101,"3-amino-4,4'-bipyrazole",Bipyrazole,Fe,Fe(NO3)3*9H2O,Non specificato,Nessuno,140.0,24.0,0.15,0.15,1.0,Solvothermal,1
+102,"3-amino-4,4'-bipyrazole",Bipyrazole,Fe,Fe(NO3)3*9H2O,DMF,Nessuno,120.0,24.0,0.2,0.1,2.0,Solvothermal,1
+103,"3-amino-4,4'-bipyrazole",Bipyrazole,Fe,FeCl3,DMF,Nessuno,120.0,24.0,0.2,0.1,2.0,Solvothermal,1
+104,"3-amino-4,4'-bipyrazole",Bipyrazole,Fe,FeCl3,DMF,Acido acetico glaciale,120.0,24.0,0.2,0.1,2.0,Solvothermal,1
+105,"3-amino-4,4'-bipyrazole",Bipyrazole,Fe,FeCl3,DMF,Acido acetico glaciale,120.0,24.0,0.2,0.1,2.0,Solvothermal,1
+106,"3-amino-4,4'-bipyrazole",Bipyrazole,Fe,FeCl3,H2O/DMF,Acido acetico glaciale,100.0,24.0,0.2,0.1,2.0,Solvothermal,1
+107,"3-amino-4,4'-bipyrazole",Bipyrazole,Fe,FeCl3,H2O/DMF,Acido acetico glaciale,110.0,72.0,0.2,0.2,1.0,Solvothermal,1
+108,"3-amino-4,4'-bipyrazole",Bipyrazole,Mg,Mg(OAc)2*4H2O,H2O,Nessuno,130.0,48.0,0.15,0.45,0.3333333333333333,Solvothermal,1
+109,"3-amino-4,4'-bipyrazole",Bipyrazole,Mn,MnCl2 · 4H2O,Non specificato,Nessuno,100.0,24.0,0.2,0.2,1.0,Solvothermal,1
+110,"3-amino-4,4'-bipyrazole",Bipyrazole,Mn,MnCl2 · 4H2O,Non specificato,Nessuno,100.0,5.0,0.2,0.2,1.0,Solvothermal,1
+111,"3-amino-4,4'-bipyrazole",Bipyrazole,Mn,Mn(Oac)2*4H2O,Non specificato,Nessuno,130.0,72.0,0.2,0.2,1.0,Solvothermal,1
+112,"3-amino-4,4'-bipyrazole",Bipyrazole,Mn,MnCl2 · 4H2O,Non specificato,Nessuno,100.0,48.0,0.2,0.2,1.0,Solvothermal,1
+113,"3-amino-4,4'-bipyrazole",Bipyrazole,Mn,MnCl2 · 4H2O,Non specificato,Nessuno,160.0,48.0,0.2,0.2,1.0,Solvothermal,1
+114,"3-amino-4,4'-bipyrazole",Bipyrazole,Mn,MnCl2 · 4H2O,Non specificato,Nessuno,160.0,72.0,0.2,0.2,1.0,Solvothermal,1
+115,"3-amino-4,4'-bipyrazole",Bipyrazole,Mn,Mn(Oac)2*4H2O,Non specificato,Nessuno,160.0,24.0,0.2,0.2,1.0,Solvothermal,1
+116,"3-amino-4,4'-bipyrazole",Bipyrazole,Mn,Mn(Oac)2*4H2O,DMF,BDC,140.0,115.0,0.2,0.2,1.0,Solvothermal,1
+117,"3-amino-4,4'-bipyrazole",Bipyrazole,Zr,Zr(OCH3)4,HCl 37%,Nessuno,120.0,48.0,0.15,0.15,1.0,Solvothermal,1
+118,"3-amino-4,4'-bipyrazole",Bipyrazole,Zr,ZrCl4,HCl 37%,Nessuno,120.0,48.0,0.15,0.15,1.0,Solvothermal,1
+119,"3-amino-4,4'-bipyrazole",Bipyrazole,Zr,ZrCl4,H2O,Nessuno,100.0,48.0,0.2,0.1,2.0,Solvothermal,1
+120,"3-amino-4,4'-bipyrazole",Bipyrazole,Zr,ZrCl4,DMF,Nessuno,120.0,48.0,0.2,0.1,2.0,Solvothermal,1
+121,3-MePz-4-COOH,Pyrazole carbossilati,Al,Al(NO3)3*9H2O,DMF,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+122,3-MePz-4-COOH,Pyrazole carbossilati,Cu,Cu(OAc)2*H2O,H2O,Nessuno,120.0,96.0,0.2,0.1,2.0,Solvothermal,2
+123,3-MePz-4-COOH,Pyrazole carbossilati,Fe,Fe2(SO4)3*xH2O,DMF/EtOH,Nessuno,120.0,24.0,0.2,0.1,2.0,Solvothermal,1
+124,3-MePz-4-COOH,Pyrazole carbossilati,Fe,FeCl3,DMF/EtOH,Nessuno,120.0,24.0,0.2,0.1,2.0,Solvothermal,1
+125,3-MePz-4-COOH,Pyrazole carbossilati,Mn,Mn(OAc)2*4H2O,DMF/H2O,Nessuno,120.0,24.0,0.2,0.1,2.0,Solvothermal,2
+126,3-MePz-4-COOH,Pyrazole carbossilati,Mn,Mn(OAc)2*4H2O,DMF/H2O,Nessuno,120.0,72.0,0.2,0.1,2.0,Solvothermal,2
+127,3-MePz-4-COOH,Pyrazole carbossilati,Ni,Ni(NO3)2,DMF/H2O,Nessuno,120.0,72.0,0.2,0.1,2.0,Solvothermal,2
+128,3-MePz-4-COOH,Pyrazole carbossilati,Zr,ZrCl4,MeOH,Nessuno,110.0,94.0,0.3,0.3,1.0,Solvothermal,1
+129,3-MePz-4-COOH,Pyrazole carbossilati,Zr,ZrCl4,MeOH,Nessuno,100.0,24.0,0.3,0.3,1.0,Solvothermal,1
+130,3-MePz-4-COOH,Pyrazole carbossilati,Zr,ZrCl4,MeOH,Nessuno,110.0,24.0,0.15,0.15,1.0,Solvothermal,1
+131,3-MePz-4-COOH,Pyrazole carbossilati,Zr,ZrCl4,DMF/MeOH,Nessuno,110.0,24.0,0.15,0.15,1.0,Solvothermal,1
+132,3-MePz-4-COOH,Pyrazole carbossilati,Zr,ZrCl4,MeOH,Nessuno,110.0,72.0,0.15,0.15,1.0,Solvothermal,1
+133,"3-nitro-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF/EtOH,Nessuno,140.0,72.0,0.2,0.1,2.0,Solvothermal,1
+134,"3-nitro-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,140.0,72.0,0.2,0.1,2.0,Solvothermal,1
+135,"3-nitro-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,140.0,72.0,0.6,0.3,2.0,Solvothermal,1
+136,"3-nitro-4,4'-bipyrazole",Bipyrazole,Cd,Cd(OAc)2*2H2O,DMF,Nessuno,140.0,72.0,0.2,0.1,2.0,Solvothermal,1
+137,"3-nitro-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,160.0,24.0,0.2,0.1,2.0,Solvothermal,2
+138,"3-nitro-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,160.0,48.0,0.1,0.1,1.0,Solvothermal,1
+139,"3-nitro-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,160.0,48.0,0.1,0.2,0.5,Solvothermal,1
+140,"3-nitro-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF/H2O,Nessuno,160.0,72.0,0.3,0.3,1.0,Solvothermal,1
+141,"3-nitro-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF/H2O,Nessuno,140.0,120.0,0.2,0.1,2.0,Solvothermal,1
+142,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Nessuno,100.0,48.0,0.15,0.15,1.0,Solvothermal,1
+143,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Acido benzoico,100.0,24.0,0.15,0.15,1.0,Solvothermal,1
+144,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Acido acetico glaciale,100.0,24.0,0.15,0.15,1.0,Solvothermal,1
+145,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Acido benzoico,100.0,24.0,0.3,0.3,1.0,Solvothermal,1
+146,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Nessuno,100.0,25.0,0.3,0.3,1.0,Solvothermal,1
+147,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Nessuno,100.0,48.0,0.9,0.9,1.0,Solvothermal,2
+148,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,140.0,48.0,0.2,0.1,2.0,Solvothermal,1
+149,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,140.0,120.0,1.2,0.6,2.0,Solvothermal,2
+150,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,140.0,120.0,1.2,0.6,2.0,Solvothermal,2
+151,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,140.0,48.0,1.0,0.5,2.0,Solvothermal,1
+152,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF/H2O,Nessuno,120.0,48.0,0.1,0.1,1.0,Solvothermal,1
+153,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,120.0,48.0,0.15,0.15,1.0,Solvothermal,1
+154,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Cd,Cd(OAc)2*2H2O,DMF,Nessuno,120.0,48.0,0.15,0.15,1.0,Solvothermal,1
+155,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Fe,Fe(NO)3*9H2O,DMF,Nessuno,90.0,24.0,0.2,0.2,1.0,Solvothermal,1
+156,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Fe,FeCl3,DMF,Nessuno,90.0,24.0,0.2,0.2,1.0,Solvothermal,1
+157,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Fe,FeCl3*6H2O,DMF,Nessuno,110.0,48.0,0.2,0.1,2.0,Solvothermal,1
+158,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Mn,Mn(NO3)2·xH2O,DMF,Nessuno,110.0,48.0,0.2,0.1,2.0,Solvothermal,1
+159,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Ti,Ti(OEt)4,DMF,Nessuno,110.0,48.0,0.2,0.1,2.0,Solvothermal,1
+160,"3,3-dimethyl-4,4'-bipyrazole",Bipyrazole,Zr,ZrCl4,DMF,Nessuno,110.0,48.0,0.2,0.1,2.0,Solvothermal,1
+161,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,150.0,24.0,0.1,0.1,1.0,Solvothermal,2
+162,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,150.0,24.0,0.1,0.2,0.5,Solvothermal,1
+163,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF/H20,Nessuno,160.0,48.0,0.2,0.1,2.0,Solvothermal,0
+164,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,DMF/H20,Nessuno,160.0,48.0,0.2,0.1,2.0,Solvothermal,2
+165,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Co,Cd(OAc)2*4H2O,DMF/H20,Nessuno,160.0,24.0,0.2,0.2,1.0,Solvothermal,1
+166,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H20,Nessuno,120.0,24.0,0.1,0.1,1.0,Solvothermal,1
+167,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H20,Nessuno,150.0,48.0,0.1,0.1,1.0,Solvothermal,1
+168,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Co,Cd(OAc)2*4H2O,DMF/H20,Nessuno,160.0,24.0,0.1,0.2,0.5,Solvothermal,1
+169,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF,Nessuno,160.0,6.0,0.2,0.1,2.0,Solvothermal,2
+170,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Cu,Cu(NO3)2*3H2O,DMF/H20,Nessuno,160.0,48.0,0.2,0.1,2.0,Solvothermal,2
+171,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Cu,Cu(NO3)2*3H2O,DMF/H20,Nessuno,160.0,24.0,0.2,0.2,1.0,Solvothermal,1
+172,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Cu,Cu(NO3)2*3H2O,DMF/H20,Nessuno,160.0,48.0,0.1,0.2,0.5,Solvothermal,1
+173,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2*H2O,DMF/H20,Nessuno,120.0,24.0,0.1,0.1,1.0,Solvothermal,1
+174,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2*H2O,DMF/H20,Nessuno,150.0,48.0,0.1,0.1,1.0,Solvothermal,1
+175,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Cu,Cu(NO3)2*3H2O,DMF,Nessuno,160.0,6.0,0.2,0.1,2.0,Solvothermal,2
+176,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Ni,Ni(OAc)2*4H2O,CH3CN,Nessuno,120.0,6.0,0.2,0.2,1.0,Solvothermal,1
+177,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Zn,Zn(NO3)2*6H2O,DMF/H20,Nessuno,160.0,48.0,0.2,0.1,2.0,Solvothermal,2
+178,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Zn,Zn(NO3)2*6H2O,DMF/H20,Nessuno,160.0,24.0,0.2,0.2,1.0,Solvothermal,1
+179,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Zn,Zn(OAc)2*2H2O,DMF/H20,Nessuno,120.0,24.0,0.1,0.1,1.0,Solvothermal,1
+180,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Zn,Zn(OAc)2*2H2O,DMF/H20,Nessuno,150.0,48.0,0.1,0.1,1.0,Solvothermal,1
+181,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Zn,Zn(NO3)2*6H2O,DMF/H20,Nessuno,160.0,24.0,0.1,0.2,0.5,Solvothermal,2
+182,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Zn,Zn(NO3)2*6H2O,DMF,Nessuno,160.0,6.0,0.2,0.1,2.0,Solvothermal,2
+183,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Zr,ZrCl4,DMF,Nessuno,120.0,48.0,0.1,0.1,1.0,Solvothermal,1
+184,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Zr,ZrCl4,DMF,H2O-Et3N,120.0,48.0,0.1,0.1,1.0,Solvothermal,1
+185,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF,Nessuno,100.0,1.5,0.15,0.15,1.0,Solvothermal,1
+186,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF/MeCN,Nessuno,100.0,0.45,0.15,0.15,1.0,Solvothermal,1
+187,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF/MeCN,Nessuno,100.0,1.0,0.15,0.15,1.0,Solvothermal,1
+188,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF/MeCN,Nessuno,80.0,24.0,0.15,0.15,1.0,Solvothermal,1
+189,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ag,Ag2O,MeOH/NH3,Nessuno,120.0,115.0,0.15,0.15,1.0,Solvothermal,1
+190,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,MeOH,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+191,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ag,AgNO3,DMF/MeOH,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+192,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Al,Al(NO3)3∙9H2O,DMF,Nessuno,140.0,24.0,0.2,0.2,1.0,Solvothermal,1
+193,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF/H2O,Nessuno,160.0,72.0,0.3,0.3,1.0,Solvothermal,1
+194,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,140.0,72.0,0.2,0.1,2.0,Solvothermal,1
+195,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,140.0,72.0,0.48,0.2,2.4,Solvothermal,2
+196,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,140.0,48.0,1.0,0.5,2.0,Solvothermal,1
+197,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(OAc)2*2H2O,DMF/H2O,Nessuno,140.0,48.0,0.2,0.1,2.0,Solvothermal,1
+198,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF/H2O,Nessuno,140.0,120.0,0.2,0.1,2.0,Solvothermal,1
+199,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,ButOH,Nessuno,130.0,48.0,0.2,0.2,1.0,Solvothermal,1
+200,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,ButOH,Nessuno,110.0,72.0,0.2,0.2,1.0,Solvothermal,1
+201,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,DMF,Nessuno,120.0,3.0,0.5,0.5,1.0,Solvothermal,1
+202,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,DMF,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+203,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,EtOH,Nessuno,70.0,72.0,0.2,0.2,1.0,Solvothermal,1
+204,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,NH3 28%,Nessuno,70.0,24.0,0.2,0.2,1.0,Solvothermal,1
+205,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,DMF,Nessuno,160.0,24.0,0.2,0.2,1.0,Solvothermal,1
+206,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF,Nessuno,160.0,24.0,0.2,0.2,1.0,Solvothermal,1
+207,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,DMF,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+208,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,NH3 30%,Nessuno,140.0,24.0,0.2,0.2,1.0,Solvothermal,1
+209,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,DMF,BDC,160.0,48.0,0.2,0.2,1.0,Solvothermal,1
+210,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,DMF/H2O,BDC,160.0,48.0,0.2,0.2,1.0,Solvothermal,1
+211,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,DMF,Nessuno,200.0,144.0,0.2,0.2,1.0,Solvothermal,1
+212,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,DMF/H2O,Nessuno,160.0,72.0,0.2,0.2,1.0,Solvothermal,1
+213,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,DMF,Nessuno,160.0,72.0,0.2,0.2,1.0,Solvothermal,1
+214,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,72.0,0.2,0.2,1.0,Solvothermal,1
+215,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,120.0,0.06091321086,0.03435953821,1.7728180887562632,Solvothermal,1
+216,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,72.0,1.2,0.6,2.0,Solvothermal,1
+217,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,72.0,1.5,1.5,1.0,Solvothermal,1
+218,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,24.0,0.1,0.05,2.0,Solvothermal,1
+219,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/EtOH,Nessuno,160.0,24.0,0.1,0.05,2.0,Solvothermal,1
+220,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,24.0,0.1,0.05,2.0,Solvothermal,1
+221,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/EtOH,Nessuno,160.0,16.0,0.2,0.1,2.0,Solvothermal,1
+222,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/MeOH,Nessuno,160.0,24.0,0.1,0.05,2.0,Solvothermal,1
+223,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,MeOH,Nessuno,120.0,72.0,0.1,0.1,1.0,Solvothermal,0
+224,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,150.0,72.0,0.05,0.05,1.0,Solvothermal,2
+225,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,DMF,Nessuno,110.0,48.0,0.2,0.2,1.0,Solvothermal,1
+226,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,DMF/H2O,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+227,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,DMF,Nessuno,160.0,24.0,0.2,0.2,1.0,Solvothermal,1
+228,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF,Nessuno,160.0,24.0,0.2,0.2,1.0,Solvothermal,1
+229,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,DMF,Nessuno,160.0,24.0,0.2,0.4,0.5,Solvothermal,1
+230,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/MetOH,Nessuno,160.0,24.0,0.2,0.2,1.0,Solvothermal,1
+231,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,DMF/MetOH,Nessuno,160.0,24.0,0.2,0.2,1.0,Solvothermal,1
+232,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,95.0,0.06091321086,0.03435953821,1.7728180887562632,Solvothermal,1
+233,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,24.0,0.1218,0.0687,1.7729257641921399,Solvothermal,1
+234,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,24.0,1.2,1.2,1.0,Solvothermal,1
+235,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,24.0,1.3,1.3,1.0,Solvothermal,1
+236,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,72.0,0.2,0.2,1.0,Solvothermal,1
+237,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,24.0,0.2,0.2,1.0,Solvothermal,1
+238,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,24.0,0.2,0.2,1.0,Solvothermal,1
+239,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,120.0,0.06091321086,0.03435953821,1.7728180887562632,Solvothermal,1
+240,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/ButOH/CH3CN,Nessuno,160.0,48.0,0.06091321086,0.03435953821,1.7728180887562632,Solvothermal,1
+241,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,100.0,0.1827,0.1029,1.7755102040816326,Solvothermal,1
+242,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,24.0,1.2,1.2,1.0,Solvothermal,1
+243,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,24.0,1.2,0.6,2.0,Solvothermal,1
+244,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2*6H2O,DMF,Nessuno,160.0,24.0,0.2,0.4,0.5,Solvothermal,1
+245,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2*4H2O,Non specificato,Nessuno,120.0,60.0,0.25,0.4,0.625,Solvothermal,1
+246,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2*H2O,DMF,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+247,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2*H2O,ButOH,Nessuno,130.0,48.0,0.2,0.2,1.0,Solvothermal,1
+248,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2*H2O,ButOH,Nessuno,110.0,72.0,0.2,0.2,1.0,Solvothermal,1
+249,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2*H2O,DMF,Nessuno,120.0,3.0,0.5,0.5,1.0,Solvothermal,1
+250,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2*H2O,DMF,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+251,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2*H2O,EtOH,Nessuno,70.0,72.0,0.2,0.2,1.0,Solvothermal,1
+252,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2*H2O,DMF,Nessuno,80.0,3.0,0.5,0.5,1.0,Solvothermal,1
+253,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2*H2O,NH3 30%,Nessuno,110.0,24.0,0.2,0.5,0.4,Solvothermal,1
+254,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(NO3)2*3H2O,Non specificato,Nessuno,110.0,24.0,0.2,0.2,1.0,Solvothermal,1
+255,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2*H2O,DMF,Nessuno,110.0,48.0,0.2,0.2,1.0,Solvothermal,1
+256,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2*H2O,DMF/H2O,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+257,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(NO3)2*3H2O,DMF/H2O,Nessuno,160.0,24.0,0.1218,0.0687,1.7729257641921399,Solvothermal,1
+258,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2 *H2O,DMF/H2O,Nessuno,160.0,24.0,0.1218,0.0687,1.7729257641921399,Solvothermal,1
+259,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(NO3)2*3H2O,DMF/H2O,Nessuno,160.0,24.0,0.24,0.13,1.846153846153846,Solvothermal,1
+260,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2*H2O,DMF/H2O,Nessuno,100.0,72.0,0.24,0.24,1.0,Solvothermal,1
+261,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(NO3)2*3H2O,DMF/H2O,Nessuno,100.0,72.0,0.24,0.24,1.0,Solvothermal,1
+262,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Fe,Fe(NO3)3*9H2O,DMF,Nessuno,120.0,24.0,0.2,0.1,2.0,Solvothermal,1
+263,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Fe,FeCl3,DMF,Nessuno,120.0,24.0,0.2,0.1,2.0,Solvothermal,1
+264,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Mn,MnCl2 · 4H2O,Non specificato,Nessuno,100.0,24.0,0.2,0.2,1.0,Solvothermal,1
+265,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(OAc)2*4H2O,ButOH,Nessuno,130.0,48.0,0.2,0.2,1.0,Solvothermal,1
+266,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(OAc)2*4H2O,ButOH,Nessuno,110.0,72.0,0.2,0.2,1.0,Solvothermal,1
+267,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(OAc)2*4H2O,DMF,Nessuno,120.0,3.0,0.5,0.5,1.0,Solvothermal,1
+268,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(OAc)2*4H2O,DMF,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+269,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(OAc)2*4H2O,DMF,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+270,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(OAc)2*4H2O,EtOH,Nessuno,70.0,72.0,0.2,0.2,1.0,Solvothermal,1
+271,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(NO3)2*6H2O,Mesitilene,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+272,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(NO3)2*6H2O,DMF,Nessuno,160.0,24.0,0.2,0.2,1.0,Solvothermal,1
+273,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(NO3)2*6H2O,DMF,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+274,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(NO3)2*6H2O,DMF,Nessuno,65.0,96.0,0.2,0.2,1.0,Solvothermal,1
+275,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(OAc)2*4H2O,DMF,Nessuno,110.0,48.0,0.2,0.2,1.0,Solvothermal,1
+276,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(OAc)2*4H2O,DMF/H2O,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+277,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,24.0,0.24,0.13,1.846153846153846,Solvothermal,1
+278,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(OAc)2*4H2O,DMF,Nessuno,140.0,24.0,0.2,0.2,1.0,Solvothermal,1
+279,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(OAc)2*4H2O,DMF,Nessuno,120.0,72.0,0.2,0.2,1.0,Solvothermal,1
+280,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(NO3)2*6H2O,DMF,Nessuno,85.0,72.0,0.2,0.2,1.0,Solvothermal,1
+281,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Zn,Zn(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,24.0,0.24,0.13,1.846153846153846,Solvothermal,1
+282,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Zn,Zn(OAc)2*2H2O,DMF/H2O,Nessuno,160.0,72.0,0.2,0.2,1.0,Solvothermal,1
+283,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Zn,Zn(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,72.0,0.2,0.2,1.0,Solvothermal,1
+284,"3,5-DiMePz-4-COOH",Pyrazole carbossilati,Cu,Cu(OAc)2*H2O,H2O,Nessuno,120.0,48.0,0.2,0.1,2.0,Solvothermal,2
+285,"3,5-DiMePz-4-COOH",Pyrazole carbossilati,Cu,Cu(OAc)2*H2O,H2O,Nessuno,120.0,72.0,1.0,0.5,2.0,Solvothermal,1
+286,"3,5-DiMePz-4-COOH",Pyrazole carbossilati,Cu,Cu(OAc)2*H2O,EtOH,Nessuno,120.0,48.0,0.2,0.1,2.0,Solvothermal,2
+287,"3,5-DiMePz-4-COOH",Pyrazole carbossilati,Zn,Zn(OAc)2*2H2O,H2O,Nessuno,120.0,48.0,0.2,0.1,2.0,Solvothermal,1
+288,"3,5-DiMePz-4-COOH",Pyrazole carbossilati,Zn,Zn(OAc)2*2H2O,EtOH,Nessuno,120.0,48.0,0.2,0.1,2.0,Solvothermal,2
+289,"3,5-DiMePz-4-COOH",Pyrazole carbossilati,Zn,Zn(OAc)2*2H2O,EtOH,Nessuno,120.0,72.0,1.0,0.5,2.0,Solvothermal,1
+290,"3,5-DiMePz-4-COOH",Pyrazole carbossilati,Zr,ZrCl4,MeOH,Nessuno,110.0,72.0,0.15,0.15,1.0,Solvothermal,1
+291,"3,5-DiMePz-4-COOH",Pyrazole carbossilati,Zr,ZrCl4,MeOH,Nessuno,110.0,94.0,0.3,0.3,1.0,Solvothermal,1
+292,"3,5-DiMePz-4-COOH",Pyrazole carbossilati,Zr,ZrCl4,MeOH,Nessuno,100.0,24.0,0.3,0.3,1.0,Solvothermal,1
+293,"3,5-DiMePz-4-COOH",Pyrazole carbossilati,Zr,ZrCl4,MeOH,Nessuno,110.0,24.0,0.15,0.15,1.0,Solvothermal,1
+294,"3,5-DiMePz-4-COOH",Pyrazole carbossilati,Zr,ZrCl4,MeOH,Nessuno,110.0,48.0,0.15,0.15,1.0,Solvothermal,1
+295,"3,5-DiMePz-4-COOH",Pyrazole carbossilati,Zr,Zr(OCH3)4,MetOH,Nessuno,120.0,30.0,0.25,0.4,0.625,Solvothermal,1
+296,"3,5-DiMePz-4-COOH",Pyrazole carbossilati,Zr,Zr(OCH3)4,MeOH,Nessuno,120.0,2.0,0.2,0.1,2.0,Solvothermal,1
+297,"3,5-DiMePz-4-COOH",Pyrazole carbossilati,Zr,ZrCl4,H2O,Nessuno,120.0,72.0,1.0,0.5,2.0,Solvothermal,1
+298,"4-Amino-4H-1,2,4-triazole",Triazole,Cu,Cu(OAc)2*H2O,EtOH,Nessuno,120.0,24.0,1.0,2.0,0.5,Solvothermal,1
+299,"4-Amino-4H-1,2,4-triazole",Triazole,Cu,Cu(OAc)2*H2O,DMF,Nessuno,130.0,48.0,0.5,0.5,1.0,Solvothermal,1
+300,"4-Amino-4H-1,2,4-triazole",Triazole,Cu,Cu(OAc)2*H2O,DMF,Nessuno,120.0,48.0,0.5,1.0,0.5,Solvothermal,1
+301,"4-Amino-4H-1,2,4-triazole",Triazole,Cu,Cu(OAc)2*H2O,EtOH,Nessuno,70.0,72.0,1.0,2.0,0.5,Solvothermal,1
+302,"4-Amino-4H-1,2,4-triazole",Triazole,Zn,Zn(OAc)2*2H2O,EtOH,Nessuno,120.0,24.0,1.0,1.0,1.0,Solvothermal,1
+303,"4-Amino-4H-1,2,4-triazole",Triazole,Zn,Zn(NO3)2 *6H2O,DMF,BTC,160.0,75.0,0.5,0.5,1.0,Solvothermal,1
+304,"4-Amino-4H-1,2,4-triazole",Triazole,Zn,Zn(NO3)2 *6H2O,DMF,Nessuno,160.0,75.0,0.5,0.5,1.0,Solvothermal,1
+305,"4-Amino-4H-1,2,4-triazole",Triazole,Zn,Zn(NO3)2 *6H2O,DMF,Nessuno,120.0,48.0,0.5,0.5,1.0,Solvothermal,1
+306,"4-Amino-4H-1,2,4-triazole",Triazole,Zn,Zn(OAc)2*2H2O,EtOH,Nessuno,70.0,72.0,1.0,2.0,0.5,Solvothermal,1
+307,5-MePz-4-COOH,Pyrazole carbossilati,Zn,Zn(NO3)2*6H2O,DMF,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+308,5-MePz-4-COOH,Pyrazole carbossilati,Zr,ZrCl4,DMF,Nessuno,120.0,24.0,0.2,0.2,1.0,Solvothermal,1
+309,5-MePz-4-COOH,Pyrazole carbossilati,Zr,ZrCl4,DMF,Benzoic acid,120.0,24.0,0.15,0.15,1.0,Solvothermal,1
+310,5-MePz-4-COOH,Pyrazole carbossilati,Zr,ZrCl4,DMF,HCl 37%,120.0,72.0,0.15,0.15,1.0,Solvothermal,1
+311,BDC,Carbossilati aromatici,Cu,Cu(OAc)2*H2O,EtOH,Pz,120.0,24.0,0.5,1.0,0.5,Solvothermal,1
+312,BDC,Carbossilati aromatici,Cu,Cu(OAc)2*H2O,EtOH,4-BrPz,120.0,24.0,0.5,1.0,0.5,Solvothermal,1
+313,BDC,Carbossilati aromatici,Cu,Cu(OAc)2*H2O,EtOH,"3,5-dimetilPz",120.0,24.0,0.5,1.0,0.5,Solvothermal,1
+314,BDC,Carbossilati aromatici,Cu,Cu(OAc)2*H2O,EtOH,4-ClPz,120.0,24.0,0.5,1.0,0.5,Solvothermal,1
+315,BDC,Carbossilati aromatici,Cu,Cu(OAc)2*H2O,EtOH,Pz,120.0,24.0,0.5,1.0,0.5,Solvothermal,1
+316,BDC,Carbossilati aromatici,Cu,Cu(OAc)2*H2O,EtOH/H2O,Pz,120.0,24.0,0.5,1.0,0.5,Solvothermal,1
+317,BPz,Bipyrazole,Au,NaAuCl4 · 2H2O,DMF,Nessuno,60.0,48.0,0.2,0.1,2.0,Solvothermal,1
+318,BPz,Bipyrazole,Au,NaAuCl4 · 2H2O,DMF,Et3N,140.0,24.0,0.2,0.1,2.0,Solvothermal,1
+319,BPz,Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,150.0,24.0,0.8,0.8,1.0,Solvothermal,1
+320,BPz,Bipyrazole,Co,Co(OAc)2*4H2O,DMF,Nessuno,120.0,72.0,1.5,1.5,1.0,Solvothermal,2
+321,BPz,Bipyrazole,Co,Co(OAc)2*4H2O,DMF,Nessuno,120.0,72.0,0.5,0.5,1.0,Solvothermal,2
+322,BPz,Bipyrazole,Co,Co(OAc)2*4H2O,DMF,Nessuno,120.0,72.0,0.5,0.5,1.0,Solvothermal,2
+323,BPz,Bipyrazole,Co,Co(OAc)2*4H2O,DMF,Nessuno,120.0,72.0,0.5,0.5,1.0,Solvothermal,1
+324,Et4BPz,Bipyrazole,Ag,AgNO3,MeOH,Nessuno,120.0,48.0,0.2,0.2,1.0,Solvothermal,1
+325,Et4BPz,Bipyrazole,Ag,AgPF6,MeOH,Nessuno,120.0,48.0,0.2,0.2,1.0,Solvothermal,1
+326,Et4BPz,Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Nessuno,140.0,48.0,0.6,0.6,1.0,Solvothermal,1
+327,Et4BPz,Bipyrazole,Ni,Ni(NO3)2*6H2O,DMF/H2O,Nessuno,160.0,72.0,0.2,0.1,2.0,Solvothermal,1
+328,Et4BPz,Bipyrazole,Ni,Ni(OAc)2*4H2O,DMA,Nessuno,150.0,24.0,0.2,0.2,1.0,Solvothermal,1
+329,Et4BPz,Bipyrazole,Ni,Ni(NO3)2*6H2O,MeOH,Nessuno,140.0,48.0,0.2,0.2,1.0,Solvothermal,1
+330,Et4BPz,Bipyrazole,Zn,Zn(OAc)2*2H2O,DMF/H2O,Nessuno,140.0,72.0,0.2,0.1,2.0,Solvothermal,1
+331,H2Me2BDP,Altro,Ag,AgPF6,MeOH,Nessuno,120.0,48.0,0.2,0.2,1.0,Solvothermal,1
+332,Me4BPz,Bipyrazole,Ni,Ni(NO3)2*6H2O,DMF/H2O/EtOH,Nessuno,120.0,72.0,0.2,0.1,2.0,Solvothermal,1
+333,Me4BPz,Bipyrazole,Ni,Ni(OAc)2*4H2O,DMF/H2O/EtOH,Nessuno,120.0,72.0,0.2,0.1,2.0,Solvothermal,1
+334,Me4BPz,Bipyrazole,Zr,ZrCl4,DMF/H2O,Nessuno,120.0,48.0,0.2,0.1,2.0,Solvothermal,1
+335,Me4BPz,Bipyrazole,Zr,ZrCl4,DMF/MeOH,Nessuno,120.0,48.0,0.1,0.1,1.0,Solvothermal,1
+336,"PzDC / 1H-3,5-dicarboxylic",Pyrazole carbossilati,Zr,ZrCl4,DMF/MeOH,Nessuno,120.0,48.0,0.1,0.1,1.0,Solvothermal,1
+337,"PzDC / 1H-3,5-dicarboxylic",Pyrazole carbossilati,Zr,ZrCl4,H2O,Nessuno,120.0,48.0,0.1,0.1,1.0,Solvothermal,1
+338,"PzDC / 1H-3,5-dicarboxylic",Pyrazole carbossilati,Zr,ZrCl4,DMF/H2O,Nessuno,120.0,48.0,0.1,0.1,1.0,Solvothermal,1
+339,"PzDC / 1H-3,5-dicarboxylic",Pyrazole carbossilati,Zr,ZrCl4,H2O,Nessuno,120.0,72.0,0.1,0.075,1.3333333333333335,Solvothermal,1
+340,"PzDC / 1H-3,5-dicarboxylic",Pyrazole carbossilati,Zr,ZrCl4,MeOH,Nessuno,120.0,72.0,0.25,0.4,0.625,Solvothermal,1
+341,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2*4H2O,DMF,Et3N,150.0,72.0,0.1,0.1,1.0,Solvothermal,0
+342,BDP,Bipyrazole,Co,Co(NO3)2*6H2O,DMF,Nessuno,120.0,72.0,0.1,0.3,0.33333333333333337,Solvothermal,0
+343,BDP,Bipyrazole,Co,Co(OAc)2*4H2O,DMF,Acido acetico glaciale,150.0,16.0,0.12,0.24,0.5,Solvothermal,0
+344,BDP,Bipyrazole,Co,Co(NO3)2*6H2O,DMF,Nessuno,150.0,24.0,0.1,0.2,0.5,Solvothermal,0
+345,BDP,Bipyrazole,Co,Co(OAc)2*4H2O,DEF,Nessuno,160.0,72.0,0.2,0.2,1.0,Solvothermal,1
+346,BDP,Bipyrazole,Co,Co(NO3)2*6H2O,DEF,Nessuno,160.0,72.0,0.2,0.2,1.0,Solvothermal,1
+347,BDP,Bipyrazole,Co,Co(NO3)2*6H2O,DMF,H2O,160.0,72.0,0.14,0.23,0.6086956521739131,Solvothermal,1
+348,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,CoCl2+FeCl3,DMF,MeOH,130.0,16.0,0.1,0.1,1.0,Solvothermal,1
+349,H2FBDP,Bipyrazole,Co,Co(NO3)2*6H2O,DMF,Nessuno,160.0,72.0,0.1,0.1,1.0,Solvothermal,1
+350,H2FBDP,Bipyrazole,Co,Co(OAc)2*4H2O,DMF,Nessuno,160.0,72.0,0.1,0.1,1.0,Solvothermal,1
+351,BDP,Bipyrazole,Co,Co(NO3)2*6H2O,DMF,Nessuno,130.0,16.0,0.14,0.23,0.6086956521739131,Solvothermal,1
+352,BDP,Bipyrazole,Co,Co(NO3)2*6H2O,DMF,H2O,130.0,16.0,0.14,0.23,0.6086956521739131,Solvothermal,1
+353,BDP,Bipyrazole,Co,Co(NO3)2*6H2O,DMF,H2O,130.0,12.0,0.1,0.1,1.0,Solvothermal,1
+354,Ph2BpPhTl,Organometallica,Ru,[Ru(p-cymene)Cl2]2,CH2Cl2,Nessuno,120.0,24.0,0.12,0.25,0.48,"Nessun precipitrato, dopo aver aggiunto etere dietilico ho rimesso in frigo ed aspettato quasi una settimana, mi si è formato un precipitato, ma una volta filtrato sembra eessere tallio cloruro(colere grigiastro); quindi riconservato le acque madri per vedere se la cristallizzazione.Dopo aver aggiunto etere dietilico formati alcuni cristalli.",2
+355,HB(BPzPh)3Tl,Organometallica - pirazoli,Ru,[Ru(p-cymene)Cl2]2,CH2Cl2,Nessuno,120.0,24.0,0.12,0.25,0.48,"Nessun precipitrato, dopo aver aggiunto etere dietilico ho rimesso in frigo ed aspettato quasi una settimana, mi si è formato un precipitato, ma una volta filtrato sembra eessere tallio cloruro(colere grigiastro); quindi riconservato le acque madri per vedere se avverrà qualche cristallizzazione. Dopo aver aggiunto etere dietilico alle acque madri si è formato un precipitato che ho filtrato e poi caratterizzato",2
+356,Ph2BpPhTl,Organometallica,Rh,[Rh(C5Me5)Cl2]2,CH2Cl2,Nessuno,120.0,24.0,0.12,0.25,0.48,Dopo 30 minuti di reazione si è formato un precipitato grigio-bianco( probabilmente TlCl); ho filtrato in modo tale che rimasesse tutto sul filtro e poi le acque madri le ho portate a secco a temperatura ambiente in una notte. Una volta portate a secco ho aggiungo 5-10 ml di MeOH e filtrato. Il filtrato caratterizzzato e le acque madri invece trattate con dietiletere(10 ml circa) e rifiltrate un altra volte. Il precipitato ulteriormente caratterizzzato.,2
+357,HB(BPzPh)3Tl,Organometallica - pirazoli,Rh,[Rh(C5Me5)Cl2]2,CH2Cl2,Nessuno,120.0,24.0,0.12,0.25,0.48,Dopo 30 minuti di reazione si è formato un precipitato grigio-bianco( probabilmente TlCl); ho filtrato in modo tale che rimasesse tutto sul filtro e poi le acque madri le ho portate a secco a temperatura ambiente in una notte. Una volta portate a secco ho aggiungo 5-10 ml di MeOH e filtrato. Il filtrato caratterizzzato e le acque madri invece trattate con dietiletere(10 ml circa) e rifiltrate un altra volte. Il precipitato ulteriormente caratterizzzato.,2
+358,Ph2BpPhTl,Organometallica,Non specificato,C20H30Cl4Ir2,CH2Cl2,Nessuno,120.0,24.0,0.12,0.25,0.48,Dopo 30 minuti di reazione si è formato un precipitato grigio-bianco( probabilmente TlCl); ho filtrato in modo tale che rimasesse tutto sul filtro e poi le acque madri le ho portate a secco a temperatura ambiente in una notte. Una volta portate a secco ho aggiungo 5-10 ml di MeOH e filtrato. Il filtrato caratterizzzato e le acque madri invece trattate con dietiletere(10 ml circa) e rifiltrate un altra volte. Il precipitato ulteriormente caratterizzzato.,2
+359,HB(BPzPh)3Tl,Organometallica - pirazoli,Non specificato,C20H30Cl4Ir2,CH2Cl2,Nessuno,120.0,24.0,0.12,0.25,0.48,Dopo 30 minuti di reazione si è formato un precipitato grigio-bianco( probabilmente TlCl); ho filtrato in modo tale che rimasesse tutto sul filtro e poi le acque madri le ho portate a secco a temperatura ambiente in una notte. Una volta portate a secco ho aggiungo 5-10 ml di MeOH e filtrato. Il filtrato caratterizzzato e le acque madri invece trattate con dietiletere(10 ml circa) e rifiltrate un altra volte. Il precipitato ulteriormente caratterizzzato.,2
+360,Ph2BpPhTl,Organometallica,Ru,[Ru(p-cymene)Cl2]2,CH2Cl2,Nessuno,120.0,24.0,0.12,0.06,2.0,"Male come Org1. Nessun precipitato, nemmeno dopo aver messo in frigo ed aggiunto eteredietilico. colore giallo, differente dal org1 che era rosso",1
+361,HB(BPzPh)3Tl,Organometallica - pirazoli,Ru,[Ru(p-cymene)Cl2]2,CH2Cl2,Nessuno,120.0,3.0,0.1,0.05,2.0,"Pesato il dimero di rutenio, l'ho messo in un pallone a due colli da 10 ml, iniziato ad insufflare argon per lavorare in ambiente inerte. Una volta solubilizzato il sale metallico ho aggiunto il legante, notando subito la formazione del cloruro di tallio(sospenzione bianca). Lasciata a temperatura ambiente sotto intenso stirring per 3 ore. Lasciato evaporare completamente il solvente, formazione di piccoli cristalli.",2
+362,TpMe2Tl,Organometallica,Ru,[Ru(p-cymene)Cl2]2,CH2Cl2,Nessuno,120.0,3.0,0.1,0.05,2.0,"Sciolto prima il sale metallico all'interno della vial, una volta solubilizzato ho aggiunto il legante; lasciato in stirring per 3 ore e poi fatto evaporare lentamente il solvente fino a dimezzare il volume. Una volta dimezzato il volume ho aggiunto dietil etere circa 5 ml, ho notato la formazione di una piccola sospensione, quindi l'ho filtrato su filtro con mesh sottili(precipitato bianco-grigio). Le acque madri raccolte ed aspettato di dimezzare nuovamente il volume. Una volta evaporato tutto il solvente, nel residuo ho aggiunto Et2O e poi filtrato. Ora procedo a caratterizzare il precipitato ed aspetto che le acque madri evaporino.",1
+363,KTp,Organometallica,Ru,[Ru(p-cymene)Cl2]2,CH2Cl2,Nessuno,120.0,3.0,0.1,0.05,2.0,"Ho sciolto il rutenio in 10 ml di DCM, poi ho aggiunto il legante e lasciato in agitazione per 4 ore. Ho filtrato, perchè la soluzione era leggermente torbida e le acque madri le ho lasciate aperte sotto cappa per far evaporare il solvente.Una volta evaporato tutto il solvente ho aggiunto circa 10-15 ml di etere dietilico e filtrato. Ora procedo a caratterizzare il precipitato ed aspetto che le acque madri evaporino.",1
+364,KTp,Organometallica,Ru,[Ru(p-cymene)Cl2]2,MeCN,Nessuno,120.0,3.0,0.1,0.05,2.0,"Solubilizzato il legante in un pallone a due colli con 5 ml di MeCN, messo sotto argon ed una volta solubilizzato ho aggiunto il dimero metallico. Lasciato 3h sotto agitazione a temperatura ambiente, una volrta passate 3 ore ho lasciato l'insufflazione di argon, ma aprendo il tappo sopra per ridurre il volume del solvente .una volta trascorso il tempo di reazione, concentri la soluzione di MeCN sotto vuoto a bassa temperatura fino a piccoli volumi, poi aggiungi lentamente un anti‑solvente apolare (esano) per precipitare il complesso, filtrando non ho notato la presenza di precipitato nel filtro. Le acque madri le faccio evaporare per stringere il solvente ed aggiunto ancora esano e poi lascio in firgo una notte.",1
+365,KTp,Organometallica,Ru,[Ru(p-cymene)Cl2]2,MeOH,Nessuno,120.0,3.0,0.1,0.05,2.0,"Nessun precipitato, ma soluzione di un rosso intenso, faccio dimezzare il volume all'aria. Una volta dimezzato il volume ho aggiunto etere dietilico e messo in frigo, dopo 24h è venuto giu un precipitato finissimo bianco(forse KCl), che caratterizzato all'IR non risultava essere nulla. Le acque del filtrato le faccio evaporare per dimezzarne il volume",1
+366,HB(BPzPh)3Tl,Organometallica - pirazoli,Rh,[Rh(C5Me5)Cl2]2,CH2Cl2,Nessuno,120.0,3.0,0.1,0.1,1.0,"Solubilizzato il dimero del metallo in 5 ml di diclorometano, in un'altra vial ho lasciato in sospensione il legante in altri 5 ml di diclorometano e poi aggiunto goccia a goccia nella soluzione del metallo. Dopo 3 ore ho notato un intorbidimento della reazione(formazione del cloruro di tallio); filtrato e sciacquato con 5 ml di diclorometano e lasciato dimezzare il volume delle acque madri all'ariauna va evaporato tutto il solvente sembrano essere precipitate due specie. Riprovo acristazzare una piccola aliquota con cloroformio e n-esano.",1
+367,HB(BPzPh)3Tl,Organometallica - pirazoli,Non specificato,C20H30Cl4Ir2,CH2Cl2,Nessuno,120.0,3.0,0.1,0.1,1.0,"Solubilizzato il dimero del metallo in 5 ml di diclorometano, in un'altra vial ho lasciato in sospensione il legante in altri 5 ml di diclorometano e poi aggiunto goccia a goccia nella soluzione del metallo. Dopo 3 ore ho notato un intorbidimento della reazione(formazione del cloruro di tallio); filtrato e sciacquato con 5 ml di diclorometano e lasciato dimezzare il volume delle acque madri all'aria. Una volta evaporato completamente il solvente ho mandato un HNMR.",1
+368,HB(BPzPh)3Tl,Organometallica - pirazoli,Rh,[Rh(C5Me5)Cl2]2,CH2Cl2,Nessuno,120.0,6.0,0.05,0.1,0.5,"Solubilizzato il dimero del metallo in 4 ml di diclorometano, in un'altra vial ho lasciato in sospensione il legante in altri 4 ml di diclorometano e poi aggiunto goccia a goccia nella soluzione del metallo. Dopo 3 ore ho notato un intorbidimento della reazione(formazione del cloruro di tallio); filtrato e sciacquato con 5 ml di diclorometano e lasciato dimezzare il volume delle acque madri all'aria una va evaporato tutto il solvente sembrano essere precipitate due specie. Aggiunto qualche goccia di dietil etere e messo in frigo una notte; formazione di ulteriore precipitato.",1
+369,Et4BPz,Organometallica - pirazoli,Ru,[Ru(p-cymene)Cl2]2,MeOH,Nessuno,120.0,4.0,0.1,0.1,1.0,"Solubilizzato il dimero del metallo in 10 ml di MeOH, una volta solulbilizzato ho aggiunto il legante e lasciato in stirring per 16 ore.",2
+370,Me4BPz,Organometallica - pirazoli,Ru,[Ru(p-cymene)Cl2]2,MeOH,Nessuno,120.0,4.0,0.16,0.16,1.0,"Dopo 4 ore ancora nessuna cristallizzazione, quindi scaldato a 50 gradi per far evaporare un po di solvente e poi messo in frido appena raffreddato.",2
+371,H2BPZNH2,Organometallica - pirazoli,Ru,[Ru(p-cymene)Cl2]2,MeOH,Nessuno,120.0,4.0,0.1,0.1,1.0,"Dopo 4 ore ancora nessuna cristallizzazione, evaporato un po di solvente e poi messo in frido appena raffreddato. Aggiunto eteredietilico, perchè non vi era avvenuta cristallizzazione.",2
+372,"3,5-diamino-4,4’-bipyrazole",Organometallica - pirazoli,Ru,[Ru(p-cymene)Cl2]2,MeOH,Nessuno,120.0,4.0,0.16,0.16,1.0,"Ho pesato il dimero e sciolto in 10 ml di MeOH; una volta sulubilizzato ho aggiunto il legante e lasciato sotto agitazione per 4 ore. Una volta fatto evaporare completamente il solvente ho notato un precipitato rosso bruno, filtrato con dietil etere e mandato un HNMR comr Ru3. Il precipitato rimasto nella vial l'ho lavato con acetone d ulteriormente filtrato, ora mando anche questo all'HNMR come Ru3.lavato con acetone.",1
+373,Me4BPz,Organometallica - pirazoli,Ru,[Ru(p-cymene)Cl2]2,MeOH,Nessuno,120.0,4.0,0.3,0.3,1.0,"Dopo 4 ore ancora nessuna cristallizzazione, quindi scaldato a 50 gradi per far evaporare un po di solvente e poi messo in frido appena raffreddato.",2
+374,FErrocenylPz,Organometallica,Non specificato,PdCl2 · (CH3CN)2,MeOH,Nessuno,120.0,4.0,0.2,0.1,2.0,"Ho sciolto il palladio in 10 ml di metanolo in un pallone a due colli dove insufflavo argono. Dopo 15 minuti ho aggiunto il legante e lasciato insufflare argon per altri 10 minuti, poi cessato il flusso di argon ho messo il tappo. Subito dopo l'aggiunta del legante ho notato cambio di colore con intorbidimento della soluzione. Ho filtrato il precipitato e le acque madri le ho messe in una vial per far evaporare lentamente il solvente. Ilprecipitato era il legante, visto all'IR",2
+375,Me4BPz,Organometallica - pirazoli,Ru,[Ru(p-cymene)Cl2]2,MeOH,Nessuno,120.0,24.0,0.4,0.4,1.0,"Sciolto il sale di rutenio in metanolo 20 ml, una volta completamente sciolto ho aggiunto il legante. Lasciato reagire tutta la notte e poi lasciato evaporare il solvente in aria. Mandato HNMR del composto cristallizzato dopo completa evaporazione del solvente.",2
+376,Me4BPz,Organometallica - pirazoli,Ir,[Ir(C₅Me₅)Cl₂]₂,MeOH,Nessuno,120.0,4.0,0.1,0.1,1.0,"Sciogli il dimero [Ir(C₅Me₅)Cl₂]₂ in MeOH anidro sotto N₂ in un pallone secco. In una vial separata sciogli il ligante bipirazolico in MeOH . Aggiungi lentamente questa soluzione al pallone con l'Iridio mantenendo agitazione e atmosfera inerte. Lascia quindi agitare la miscela a temperatura ambiente per alcune ore prima di analizzarla all’NMR per verificare la formazione del complesso. Ho notato un cambio di colore della soluzione, èè passata da rossastra(colore dell'iridio) a gialla, completamente limpida. Lascio evaporare il solvente.",2
+377,Me4BPz,Organometallica - pirazoli,Rh,[Rh(C5Me5)Cl2]2,MeOH,Nessuno,120.0,4.0,0.1,0.1,1.0,"Sciogli il dimero [Rh(C5Me5)Cl2]2 in MeOH anidro sotto N₂ in un pallone secco. In una vial separata sciogli il ligante bipirazolico in MeOH . Aggiungi lentamente questa soluzione al pallone con il rodio mantenendo agitazione e atmosfera inerte. Lascia quindi agitare la miscela a temperatura ambiente per alcune ore prima di analizzarla all’NMR per verificare la formazione del complesso. Ho notato un cambio di colore della soluzione, èè passata da rossastra(colore dell'iridio) a gialla, completamente limpida. Lascio evaporare il solvente.",2
+378,FErrocenylPz,Organometallica,Non specificato,PdCl2 · (CH3CN)2,MeOH,Nessuno,120.0,4.0,0.4,0.2,2.0,"Filtrato il precipitato(eccesso di legante), la soluzione raccolta in una beuta e fatta evaporare all'aria.",1
+379,"1,4-Di(1H-pyrazol-4-yl)benzene",Organometallica - pirazoli,Ru,[Ru(p-cymene)Cl2]2,MeOH,Nessuno,120.0,24.0,0.2,0.1,2.0,"To a methanolic (5 mL) solution of pyrazole based ligand , was added a methanolic (5 mL) solution of [RuCl2(η6-p-cymene)]2 , and the reaction mixture was allowed to stir for 4 h at room temperature. Dopo 24 ore ho filtrato l'eccesso di reagenti e lasciato poi dimezzare il volume della soluzione all'aria lentamente. Portato a secco e mandato l'HNMR",2
+380,(NO2)2BPz,Organometallica - pirazoli,Ru,[Ru(p-cymene)Cl2]2,MeOH,Nessuno,120.0,24.0,0.1,0.05,2.0,"filtrato e lavato con metanolo, dopo aver dimezzato il volume della soluzione.Precipitato di colore nero, ma sembra cristallino",2
+381,NO2BPz,Organometallica - pirazoli,Ru,[Ru(p-cymene)Cl2]2,MeOH,Nessuno,120.0,24.0,0.1,0.05,2.0,"filtrato per rimuovere l'eccesso di reagenti noon reagito, lasciato ridurre il volume. Lavato con etere dietilico e filtrato(precipitato verdino).Ir del primo precipitato è pessimo. Le acque madri le ho tenute.",1
+382,FErrocenylPz,Organometallica,Non specificato,PdCl2 · (CH3CN)2,MeOH,Nessuno,120.0,6.0,0.1,0.1,1.0,"Ho pesato il dimero e sciolto in 10 ml di MeOH; una volta sulubilizzato ho aggiunto il legante e lasciato sotto agitazione per 6ORE. Ho lasciato dimezzare il volume all'aria, poi aggiunto qualche goccia di dietiletere e messo in frigo. Il precipitato ottenuto l'ho filtrato.",2
+383,"3,3'-diamino-4,4’-bipyrazole",Organometallica - pirazoli,Ru,[Ru(p-cymene)Cl2]2,MeOH,Nessuno,120.0,24.0,0.1,0.1,1.0,Ho pesato il dimero e sciolto in 10 ml di MeOH; una volta sulubilizzato ho aggiunto il legante e lasciato sotto agitazione per 24 ORE.Fatto evaporare all'aria per ridurre il volume,1
+384,"1,4-Di(1H-pyrazol-4-yl)benzene BDP",Organometallica - pirazoli,Ir,[Ir(C₅Me₅)Cl₂]₂,MeOH,Nessuno,120.0,24.0,0.05,0.1,0.5,"Ho sciolto il sale metallico in 10 ml di MeOH, una volta solubilizzato ho aggiunto il linker e lasciato in stirring.",1
+385,"1,4-Di(1H-pyrazol-4-yl)benzene BDP",Organometallica - pirazoli,Rh,[Rh(C5Me5)Cl2]2,MeOH,Nessuno,120.0,24.0,0.05,0.1,0.5,"Ho sciolto il sale metallico in 10 ml di MeOH, una volta solubilizzato ho aggiunto il linker e lasciato in stirring.",1
+386,Ru1,Organometallica,Ru,CAgF3SO3,MeCN,Nessuno,120.0,3.0,0.06,0.12,0.5,lasciato aperto a temperatura ambiente per cercare di ridurre il volume di solvente e favorire una cristallizzazione,2
+387,"Ru1 scambio anionico FW=868,73",Organometallica - scambio anionico,Ru,"4,4'-bipiridina",MeCN,Nessuno,120.0,24.0,0.04,0.04,1.0,"Dopo 5h la soluzione ha cambiato colore, ora faccio evaporare un pò di solvente per vedere se verrà giu qualcosa. Una volta dimezzato il volume ho aggiunto 5 ml di dietil etere e poi posto a scaldare su piastra per circa 15 minuti, ho nontato un precipitato nerastro, fatto raffreddare e posto in frigo per vedere se continuerà a venire giu.",2
+388,"Ru1,2",Organometallica,Ru,CAgF3SO3,CH2Cl2,Nessuno,120.0,3.0,0.04,0.08,0.5,"Precipitato bianco formatosi alla fine delle 4 ore, filtrato e lasciato ridurre di volume all'aria.",2
+389,"Ru1,3 802,63",Organometallica,Ru,CAgF3SO3,CH2Cl2,Nessuno,120.0,5.0,0.05,0.2,0.25,"Precipitato bianco formatosi alla fine delle 4 ore, filtrato e lasciato ridurre di volume all'aria.",1
+390,"Ru1,3 scambio anionico FW=868,73",Organometallica - scambio anionico,Ru,"4,4'-bipiridina",MeCN,Nessuno,120.0,5.0,0.02,0.02,1.0,"Ho solubilizzato il complesso in 10 ml di MeCN, in un'altra vial ho solubilizzato la bipiridina in altri 10 ml di MeCN, poi ho aggiunto goccia a goccia nella soluzione del complesso.",1
+391,"Ru1,3",Organometallica,Ru,CAgF3SO3,CH2Cl2,Nessuno,120.0,5.0,0.05,0.2,0.25,"Precipitato bianco formatosi alla fine delle 4 ore, filtrato e lasciato ridurre di volume all'aria.",1
+392,"Ru1,3 scambio anionico2 FW=868,73",Organometallica - scambio anionico,Ru,BDP,MeCN,Nessuno,120.0,24.0,0.02,0.02,1.0,"Ho solubilizzato il complesso in 52 ml di MeCN, in un'altra vial ho solubilizzato il BDP in altri 5 ml di MeCN, poi ho aggiunto goccia a goccia nella soluzione del complesso. Soluzione torbida, perchè il legante non si è solubilizzato molto bene in MeCN. Dopo 24 ore ho filtrato l'eccesso di reagenti ed ho lasciato ad evaporare il solvente all'aria lentamente.",1
+393,"Ru1,3",Organometallica,Ru,CAgF3SO3,CH2Cl2,Nessuno,120.0,6.0,0.05,0.22,0.227,"Filtrato il precipitato formatosi, sciacquato con 5 ml di diclorometano e poi lasciato evaporare all'aria le acque madri.",1
+394,"Ru1,3 scambio anionico3 FW=868,73",Organometallica - scambio anionico,Ru,BPz,MeCN,Nessuno,120.0,5.0,0.02,0.03,0.667,andando a secco,1
+395,"Ru1,3",Organometallica,Ru,CAgF3SO3,CH2Cl2,Nessuno,120.0,5.0,0.05,0.2,0.25,"Solubilizzato separatamente i due reagenti, poi aggiungo goccia a goccia la soluzione di CAgF3SO3 in quella del complesso. Precipitato bianco formatosi alla fine delle 4 ore, filtrato e lasciato ridurre di volume all'aria.",1
+396,"Ru1 scambio anionico FW=868,73",Organometallica - scambio anionico,Ru,"4,4'-bipiridina(Az50)",MeCN,Nessuno,120.0,24.0,0.02,0.04,0.5,"Solubilizzare il complesso in 2 ml di acetonitrile, in una vial separata solubilizzare la bipiridina con 3 ml di CH3CN ed aggiungere goccia a goccia la soluzione in quella del complesso. Lasciar reagire 24h.",1
+397,Et4BPz,Organometallica - pirazoli,Rh,[Rh(C5Me5)Cl2]2,MeOH,Nessuno,120.0,16.0,0.1,0.05,0.5,"Solubilizzato il dimero del metallo in 10 ml di MeOH, una volta solulbilizzato ho aggiunto il legante e lasciato in stirring per 16 ore.",1
+398,H2BPZNH2,Organometallica,Rh,[Rh(C5Me5)Cl2]3,MeOH,Nessuno,70.0,24.0,0.1,0.05,0.5,"Solubilizzato il dimero del metallo in 10 ml di MeOH, una volta solulbilizzato ho aggiunto il legante e lasciato in stirring per 16 ore.",1
+399,(NO2)2BPz,Organometallica,Ir,[Ir(C5Me5)Cl2]4,MeOH,Et3N 2 eq,70.0,24.0,0.1,0.05,0.5,"Solubilizzato il dimero del metallo in 10 ml di MeOH, una volta solulbilizzato ho aggiunto il legante e lasciato in stirring per 16 ore.",1
+400,NO2BPz,Organometallica,Ir,[Ir(C5Me5)Cl2]5,MeOH,Et3N 2 eq,70.0,24.0,0.1,0.05,0.5,"Solubilizzato il dimero del metallo in 10 ml di MeOH, una volta solulbilizzato ho aggiunto il legante e lasciato in stirring per 16 ore.",1
+401,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Zn,Zn(NO3)2·6H2O,DMF,Nessuno,120.0,24.0,0.7,2.2,0.3182,Solvothermal,2
+402,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Cu,Cu(NO3)2·3H2O,DMF/EtOH/H2O,Nessuno,110.0,18.0,2.8,5.0,0.56,Solvothermal,2
+403,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Zr,ZrCl4,DMF/HCl,Nessuno,120.0,24.0,1.5,1.5,1.0,Solvothermal,2
+404,2-Aminoterephthalic acid,Non specificata,Zr,ZrCl4,DMF/HCl,Nessuno,120.0,24.0,1.5,1.5,1.0,Solvothermal,2
+405,2-Nitroterephthalic acid,Non specificata,Zr,ZrCl4,DMF/HCl,Nessuno,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+406,"4,4'-Biphenyldicarboxylic acid (H2BPDC)",Non specificata,Zr,ZrCl4,DMF/HCl,Nessuno,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+407,2-Methylimidazole,Non specificata,Zn,Zn(NO3)2·6H2O,MeOH,Nessuno,25.0,12.0,4.0,1.0,4.0,Precipitation,2
+408,2-Methylimidazole,Non specificata,Co,Co(NO3)2·6H2O,MeOH,Nessuno,25.0,24.0,4.0,1.0,4.0,Precipitation,2
+409,Benzimidazole,Non specificata,Zn,Zn(NO3)2·6H2O,DMF,Nessuno,130.0,48.0,6.0,1.5,4.0,Solvothermal,2
+410,Benzimidazole,Non specificata,Zn,Zn(NO3)2·6H2O,Toluene/MeOH,Nessuno,100.0,24.0,3.2,0.8,4.0,Solvothermal,2
+411,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Al,Al(NO3)3·9H2O,H2O,Nessuno,220.0,72.0,3.0,3.0,1.0,Hydrothermal,2
+412,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Cr,Cr(NO3)3·9H2O,H2O/HF,Nessuno,220.0,72.0,5.0,5.0,1.0,Hydrothermal,2
+413,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Fe,FeCl3·6H2O,DMF,Nessuno,150.0,15.0,5.0,5.0,1.0,Solvothermal,2
+414,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Fe,Fe metal,H2O/HF/HNO3,Nessuno,150.0,12.0,6.7,10.0,0.67,Hydrothermal,2
+415,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Cr,CrO3,H2O/HF,Nessuno,220.0,96.0,6.7,10.0,0.67,Hydrothermal,2
+416,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Cr,Cr(NO3)3·9H2O,H2O/HF,Nessuno,220.0,8.0,4.0,4.0,1.0,Hydrothermal,2
+417,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Fe,FeCl3·6H2O,DMF,Nessuno,110.0,20.0,1.5,3.0,0.5,Solvothermal,2
+418,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Non specificata,Mg,Mg(NO3)2·6H2O,DMF/EtOH/H2O,Nessuno,125.0,24.0,1.0,3.3,0.303,Solvothermal,2
+419,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Non specificata,Zn,Zn(NO3)2·6H2O,DMF/EtOH/H2O,Nessuno,100.0,24.0,1.0,3.3,0.303,Solvothermal,2
+420,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Non specificata,Ni,Ni(NO3)2·6H2O,DMF/EtOH/H2O,Nessuno,120.0,24.0,1.0,3.3,0.303,Solvothermal,2
+421,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Non specificata,Co,Co(NO3)2·6H2O,DMF/EtOH/H2O,Nessuno,120.0,24.0,1.0,3.3,0.303,Solvothermal,2
+422,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Non specificata,Fe,FeCl2·4H2O,DMF/EtOH,Nessuno,120.0,24.0,1.0,3.3,0.303,Solvothermal,2
+423,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Non specificata,Mn,Mn(OAc)2·4H2O,DMF/EtOH/H2O,Nessuno,120.0,24.0,1.0,3.3,0.303,Solvothermal,2
+424,"1,3,6,8-tetrakis(p-benzoic acid)pyrene (H4TBAPy)",Non specificata,Zr,ZrOCl2·8H2O,DMF/TFA,Nessuno,120.0,18.0,0.06,0.3,0.2,Solvothermal,2
+425,TCPP (Tetrakis(4-carboxyphenyl)porphyrin),Non specificata,Zr,ZrOCl2·8H2O,DMF/BA,Nessuno,120.0,24.0,0.04,0.23,0.1739,Solvothermal,2
+426,"3,3',5,5'-Azobenzenetetracarboxylic acid (H4ABTC)",Non specificata,Fe,Fe(NO3)3·9H2O,DMF,Nessuno,150.0,24.0,0.3,0.6,0.5,Solvothermal,2
+427,"Isophthalic acid (1,3-BDC)",Non specificata,Al,Al(ClO4)3·6H2O,H2O/DMF,Nessuno,130.0,12.0,2.0,2.0,1.0,Hydrothermal,2
+428,2-Aminoterephthalic acid,Non specificata,Al,Al(ClO4)3·6H2O,MeOH,Nessuno,125.0,5.0,1.0,3.0,0.3333,Solvothermal,2
+429,"2,6-NDC (0.5) / H3BTC (0.5)",Non specificata,Zn,Zn(NO3)2·6H2O,DMF,Nessuno,120.0,24.0,1.0,2.0,0.5,Solvothermal,2
+430,"2,6-NDC (1.0) / DABCO (0.5)",Non specificata,Ni,Ni(NO3)2·6H2O,DMF,Nessuno,120.0,48.0,1.5,1.0,1.5,Solvothermal,2
+431,"Biphenyl-3,3',5,5'-tetracarboxylic acid",Non specificata,Cu,Cu(NO3)2·2.5H2O,DMF/MeOH,Nessuno,75.0,24.0,0.3,1.2,0.25,Solvothermal,2
+432,"Biphenyl-3,3',5,5'-tetracarboxylic acid",Non specificata,Al,Al(NO3)3·9H2O,H2O,Nessuno,210.0,72.0,0.38,1.5,0.2533,Hydrothermal,2
+433,"Biphenyl-3,3',5,5'-tetracarboxylic acid",Non specificata,In,In(NO3)3·xH2O,DMF/MeOH/H2O,Nessuno,120.0,24.0,0.25,1.0,0.25,Solvothermal,2
+434,"Biphenyl-3,3',5,5'-tetracarboxylic acid",Non specificata,Cu,Cu(NO3)2·2.5H2O,DMF/Dioxane/H2O,Nessuno,85.0,24.0,0.35,1.5,0.2333,Solvothermal,2
+435,"1,3,5-tris(4-carboxyphenyl)benzene (BTB)",Non specificata,Zn,Zn(NO3)2·6H2O,DEF,Nessuno,85.0,48.0,0.34,1.8,0.1889,Solvothermal,2
+436,"1,3,5-BTB (0.2) / 2,6-NDC (0.2)",Non specificata,Zn,Zn(NO3)2·6H2O,DMF,Nessuno,85.0,24.0,0.4,1.2,0.3333,Solvothermal,2
+437,"3,3',5,5'-Biphenyltetracarboxylic acid",Non specificata,Cu,Cu(NO3)2·2.5H2O,DMF/EtOH/H2O,Nessuno,65.0,24.0,0.3,1.0,0.3,Solvothermal,2
+438,2-Bromoterephthalic acid,Non specificata,Zr,ZrCl4,DMF/HCl,Nessuno,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+439,"1,2,4,5-Benzenetetracarboxylic acid",Non specificata,Zr,ZrCl4,DMF/HCl,Nessuno,120.0,24.0,0.5,1.0,0.5,Solvothermal,2
+440,"2,5-Dihydroxyterephthalic acid",Non specificata,Zr,ZrCl4,DMF/HCl,Nessuno,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+441,Terphenyldicarboxylic acid (TPDC),Non specificata,Zr,ZrCl4,DMF/HCl,Nessuno,120.0,24.0,0.5,0.5,1.0,Solvothermal,2
+442,2-Nitroimidazole,Non specificata,Co,Co(NO3)2·6H2O,DMF,Nessuno,100.0,48.0,4.0,1.0,4.0,Solvothermal,2
+443,Imidazole-2-carboxaldehyde,Non specificata,Zn,Zn(NO3)2·6H2O,DMF,Nessuno,100.0,18.0,4.0,1.0,4.0,Solvothermal,2
+444,Benzimidazole,Non specificata,Co,Co(NO3)2·6H2O,DMF,Nessuno,140.0,48.0,4.0,1.0,4.0,Solvothermal,2
+445,"4,5-Dichloroimidazole",Non specificata,Zn,Zn(NO3)2·6H2O,DMF,Nessuno,85.0,24.0,4.0,1.0,4.0,Solvothermal,2
+446,Fumaric acid,Non specificata,Fe,FeCl3·6H2O,H2O,Nessuno,65.0,12.0,5.0,5.0,1.0,Hydrothermal,2
+447,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Fe,FeCl3·6H2O,DMF,Nessuno,100.0,12.0,5.0,5.0,1.0,Solvothermal,2
+448,"2,6-Naphthalenedicarboxylic acid",Non specificata,Fe,FeCl3·6H2O,DMF,Nessuno,100.0,12.0,5.0,5.0,1.0,Solvothermal,2
+449,"4,4'-Biphenyldicarboxylic acid",Non specificata,Fe,FeCl3·6H2O,DMF,Nessuno,100.0,12.0,5.0,5.0,1.0,Solvothermal,2
+450,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Al,Al(NO3)3·9H2O,DMF,Nessuno,130.0,24.0,3.0,3.0,1.0,Solvothermal,2
+451,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,In,In(NO3)3·xH2O,DMF,Nessuno,100.0,48.0,2.0,2.0,1.0,Solvothermal,2
+452,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Ti,Ti(OiPr)4,DMF/MeOH,Nessuno,150.0,15.0,12.0,6.0,2.0,Solvothermal,2
+453,2-Aminoterephthalic acid,Non specificata,Ti,Ti(OiPr)4,DMF/MeOH,Nessuno,150.0,15.0,12.0,6.0,2.0,Solvothermal,2
+454,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Al,Al(NO3)3·9H2O,H2O,Nessuno,210.0,24.0,2.5,5.0,0.5,Hydrothermal,2
+455,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Al,Al(NO3)3·9H2O,H2O/HNO3,Nessuno,210.0,72.0,2.0,4.0,0.5,Hydrothermal,2
+456,5-Methoxyisophthalic acid,Non specificata,Al,Al(ClO4)3·6H2O,H2O,Nessuno,130.0,12.0,2.0,2.0,1.0,Hydrothermal,2
+457,5-Nitroisophthalic acid,Non specificata,Al,Al(ClO4)3·6H2O,H2O,Nessuno,130.0,12.0,2.0,2.0,1.0,Hydrothermal,2
+458,"trans-Cyclohexane-1,4-dicarboxylic acid",Non specificata,Al,Al2(SO4)3·18H2O,H2O,Nessuno,180.0,24.0,3.0,1.5,2.0,Hydrothermal,2
+459,TCPP (Tetrakis(4-carboxyphenyl)porphyrin),Non specificata,Zr,ZrOCl2·8H2O,DMF/BA,Nessuno,120.0,12.0,0.04,0.3,0.1333,Solvothermal,2
+460,TCPP,Non specificata,Hf,HfCl4,DMF/BA,Nessuno,120.0,24.0,0.03,0.2,0.15,Solvothermal,2
+461,TCPP,Non specificata,Fe,FeCl3,DMF,Nessuno,150.0,24.0,0.08,0.5,0.16,Solvothermal,2
+462,Fumaric acid,Non specificata,Zr,ZrCl4,DMF/Formic acid,Nessuno,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+463,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Zr,ZrOCl2·8H2O,DMF/Formic acid,Nessuno,100.0,24.0,0.27,0.8,0.3375,Solvothermal,2
+464,"Pyrazole-3,5-dicarboxylic acid",Non specificata,Zr,ZrCl4,DMF/Formic acid,Nessuno,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+465,"1H-pyrazole-3,5-dicarboxylic acid",Non specificata,Al,AlCl3·6H2O,H2O,Nessuno,100.0,24.0,2.0,2.0,1.0,Hydrothermal,2
+466,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Fe,FeCl3,EtOH,Nessuno,80.0,24.0,1.0,2.0,0.5,Solvothermal,2
+467,"4,4',4''-Benzene-1,3,5-triyl-tris-benzoic acid",Non specificata,Cu,Cu(NO3)2·2.5H2O,DMF,Nessuno,80.0,48.0,0.25,0.8,0.3125,Solvothermal,2
+468,"5-(2,4,6-trioxohexahydro-1,3,5-triazin-1-yl)isophthalic acid",Non specificata,Cu,Cu(NO3)2·2.5H2O,DMA/DMSO,Nessuno,85.0,72.0,0.15,0.5,0.3,Solvothermal,2
+469,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Fe,Fe(NO3)3·9H2O,H2O,Nessuno,80.0,4.0,6.7,10.0,0.67,Precipitation,2
+470,"4,4'-(naphthalene-2,6-diyl)dibenzonic acid",Non specificata,Cu,Cu(NO3)2·2.5H2O,DMF,Nessuno,85.0,48.0,0.2,0.6,0.3333,Solvothermal,2
+471,Imidazole (3.0) / Benzimidazole (1.0),Non specificata,Zn,Zn(NO3)2·6H2O,DMF,Nessuno,130.0,48.0,4.0,1.0,4.0,Solvothermal,2
+472,Imidazole,Non specificata,Zn,Zn(NO3)2·6H2O,DMF,Nessuno,130.0,48.0,4.0,1.0,4.0,Solvothermal,2
+473,2-Ethylimidazole,Non specificata,Zn,Zn(ClO4)2·6H2O,MeOH/NH3,Nessuno,25.0,24.0,4.0,1.0,4.0,Room Temperature,2
+474,4-Methyl-5-imidazolecarboxaldehyde,Non specificata,Zn,Zn(NO3)2·6H2O,DMF,Nessuno,85.0,24.0,4.0,1.0,4.0,Solvothermal,2
+475,"Adenine (0.4) / 4,4'-BPDC (0.8)",Non specificata,Zn,Zn(NO3)2·6H2O,DMF,Nessuno,130.0,24.0,1.2,1.2,1.0,Solvothermal,2
+476,Adenine,Non specificata,Co,Co(NO3)2·6H2O,DMF,Nessuno,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+477,"Pyrazine-2,3-dicarboxylic acid",Non specificata,Zn,Zn(NO3)2·6H2O,H2O,Nessuno,140.0,24.0,1.0,2.0,0.5,Hydrothermal,2
+478,Citric acid (1.0) / Diamondoid linker (1.0),Non specificata,Co,Co(NO3)2·6H2O,H2O/EtOH,Nessuno,120.0,24.0,2.0,2.0,1.0,Hydrothermal,2
+479,BHB-based tetracarboxylate,Non specificata,Cu,Cu(NO3)2·2.5H2O,DMF/Dioxane,Nessuno,65.0,48.0,0.2,0.8,0.25,Solvothermal,2
+480,"2,5-Dihydroxyterephthalic acid",Non specificata,Mg,Mg(OAc)2·4H2O,THF/H2O,Nessuno,110.0,24.0,1.0,3.3,0.303,Solvothermal,2
+481,"2,6-Naphthalenedicarboxylic acid",Non specificata,Al,Al(NO3)3·9H2O,DMF,Nessuno,120.0,24.0,2.0,2.0,1.0,Solvothermal,2
+482,"4,4'-Biphenyldicarboxylic acid",Non specificata,Al,Al(NO3)3·9H2O,DMF,Nessuno,120.0,24.0,2.0,2.0,1.0,Solvothermal,2
+483,TCPP,Non specificata,Al,Al(NO3)3·9H2O,H2O,Nessuno,180.0,24.0,0.1,0.5,0.2,Hydrothermal,2
+484,Fumaric acid,Non specificata,Zr,ZrOCl2·8H2O,Water/Formic acid,Nessuno,100.0,24.0,2.0,2.0,1.0,Hydrothermal,2
+485,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Ce,Ce(NH4)2(NO3)6,DMF,Nessuno,100.0,15.0,1.0,1.0,1.0,Solvothermal,2
+486,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Hf,HfCl4,DMF/HCl,Nessuno,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+487,"4,4'-Biphenyldicarboxylic acid",Non specificata,Hf,HfCl4,DMF/HCl,Nessuno,120.0,24.0,0.8,0.8,1.0,Solvothermal,2
+488,"2,5-Thiophenedicarboxylic acid",Non specificata,Zr,ZrCl4,DMF/Propanol,Nessuno,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+489,TDPAT,Non specificata,Fe,FeCl3,DMF,Nessuno,120.0,48.0,0.3,1.0,0.3,Solvothermal,2
+490,TCPP,Non specificata,Zr,ZrCl4,DMF,Nessuno,120.0,24.0,0.05,0.3,0.1667,Solvothermal,2
+491,TCPP,Non specificata,Zr,ZrOCl2·8H2O,DMF/Benzoic acid,Nessuno,120.0,24.0,0.05,0.3,0.1667,Solvothermal,2
+492,TCPP,Non specificata,Zr,ZrOCl2·8H2O,DMF/Benzoic acid,Nessuno,120.0,24.0,0.05,0.3,0.1667,Solvothermal,2
+493,TATB,Non specificata,Zr,ZrCl4,DMF/TFA,Nessuno,120.0,24.0,0.1,0.4,0.25,Solvothermal,2
+494,H4TBAPy derivative,Non specificata,Zr,ZrOCl2·8H2O,DMF/TFA,Nessuno,120.0,24.0,0.05,0.25,0.2,Solvothermal,2
+495,4-Aminobenzoic acid,Non specificata,Ti,Ti(OiPr)4,DMF,Nessuno,120.0,24.0,4.0,2.0,2.0,Solvothermal,2
+496,2-Aminoterephthalic acid,Non specificata,Al,AlCl3·6H2O,DMF,Nessuno,130.0,72.0,1.5,3.0,0.5,Solvothermal,2
+497,2-Aminoterephthalic acid,Non specificata,Cr,Cr(NO3)3·9H2O,H2O/NaOH,Nessuno,150.0,12.0,4.0,4.0,1.0,Hydrothermal,2
+498,2-Aminoterephthalic acid,Non specificata,Fe,FeCl3·6H2O,DMF,Nessuno,110.0,24.0,1.5,3.0,0.5,Solvothermal,2
+499,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Zn,Zn(NO3)2·6H2O,DMF/EtOH,Nessuno,85.0,24.0,2.0,3.0,0.6667,Solvothermal,2
+500,"4,4'-Bipyridine (0.5) / H2BDC (0.5)",Non specificata,Cd,Cd(NO3)2·4H2O,DMF,Nessuno,100.0,48.0,1.0,1.0,1.0,Solvothermal,2
+501,2-Fluoroterephthalic acid,Non specificata,Zr,ZrCl4,DMF/HCl,HCl,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+502,"1,2,4,5-Benzenetetracarboxylic acid",Non specificata,Zr,ZrOCl2·8H2O,DMF/Water,Acetic acid,100.0,24.0,0.5,1.0,0.5,Solvothermal,2
+503,2-Sulfoterephthalic acid monosodium salt,Non specificata,Zr,ZrCl4,DMF/HCl,HCl,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+504,"2,5-Dihydroxyterephthalic acid",Non specificata,Zr,ZrOCl2·8H2O,DMF/Water,Benzoic acid,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+505,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Ce,Ce(NH4)2(NO3)6,DMF,Formic acid,100.0,15.0,1.0,1.0,1.0,Solvothermal,2
+506,2-Aminoterephthalic acid,Non specificata,Hf,HfCl4,DMF/HCl,HCl,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+507,"2,5-Dimethylterephthalic acid",Non specificata,Zr,ZrCl4,DMF/HCl,HCl,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+508,"2,5-Dinitroterephthalic acid",Non specificata,Zr,ZrCl4,DMF/HCl,HCl,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+509,"2-Amino-[1,1'-biphenyl]-4,4'-dicarboxylic acid",Non specificata,Zr,ZrCl4,DMF/HCl,HCl,120.0,24.0,0.5,0.5,1.0,Solvothermal,2
+510,"3,3'-Dimethyl-[1,1'-biphenyl]-4,4'-dicarboxylic acid",Non specificata,Zr,ZrCl4,DMF/HCl,Benzoic acid,120.0,24.0,0.5,0.5,1.0,Solvothermal,2
+511,"2'-Amino-[1,1':4',1''-terphenyl]-4,4''-dicarboxylic acid",Non specificata,Zr,ZrCl4,DMF/HCl,Benzoic acid,120.0,24.0,0.3,0.3,1.0,Solvothermal,2
+512,"2,6-Naphthalenedicarboxylic acid",Non specificata,Zr,ZrCl4,DMF/Acetic acid,Acetic acid,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+513,"2,6-Naphthalenedicarboxylic acid",Non specificata,Hf,HfCl4,DMF/Acetic acid,Acetic acid,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+514,Fumaric acid,Non specificata,Zr,ZrOCl2·8H2O,Water/Formic acid,Formic acid,100.0,24.0,2.0,2.0,1.0,Hydrothermal,2
+515,Fumaric acid,Non specificata,Hf,HfCl4,DMF/Formic acid,Formic acid,120.0,24.0,2.0,2.0,1.0,Solvothermal,2
+516,5-Aminoisophthalic acid,Non specificata,Zr,ZrOCl2·8H2O,DMF/Formic acid,Formic acid,100.0,24.0,0.5,1.0,0.5,Solvothermal,2
+517,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Hf,HfCl4,DMF/Formic acid,Formic acid,100.0,24.0,0.27,0.8,0.3375,Solvothermal,2
+518,"Pyrazole-3,5-dicarboxylic acid",Non specificata,Hf,HfCl4,DMF/Formic acid,Formic acid,120.0,24.0,1.0,1.0,1.0,Solvothermal,2
+519,"1,3,6,8-tetrakis(p-benzoic acid)pyrene",Non specificata,Hf,HfCl4,DMF/TFA,TFA,120.0,18.0,0.06,0.3,0.2,Solvothermal,2
+520,"1,3,6,8-tetrakis(p-benzoic acid)pyrene",Non specificata,Zr,ZrOCl2·8H2O,DMF/Benzoic acid,Benzoic acid,120.0,18.0,0.05,0.25,0.2,Solvothermal,2
+521,2-Methylimidazole,Non specificata,Co,Co(NO3)2·6H2O,MeOH/H2O,Formic acid,150.0,12.0,4.0,2.5,1.6,Precipitation,2
+522,Benzimidazole,Non specificata,Co,Co(OAc)2·4H2O,MeCN,Benzoic acid,25.0,48.0,2.0,2.5,0.8,Room Temperature,2
+523,2-Aminoterephthalic acid,Non specificata,Ni,Ni(NO3)2·6H2O,DMF,HNO3,85.0,36.0,1.0,1.5,0.6667,Microwave,2
+524,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Non specificata,Ni,Ni(OAc)2·4H2O,DEF,Triethylamine,100.0,48.0,1.0,5.0,0.2,Sonochemical,2
+525,"4,4'-Biphenyldicarboxylic acid (H2BPDC)",Non specificata,Fe,FeCl3·6H2O,MeOH,Triethylamine,120.0,4.0,1.5,5.0,0.3,Solvothermal,2
+526,"2,6-Naphthalenedicarboxylic acid (2,6-NDC)",Non specificata,Fe,Fe(NO3)3·9H2O,EtOH,HNO3,130.0,4.0,1.5,5.0,0.3,Hydrothermal,2
+527,Fumaric acid,Non specificata,Al,Al(NO3)3·9H2O,H2O,Nessuno,60.0,24.0,1.5,2.5,0.6,Precipitation,2
+528,Isophthalic acid,Non specificata,Al,AlCl3·6H2O,DMF/EtOH/H2O,Benzoic acid,25.0,2.0,1.0,1.5,0.6667,Room Temperature,2
+529,5-Nitroisophthalic acid,Non specificata,Zr,ZrCl4,DMF/H2O,Formic acid,85.0,36.0,0.25,2.0,0.125,Microwave,2
+530,5-Aminoisophthalic acid,Non specificata,Zr,ZrOCl2·8H2O,DMA,Nessuno,120.0,6.0,2.0,4.0,0.5,Sonochemical,2
+531,Imidazole-2-carboxaldehyde,Non specificata,Mg,Mg(NO3)2·6H2O,THF/H2O,HCl,150.0,4.0,0.25,2.0,0.125,Solvothermal,2
+532,"4,4',4''-Triaminotriphenylamine",Non specificata,Mn,Mn(OAc)2·4H2O,MeOH/H2O,Acetic acid,80.0,72.0,2.0,1.0,2.0,Hydrothermal,2
+533,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Non specificata,Zn,Zn(NO3)2·6H2O,MeCN,Benzoic acid,100.0,36.0,2.0,2.0,1.0,Precipitation,2
+534,"Pyrazine-2,3-dicarboxylic acid",Non specificata,Zn,Zn(OAc)2·2H2O,DMF,HCl,25.0,6.0,0.25,3.0,0.0833,Room Temperature,2
+535,"4,4'-Bipyridine",Non specificata,Cu,Cu(NO3)2·2.5H2O,DEF,Triethylamine,80.0,48.0,0.5,2.0,0.25,Microwave,2
+536,"1,2,4-Triazole",Non specificata,Cu,Cu(OAc)2·H2O,MeOH,Triethylamine,130.0,24.0,1.5,1.0,1.5,Sonochemical,2
+537,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Co,Co(NO3)2·6H2O,EtOH,HCl,80.0,4.0,3.0,1.0,3.0,Solvothermal,2
+538,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Co,Co(OAc)2·4H2O,H2O,Triethylamine,180.0,36.0,0.25,2.0,0.125,Hydrothermal,2
+539,2-Methylimidazole,Non specificata,Ni,Ni(NO3)2·6H2O,DMF/EtOH/H2O,Acetic acid,180.0,18.0,2.0,5.0,0.4,Precipitation,2
+540,Benzimidazole,Non specificata,Ni,Ni(OAc)2·4H2O,DMF/H2O,Nessuno,25.0,18.0,0.5,5.0,0.1,Room Temperature,2
+541,2-Aminoterephthalic acid,Non specificata,Fe,FeCl3·6H2O,DMA,Nessuno,200.0,2.0,4.0,0.5,8.0,Microwave,2
+542,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Non specificata,Fe,Fe(NO3)3·9H2O,THF/H2O,Formic acid,180.0,2.0,4.0,2.0,2.0,Sonochemical,2
+543,"4,4'-Biphenyldicarboxylic acid (H2BPDC)",Non specificata,Al,Al(NO3)3·9H2O,MeOH/H2O,Formic acid,85.0,2.0,1.0,5.0,0.2,Solvothermal,2
+544,"2,6-Naphthalenedicarboxylic acid (2,6-NDC)",Non specificata,Al,AlCl3·6H2O,MeCN,Acetic acid,60.0,18.0,4.0,1.0,4.0,Hydrothermal,2
+545,Fumaric acid,Non specificata,Zr,ZrCl4,DMF,Acetic acid,200.0,36.0,1.5,0.5,3.0,Precipitation,2
+546,Isophthalic acid,Non specificata,Zr,ZrOCl2·8H2O,DEF,Benzoic acid,25.0,2.0,4.0,5.0,0.8,Room Temperature,2
+547,5-Nitroisophthalic acid,Non specificata,Mg,Mg(NO3)2·6H2O,MeOH,Triethylamine,180.0,18.0,1.5,1.5,1.0,Microwave,2
+548,5-Aminoisophthalic acid,Non specificata,Mn,Mn(OAc)2·4H2O,EtOH,Benzoic acid,85.0,2.0,2.0,1.5,1.3333,Sonochemical,2
+549,Imidazole-2-carboxaldehyde,Non specificata,Zn,Zn(NO3)2·6H2O,H2O,Benzoic acid,85.0,2.0,0.5,2.5,0.2,Solvothermal,2
+550,"4,4',4''-Triaminotriphenylamine",Non specificata,Zn,Zn(OAc)2·2H2O,DMF/EtOH/H2O,Acetic acid,150.0,72.0,4.0,4.0,1.0,Hydrothermal,2
+551,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Non specificata,Cu,Cu(NO3)2·2.5H2O,DMF/H2O,HNO3,85.0,36.0,1.5,0.5,3.0,Precipitation,2
+552,"Pyrazine-2,3-dicarboxylic acid",Non specificata,Cu,Cu(OAc)2·H2O,DMA,Benzoic acid,25.0,12.0,2.0,3.0,0.6667,Room Temperature,2
+553,"4,4'-Bipyridine",Non specificata,Co,Co(NO3)2·6H2O,THF/H2O,Formic acid,150.0,12.0,4.0,2.5,1.6,Microwave,2
+554,"1,2,4-Triazole",Non specificata,Co,Co(OAc)2·4H2O,MeOH/H2O,Acetic acid,85.0,24.0,0.5,2.0,0.25,Sonochemical,2
+555,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Ni,Ni(NO3)2·6H2O,MeCN,HCl,200.0,18.0,1.5,3.0,0.5,Solvothermal,2
+556,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Ni,Ni(OAc)2·4H2O,DMF,Benzoic acid,100.0,36.0,0.25,2.0,0.125,Hydrothermal,2
+557,2-Methylimidazole,Non specificata,Fe,FeCl3·6H2O,DEF,Triethylamine,60.0,2.0,1.0,0.5,2.0,Precipitation,2
+558,Benzimidazole,Non specificata,Fe,Fe(NO3)3·9H2O,MeOH,Nessuno,25.0,72.0,2.0,2.0,1.0,Room Temperature,2
+559,2-Aminoterephthalic acid,Non specificata,Al,Al(NO3)3·9H2O,EtOH,Nessuno,85.0,36.0,1.0,3.0,0.3333,Microwave,2
+560,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Non specificata,Al,AlCl3·6H2O,H2O,HCl,120.0,2.0,0.5,1.5,0.3333,Sonochemical,2
+561,"4,4'-Biphenyldicarboxylic acid (H2BPDC)",Non specificata,Zr,ZrCl4,DMF/EtOH/H2O,HCl,180.0,24.0,0.25,5.0,0.05,Solvothermal,2
+562,"2,6-Naphthalenedicarboxylic acid (2,6-NDC)",Non specificata,Zr,ZrOCl2·8H2O,DMF/H2O,HCl,60.0,2.0,1.5,1.0,1.5,Hydrothermal,2
+563,Fumaric acid,Non specificata,Mg,Mg(NO3)2·6H2O,DMA,HNO3,150.0,4.0,0.25,1.5,0.1667,Precipitation,2
+564,Isophthalic acid,Non specificata,Mn,Mn(OAc)2·4H2O,THF/H2O,Formic acid,25.0,2.0,0.25,5.0,0.05,Room Temperature,2
+565,5-Nitroisophthalic acid,Non specificata,Zn,Zn(NO3)2·6H2O,MeOH/H2O,Triethylamine,60.0,4.0,1.5,1.0,1.5,Microwave,2
+566,5-Aminoisophthalic acid,Non specificata,Zn,Zn(OAc)2·2H2O,MeCN,Nessuno,150.0,18.0,0.25,5.0,0.05,Sonochemical,2
+567,Imidazole-2-carboxaldehyde,Non specificata,Cu,Cu(NO3)2·2.5H2O,DMF,Acetic acid,85.0,4.0,1.5,2.5,0.6,Solvothermal,2
+568,"4,4',4''-Triaminotriphenylamine",Non specificata,Cu,Cu(OAc)2·H2O,DEF,Formic acid,130.0,36.0,4.0,2.0,2.0,Hydrothermal,2
+569,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Non specificata,Co,Co(NO3)2·6H2O,MeOH,HNO3,180.0,2.0,3.0,4.0,0.75,Precipitation,2
+570,"Pyrazine-2,3-dicarboxylic acid",Non specificata,Co,Co(OAc)2·4H2O,EtOH,Triethylamine,25.0,12.0,3.0,1.0,3.0,Room Temperature,2
+571,"4,4'-Bipyridine",Non specificata,Ni,Ni(NO3)2·6H2O,H2O,Triethylamine,60.0,72.0,1.0,2.0,0.5,Microwave,2
+572,"1,2,4-Triazole",Non specificata,Ni,Ni(OAc)2·4H2O,DMF/EtOH/H2O,HCl,85.0,12.0,1.0,2.0,0.5,Sonochemical,2
+573,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Fe,FeCl3·6H2O,DMF/H2O,HCl,85.0,6.0,1.0,4.0,0.25,Solvothermal,2
+574,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Fe,Fe(NO3)3·9H2O,DMA,Benzoic acid,150.0,12.0,0.25,0.5,0.5,Hydrothermal,2
+575,2-Methylimidazole,Non specificata,Al,Al(NO3)3·9H2O,THF/H2O,HCl,80.0,48.0,1.0,0.5,2.0,Precipitation,2
+576,Benzimidazole,Non specificata,Al,AlCl3·6H2O,MeOH/H2O,Benzoic acid,25.0,72.0,0.5,0.5,1.0,Room Temperature,2
+577,2-Aminoterephthalic acid,Non specificata,Zr,ZrCl4,MeCN,Nessuno,85.0,36.0,0.5,2.0,0.25,Microwave,2
+578,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Non specificata,Zr,ZrOCl2·8H2O,DMF,Triethylamine,100.0,2.0,0.25,1.0,0.25,Sonochemical,2
+579,"4,4'-Biphenyldicarboxylic acid (H2BPDC)",Non specificata,Mg,Mg(NO3)2·6H2O,DEF,Benzoic acid,120.0,18.0,1.0,5.0,0.2,Solvothermal,2
+580,"2,6-Naphthalenedicarboxylic acid (2,6-NDC)",Non specificata,Mn,Mn(OAc)2·4H2O,MeOH,Formic acid,200.0,72.0,1.0,1.5,0.6667,Hydrothermal,2
+581,Fumaric acid,Non specificata,Zn,Zn(NO3)2·6H2O,EtOH,HCl,100.0,48.0,0.25,3.0,0.0833,Precipitation,2
+582,Isophthalic acid,Non specificata,Zn,Zn(OAc)2·2H2O,H2O,Triethylamine,25.0,2.0,1.5,5.0,0.3,Room Temperature,2
+583,5-Nitroisophthalic acid,Non specificata,Cu,Cu(NO3)2·2.5H2O,DMF/EtOH/H2O,Triethylamine,180.0,12.0,1.0,3.0,0.3333,Microwave,2
+584,5-Aminoisophthalic acid,Non specificata,Cu,Cu(OAc)2·H2O,DMF/H2O,Acetic acid,200.0,6.0,2.0,0.5,4.0,Sonochemical,2
+585,Imidazole-2-carboxaldehyde,Non specificata,Co,Co(NO3)2·6H2O,DMA,HNO3,80.0,4.0,1.0,3.0,0.3333,Solvothermal,2
+586,"4,4',4''-Triaminotriphenylamine",Non specificata,Co,Co(OAc)2·4H2O,THF/H2O,Nessuno,200.0,12.0,1.5,0.5,3.0,Hydrothermal,2
+587,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Non specificata,Ni,Ni(NO3)2·6H2O,MeOH/H2O,Formic acid,120.0,12.0,4.0,5.0,0.8,Precipitation,2
+588,"Pyrazine-2,3-dicarboxylic acid",Non specificata,Ni,Ni(OAc)2·4H2O,MeCN,HCl,25.0,2.0,0.25,5.0,0.05,Room Temperature,2
+589,"4,4'-Bipyridine",Non specificata,Fe,FeCl3·6H2O,DMF,Triethylamine,85.0,24.0,3.0,4.0,0.75,Microwave,2
+590,"1,2,4-Triazole",Non specificata,Fe,Fe(NO3)3·9H2O,DEF,Triethylamine,130.0,24.0,1.0,2.5,0.4,Sonochemical,2
+591,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Al,Al(NO3)3·9H2O,MeOH,Nessuno,180.0,4.0,3.0,2.5,1.2,Solvothermal,2
+592,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Al,AlCl3·6H2O,EtOH,Formic acid,60.0,18.0,2.0,2.0,1.0,Hydrothermal,2
+593,2-Methylimidazole,Non specificata,Zr,ZrCl4,H2O,Nessuno,100.0,6.0,0.25,5.0,0.05,Precipitation,2
+594,Benzimidazole,Non specificata,Zr,ZrOCl2·8H2O,DMF/EtOH/H2O,HCl,25.0,18.0,1.0,3.0,0.3333,Room Temperature,2
+595,2-Aminoterephthalic acid,Non specificata,Mg,Mg(NO3)2·6H2O,DMF/H2O,Nessuno,200.0,18.0,2.0,5.0,0.4,Microwave,2
+596,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Non specificata,Mn,Mn(OAc)2·4H2O,DMA,HCl,120.0,6.0,0.25,2.0,0.125,Sonochemical,2
+597,"4,4'-Biphenyldicarboxylic acid (H2BPDC)",Non specificata,Zn,Zn(NO3)2·6H2O,THF/H2O,Acetic acid,120.0,36.0,1.0,0.5,2.0,Solvothermal,2
+598,"2,6-Naphthalenedicarboxylic acid (2,6-NDC)",Non specificata,Zn,Zn(OAc)2·2H2O,MeOH/H2O,Triethylamine,200.0,24.0,1.0,1.0,1.0,Hydrothermal,2
+599,Fumaric acid,Non specificata,Cu,Cu(NO3)2·2.5H2O,MeCN,Triethylamine,180.0,4.0,4.0,5.0,0.8,Precipitation,2
+600,Isophthalic acid,Non specificata,Cu,Cu(OAc)2·H2O,DMF,Formic acid,25.0,36.0,4.0,1.0,4.0,Room Temperature,2
+601,5-Nitroisophthalic acid,Non specificata,Co,Co(NO3)2·6H2O,DEF,Nessuno,80.0,2.0,0.25,5.0,0.05,Microwave,2
+602,5-Aminoisophthalic acid,Non specificata,Co,Co(OAc)2·4H2O,MeOH,Benzoic acid,130.0,36.0,0.5,2.5,0.2,Sonochemical,2
+603,Imidazole-2-carboxaldehyde,Non specificata,Ni,Ni(NO3)2·6H2O,EtOH,HCl,85.0,4.0,2.0,0.5,4.0,Solvothermal,2
+604,"4,4',4''-Triaminotriphenylamine",Non specificata,Ni,Ni(OAc)2·4H2O,H2O,HCl,150.0,72.0,2.0,2.0,1.0,Hydrothermal,2
+605,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Non specificata,Fe,FeCl3·6H2O,DMF/EtOH/H2O,Triethylamine,60.0,48.0,3.0,5.0,0.6,Precipitation,2
+606,"Pyrazine-2,3-dicarboxylic acid",Non specificata,Fe,Fe(NO3)3·9H2O,DMF/H2O,HCl,25.0,6.0,4.0,4.0,1.0,Room Temperature,2
+607,"4,4'-Bipyridine",Non specificata,Al,Al(NO3)3·9H2O,DMA,Benzoic acid,80.0,4.0,4.0,5.0,0.8,Microwave,2
+608,"1,2,4-Triazole",Non specificata,Al,AlCl3·6H2O,THF/H2O,Benzoic acid,130.0,6.0,0.5,0.5,1.0,Sonochemical,2
+609,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Zr,ZrCl4,MeOH/H2O,Acetic acid,130.0,24.0,1.5,0.5,3.0,Solvothermal,2
+610,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Zr,ZrOCl2·8H2O,MeCN,HNO3,130.0,24.0,1.5,1.5,1.0,Hydrothermal,2
+611,2-Methylimidazole,Non specificata,Mg,Mg(NO3)2·6H2O,DMF,HCl,60.0,48.0,1.5,2.5,0.6,Precipitation,2
+612,Benzimidazole,Non specificata,Mn,Mn(OAc)2·4H2O,DEF,Triethylamine,25.0,18.0,1.5,4.0,0.375,Room Temperature,2
+613,2-Aminoterephthalic acid,Non specificata,Zn,Zn(NO3)2·6H2O,MeOH,HNO3,100.0,6.0,1.5,4.0,0.375,Microwave,2
+614,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Non specificata,Zn,Zn(OAc)2·2H2O,EtOH,Formic acid,80.0,6.0,4.0,0.5,8.0,Sonochemical,2
+615,"4,4'-Biphenyldicarboxylic acid (H2BPDC)",Non specificata,Cu,Cu(NO3)2·2.5H2O,H2O,Triethylamine,150.0,18.0,2.0,1.0,2.0,Solvothermal,2
+616,"2,6-Naphthalenedicarboxylic acid (2,6-NDC)",Non specificata,Cu,Cu(OAc)2·H2O,DMF/EtOH/H2O,Nessuno,150.0,72.0,2.0,2.0,1.0,Hydrothermal,2
+617,Fumaric acid,Non specificata,Co,Co(NO3)2·6H2O,DMF/H2O,Triethylamine,60.0,4.0,3.0,5.0,0.6,Precipitation,2
+618,Isophthalic acid,Non specificata,Co,Co(OAc)2·4H2O,DMA,HNO3,25.0,72.0,2.0,5.0,0.4,Room Temperature,2
+619,5-Nitroisophthalic acid,Non specificata,Ni,Ni(NO3)2·6H2O,THF/H2O,HNO3,60.0,36.0,4.0,5.0,0.8,Microwave,2
+620,5-Aminoisophthalic acid,Non specificata,Ni,Ni(OAc)2·4H2O,MeOH/H2O,Acetic acid,130.0,36.0,1.5,1.5,1.0,Sonochemical,2
+621,Imidazole-2-carboxaldehyde,Non specificata,Fe,FeCl3·6H2O,MeCN,HNO3,85.0,18.0,0.25,3.0,0.0833,Solvothermal,2
+622,"4,4',4''-Triaminotriphenylamine",Non specificata,Fe,Fe(NO3)3·9H2O,DMF,Triethylamine,120.0,2.0,3.0,3.0,1.0,Hydrothermal,2
+623,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Non specificata,Al,Al(NO3)3·9H2O,DEF,Acetic acid,100.0,18.0,0.5,2.0,0.25,Precipitation,2
+624,"Pyrazine-2,3-dicarboxylic acid",Non specificata,Al,AlCl3·6H2O,MeOH,Nessuno,25.0,18.0,1.5,4.0,0.375,Room Temperature,2
+625,"4,4'-Bipyridine",Non specificata,Zr,ZrCl4,EtOH,Triethylamine,120.0,36.0,0.5,1.0,0.5,Microwave,2
+626,"1,2,4-Triazole",Non specificata,Zr,ZrOCl2·8H2O,H2O,Benzoic acid,120.0,12.0,1.5,1.0,1.5,Sonochemical,2
+627,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Mg,Mg(NO3)2·6H2O,DMF/EtOH/H2O,HNO3,85.0,2.0,2.0,5.0,0.4,Solvothermal,2
+628,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Mn,Mn(OAc)2·4H2O,DMF/H2O,Acetic acid,100.0,48.0,4.0,5.0,0.8,Hydrothermal,2
+629,2-Methylimidazole,Non specificata,Zn,Zn(NO3)2·6H2O,DMA,Acetic acid,60.0,12.0,1.5,5.0,0.3,Precipitation,2
+630,Benzimidazole,Non specificata,Zn,Zn(OAc)2·2H2O,THF/H2O,Nessuno,25.0,6.0,0.25,2.0,0.125,Room Temperature,2
+631,2-Aminoterephthalic acid,Non specificata,Cu,Cu(NO3)2·2.5H2O,MeOH/H2O,Nessuno,85.0,18.0,1.0,2.0,0.5,Microwave,2
+632,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Non specificata,Cu,Cu(OAc)2·H2O,MeCN,HCl,60.0,48.0,1.0,1.0,1.0,Sonochemical,2
+633,"4,4'-Biphenyldicarboxylic acid (H2BPDC)",Non specificata,Co,Co(NO3)2·6H2O,DMF,Benzoic acid,80.0,6.0,1.0,1.0,1.0,Solvothermal,2
+634,"2,6-Naphthalenedicarboxylic acid (2,6-NDC)",Non specificata,Co,Co(OAc)2·4H2O,DEF,Acetic acid,60.0,48.0,0.5,2.5,0.2,Hydrothermal,2
+635,Fumaric acid,Non specificata,Ni,Ni(NO3)2·6H2O,MeOH,HCl,80.0,6.0,4.0,0.5,8.0,Precipitation,2
+636,Isophthalic acid,Non specificata,Ni,Ni(OAc)2·4H2O,EtOH,Formic acid,25.0,18.0,2.0,1.0,2.0,Room Temperature,2
+637,5-Nitroisophthalic acid,Non specificata,Fe,FeCl3·6H2O,H2O,HNO3,180.0,12.0,2.0,0.5,4.0,Microwave,2
+638,5-Aminoisophthalic acid,Non specificata,Fe,Fe(NO3)3·9H2O,DMF/EtOH/H2O,Nessuno,200.0,12.0,2.0,1.0,2.0,Sonochemical,2
+639,Imidazole-2-carboxaldehyde,Non specificata,Al,Al(NO3)3·9H2O,DMF/H2O,HCl,180.0,6.0,1.0,0.5,2.0,Solvothermal,2
+640,"4,4',4''-Triaminotriphenylamine",Non specificata,Al,AlCl3·6H2O,DMA,Triethylamine,80.0,2.0,4.0,4.0,1.0,Hydrothermal,2
+641,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Non specificata,Zr,ZrCl4,THF/H2O,Benzoic acid,120.0,2.0,2.0,4.0,0.5,Precipitation,2
+642,"Pyrazine-2,3-dicarboxylic acid",Non specificata,Zr,ZrOCl2·8H2O,MeOH/H2O,Triethylamine,25.0,72.0,0.25,1.5,0.1667,Room Temperature,2
+643,"4,4'-Bipyridine",Non specificata,Mg,Mg(NO3)2·6H2O,MeCN,Nessuno,60.0,2.0,1.5,3.0,0.5,Microwave,2
+644,"1,2,4-Triazole",Non specificata,Mn,Mn(OAc)2·4H2O,DMF,HCl,130.0,6.0,1.5,0.5,3.0,Sonochemical,2
+645,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Zn,Zn(NO3)2·6H2O,DEF,Benzoic acid,200.0,6.0,0.25,2.0,0.125,Solvothermal,2
+646,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Zn,Zn(OAc)2·2H2O,MeOH,HNO3,100.0,6.0,4.0,1.0,4.0,Hydrothermal,2
+647,2-Methylimidazole,Non specificata,Cu,Cu(NO3)2·2.5H2O,EtOH,HCl,120.0,6.0,0.25,2.0,0.125,Precipitation,2
+648,Benzimidazole,Non specificata,Cu,Cu(OAc)2·H2O,H2O,Benzoic acid,25.0,18.0,2.0,2.0,1.0,Room Temperature,2
+649,2-Aminoterephthalic acid,Non specificata,Co,Co(NO3)2·6H2O,DMF/EtOH/H2O,Acetic acid,200.0,36.0,2.0,2.5,0.8,Microwave,2
+650,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Non specificata,Co,Co(OAc)2·4H2O,DMF/H2O,HNO3,150.0,18.0,4.0,1.5,2.6667,Sonochemical,2
+651,"4,4'-Biphenyldicarboxylic acid (H2BPDC)",Non specificata,Ni,Ni(NO3)2·6H2O,DMA,HCl,80.0,72.0,0.5,1.0,0.5,Solvothermal,2
+652,"2,6-Naphthalenedicarboxylic acid (2,6-NDC)",Non specificata,Ni,Ni(OAc)2·4H2O,THF/H2O,HNO3,60.0,24.0,3.0,4.0,0.75,Hydrothermal,2
+653,Fumaric acid,Non specificata,Fe,FeCl3·6H2O,MeOH/H2O,Acetic acid,180.0,72.0,1.0,1.0,1.0,Precipitation,2
+654,Isophthalic acid,Non specificata,Fe,Fe(NO3)3·9H2O,MeCN,HNO3,25.0,4.0,2.0,2.5,0.8,Room Temperature,2
+655,5-Nitroisophthalic acid,Non specificata,Al,Al(NO3)3·9H2O,DMF,Nessuno,130.0,6.0,2.0,5.0,0.4,Microwave,2
+656,5-Aminoisophthalic acid,Non specificata,Al,AlCl3·6H2O,DEF,Benzoic acid,130.0,12.0,4.0,0.5,8.0,Sonochemical,2
+657,Imidazole-2-carboxaldehyde,Non specificata,Zr,ZrCl4,MeOH,HCl,200.0,12.0,3.0,2.0,1.5,Solvothermal,2
+658,"4,4',4''-Triaminotriphenylamine",Non specificata,Zr,ZrOCl2·8H2O,EtOH,Acetic acid,85.0,24.0,1.0,4.0,0.25,Hydrothermal,2
+659,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Non specificata,Mg,Mg(NO3)2·6H2O,H2O,HNO3,85.0,36.0,1.0,3.0,0.3333,Precipitation,2
+660,"Pyrazine-2,3-dicarboxylic acid",Non specificata,Mn,Mn(OAc)2·4H2O,DMF/EtOH/H2O,Acetic acid,25.0,4.0,3.0,2.0,1.5,Room Temperature,2
+661,"4,4'-Bipyridine",Non specificata,Zn,Zn(NO3)2·6H2O,DMF/H2O,Nessuno,100.0,48.0,4.0,2.5,1.6,Microwave,2
+662,"1,2,4-Triazole",Non specificata,Zn,Zn(OAc)2·2H2O,DMA,HCl,150.0,2.0,2.0,1.5,1.3333,Sonochemical,2
+663,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Cu,Cu(NO3)2·2.5H2O,THF/H2O,Triethylamine,200.0,2.0,0.25,0.5,0.5,Solvothermal,2
+664,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Cu,Cu(OAc)2·H2O,MeOH/H2O,HNO3,120.0,24.0,1.5,1.0,1.5,Hydrothermal,2
+665,2-Methylimidazole,Non specificata,Co,Co(NO3)2·6H2O,MeCN,HCl,120.0,24.0,1.0,2.5,0.4,Precipitation,2
+666,Benzimidazole,Non specificata,Co,Co(OAc)2·4H2O,DMF,Formic acid,25.0,18.0,1.0,2.0,0.5,Room Temperature,2
+667,2-Aminoterephthalic acid,Non specificata,Ni,Ni(NO3)2·6H2O,DEF,Nessuno,100.0,72.0,4.0,1.0,4.0,Microwave,2
+668,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Non specificata,Ni,Ni(OAc)2·4H2O,MeOH,Triethylamine,60.0,2.0,3.0,2.5,1.2,Sonochemical,2
+669,"4,4'-Biphenyldicarboxylic acid (H2BPDC)",Non specificata,Fe,FeCl3·6H2O,EtOH,HCl,85.0,36.0,1.0,0.5,2.0,Solvothermal,2
+670,"2,6-Naphthalenedicarboxylic acid (2,6-NDC)",Non specificata,Fe,Fe(NO3)3·9H2O,H2O,HNO3,180.0,24.0,1.5,2.0,0.75,Hydrothermal,2
+671,Fumaric acid,Non specificata,Al,Al(NO3)3·9H2O,DMF/EtOH/H2O,HCl,180.0,12.0,0.5,1.0,0.5,Precipitation,2
+672,Isophthalic acid,Non specificata,Al,AlCl3·6H2O,DMF/H2O,HNO3,25.0,4.0,1.5,2.0,0.75,Room Temperature,2
+673,5-Nitroisophthalic acid,Non specificata,Zr,ZrCl4,DMA,Triethylamine,200.0,12.0,1.0,5.0,0.2,Microwave,2
+674,5-Aminoisophthalic acid,Non specificata,Zr,ZrOCl2·8H2O,THF/H2O,HCl,60.0,72.0,2.0,0.5,4.0,Sonochemical,2
+675,Imidazole-2-carboxaldehyde,Non specificata,Mg,Mg(NO3)2·6H2O,MeOH/H2O,HNO3,85.0,24.0,1.0,1.0,1.0,Solvothermal,2
+676,"4,4',4''-Triaminotriphenylamine",Non specificata,Mn,Mn(OAc)2·4H2O,MeCN,Acetic acid,200.0,4.0,3.0,1.0,3.0,Hydrothermal,2
+677,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Non specificata,Zn,Zn(NO3)2·6H2O,DMF,Triethylamine,120.0,36.0,0.25,5.0,0.05,Precipitation,2
+678,"Pyrazine-2,3-dicarboxylic acid",Non specificata,Zn,Zn(OAc)2·2H2O,DEF,Nessuno,25.0,2.0,4.0,1.0,4.0,Room Temperature,2
+679,"4,4'-Bipyridine",Non specificata,Cu,Cu(NO3)2·2.5H2O,MeOH,Formic acid,120.0,72.0,1.0,3.0,0.3333,Microwave,2
+680,"1,2,4-Triazole",Non specificata,Cu,Cu(OAc)2·H2O,EtOH,Formic acid,60.0,2.0,0.25,1.0,0.25,Sonochemical,2
+681,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Co,Co(NO3)2·6H2O,H2O,Triethylamine,60.0,18.0,4.0,5.0,0.8,Solvothermal,2
+682,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Co,Co(OAc)2·4H2O,DMF/EtOH/H2O,Triethylamine,60.0,18.0,2.0,4.0,0.5,Hydrothermal,2
+683,2-Methylimidazole,Non specificata,Ni,Ni(NO3)2·6H2O,DMF/H2O,HNO3,85.0,18.0,2.0,4.0,0.5,Precipitation,2
+684,Benzimidazole,Non specificata,Ni,Ni(OAc)2·4H2O,DMA,Formic acid,25.0,18.0,0.5,1.0,0.5,Room Temperature,2
+685,2-Aminoterephthalic acid,Non specificata,Fe,FeCl3·6H2O,THF/H2O,Triethylamine,60.0,18.0,0.25,3.0,0.0833,Microwave,2
+686,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Non specificata,Fe,Fe(NO3)3·9H2O,MeOH/H2O,HCl,60.0,6.0,2.0,2.5,0.8,Sonochemical,2
+687,"4,4'-Biphenyldicarboxylic acid (H2BPDC)",Non specificata,Al,Al(NO3)3·9H2O,MeCN,HCl,60.0,2.0,0.5,5.0,0.1,Solvothermal,2
+688,"2,6-Naphthalenedicarboxylic acid (2,6-NDC)",Non specificata,Al,AlCl3·6H2O,DMF,Acetic acid,180.0,36.0,0.5,1.0,0.5,Hydrothermal,2
+689,Fumaric acid,Non specificata,Zr,ZrCl4,DEF,Acetic acid,130.0,24.0,1.0,1.5,0.6667,Precipitation,2
+690,Isophthalic acid,Non specificata,Zr,ZrOCl2·8H2O,MeOH,HNO3,25.0,2.0,1.5,3.0,0.5,Room Temperature,2
+691,5-Nitroisophthalic acid,Non specificata,Mg,Mg(NO3)2·6H2O,EtOH,Benzoic acid,200.0,2.0,4.0,5.0,0.8,Microwave,2
+692,5-Aminoisophthalic acid,Non specificata,Mn,Mn(OAc)2·4H2O,H2O,Acetic acid,150.0,18.0,3.0,2.5,1.2,Sonochemical,2
+693,Imidazole-2-carboxaldehyde,Non specificata,Zn,Zn(NO3)2·6H2O,DMF/EtOH/H2O,Acetic acid,85.0,36.0,1.5,3.0,0.5,Solvothermal,2
+694,"4,4',4''-Triaminotriphenylamine",Non specificata,Zn,Zn(OAc)2·2H2O,DMF/H2O,Triethylamine,130.0,4.0,0.5,1.0,0.5,Hydrothermal,2
+695,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Non specificata,Cu,Cu(NO3)2·2.5H2O,DMA,Triethylamine,85.0,4.0,0.25,2.0,0.125,Precipitation,2
+696,"Pyrazine-2,3-dicarboxylic acid",Non specificata,Cu,Cu(OAc)2·H2O,THF/H2O,HCl,25.0,2.0,4.0,5.0,0.8,Room Temperature,2
+697,"4,4'-Bipyridine",Non specificata,Co,Co(NO3)2·6H2O,MeOH/H2O,HNO3,150.0,6.0,2.0,0.5,4.0,Microwave,2
+698,"1,2,4-Triazole",Non specificata,Co,Co(OAc)2·4H2O,MeCN,Nessuno,100.0,48.0,0.5,0.5,1.0,Sonochemical,2
+699,"1,4-Benzenedicarboxylic acid (H2BDC)",Non specificata,Ni,Ni(NO3)2·6H2O,DMF,Triethylamine,100.0,48.0,0.5,2.5,0.2,Solvothermal,2
+700,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Non specificata,Ni,Ni(OAc)2·4H2O,DEF,Formic acid,120.0,4.0,3.0,2.5,1.2,Hydrothermal,2
+701,Fumaric acid,Carbossilati aromatici,Cd,Cd(NO3)2·4H2O,H2O,Nessuno,120.0,72.0,0.2,0.4,0.5,Hydrothermal,2
+702,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2·H2O,H2O,Nessuno,160.0,18.0,0.5,1.515,0.33,Sonochemical,2
+703,Benzimidazole,Imidazolati,Zn,Zn(OAc)2·2H2O,DEF,Nessuno,120.0,4.0,2.0,6.061,0.33,Microwave,2
+704,2-Methylimidazole,Imidazolati,Fe,Fe(NO3)3·9H2O,DMF/EtOH/H2O,Nessuno,25.0,18.0,0.1,0.067,1.5,Room Temperature,2
+705,"1,2,4-Triazole",Triazole,Mg,Mg(NO3)2·6H2O,DMF/H2O,Nessuno,150.0,24.0,1.0,2.0,0.5,Solvothermal,2
+706,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Co,Co(NO3)2·6H2O,EtOH/H2O,Nessuno,180.0,72.0,0.05,0.062,0.8,Hydrothermal,2
+707,"1,2,4-Triazole",Triazole,Al,AlCl3·6H2O,DEF,Nessuno,180.0,12.0,0.5,1.515,0.33,Sonochemical,2
+708,"1,2,4-Triazole",Triazole,Cd,Cd(NO3)2·4H2O,MeOH,Nessuno,160.0,72.0,0.05,0.042,1.2,Room Temperature,2
+709,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Carbossilati aromatici,Co,Co(OAc)2·4H2O,DMF/MeOH,Nessuno,60.0,48.0,2.0,2.5,0.8,Hydrothermal,2
+710,2-Methylimidazole,Imidazolati,Fe,Fe(NO3)3·9H2O,DEF,Nessuno,100.0,48.0,2.0,10.0,0.2,Microwave,2
+711,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Mg,Mg(NO3)2·6H2O,DEF,Nessuno,120.0,12.0,0.5,0.625,0.8,Solvothermal,2
+712,"1,2,4-Triazole",Triazole,Al,Al(NO3)3·9H2O,DMF/EtOH/H2O,Nessuno,25.0,4.0,0.05,0.025,2.0,Solvothermal,2
+713,"1,2,4-Triazole",Triazole,Co,Co(OAc)2·4H2O,H2O,Nessuno,80.0,4.0,0.05,0.1,0.5,Room Temperature,2
+714,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Zn,Zn(NO3)2·6H2O,MeOH,Nessuno,180.0,24.0,0.5,0.25,2.0,Solvothermal,2
+715,2-Aminoterephthalic acid,Carbossilati aromatici,Zr,ZrCl4,MeOH,Nessuno,150.0,48.0,0.5,1.0,0.5,Sonochemical,2
+716,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(NO3)2·3H2O,DMF,Nessuno,80.0,36.0,1.0,5.0,0.2,Room Temperature,2
+717,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Al,AlCl3·6H2O,MeOH,Nessuno,180.0,72.0,0.5,1.515,0.33,Hydrothermal,2
+718,2-Methylimidazole,Imidazolati,Co,Co(NO3)2·6H2O,DMF,Nessuno,100.0,36.0,1.0,0.833,1.2,Microwave,2
+719,Fumaric acid,Carbossilati aromatici,Co,Co(NO3)2·6H2O,DMF/MeOH,Nessuno,150.0,18.0,0.5,0.417,1.2,Room Temperature,2
+720,2-Aminoterephthalic acid,Carbossilati aromatici,Ni,Ni(OAc)2·4H2O,DMF/EtOH/H2O,Nessuno,120.0,48.0,0.5,0.625,0.8,Microwave,2
+721,"1,2,4-Triazole",Triazole,Fe,FeCl3·6H2O,MeOH,Nessuno,180.0,72.0,0.05,0.25,0.2,Solvothermal,2
+722,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Al,Al(NO3)3·9H2O,DMF/EtOH/H2O,Nessuno,80.0,72.0,2.0,10.0,0.2,Room Temperature,2
+723,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Zr,ZrCl4,DMF/H2O,Nessuno,160.0,72.0,0.05,0.042,1.2,Room Temperature,2
+724,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Carbossilati aromatici,Mn,Mn(OAc)2·4H2O,DMF,Nessuno,100.0,24.0,0.05,0.1,0.5,Hydrothermal,2
+725,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Mn,Mn(OAc)2·4H2O,H2O,Nessuno,25.0,18.0,0.1,0.303,0.33,Solvothermal,2
+726,"1,2,4-Triazole",Triazole,Zn,Zn(NO3)2·6H2O,DMF,Nessuno,25.0,18.0,0.5,0.5,1.0,Hydrothermal,2
+727,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Zn,Zn(OAc)2·2H2O,MeOH,Nessuno,100.0,72.0,0.2,0.1,2.0,Room Temperature,2
+728,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Zn,Zn(OAc)2·2H2O,H2O,Nessuno,120.0,24.0,2.0,1.667,1.2,Hydrothermal,2
+729,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Mg,Mg(NO3)2·6H2O,DMF,Nessuno,180.0,24.0,1.0,0.833,1.2,Room Temperature,2
+730,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Cu,Cu(OAc)2·H2O,DMF/H2O,Nessuno,80.0,72.0,0.5,0.625,0.8,Room Temperature,2
+731,"3-amino-4,4'-bipyrazole",Bipyrazole,Zr,ZrCl4,H2O,Nessuno,150.0,12.0,0.5,1.0,0.5,Solvothermal,2
+732,"3-amino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(OAc)2·4H2O,DMF/H2O,Nessuno,150.0,24.0,0.05,0.025,2.0,Hydrothermal,2
+733,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Carbossilati aromatici,Mn,Mn(OAc)2·4H2O,DEF,Nessuno,25.0,48.0,1.0,1.0,1.0,Microwave,2
+734,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Ni,Ni(NO3)2·6H2O,DMF/EtOH/H2O,Nessuno,80.0,18.0,2.0,2.5,0.8,Room Temperature,2
+735,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Zr,ZrCl4,H2O,Nessuno,100.0,18.0,0.5,0.25,2.0,Solvothermal,2
+736,"4,4'-Biphenyldicarboxylic acid (BPDC)",Carbossilati aromatici,Co,Co(OAc)2·4H2O,DMF/MeOH,Nessuno,80.0,48.0,0.05,0.1,0.5,Solvothermal,2
+737,2-Methylimidazole,Imidazolati,Al,AlCl3·6H2O,DEF,Nessuno,60.0,48.0,1.0,0.5,2.0,Room Temperature,2
+738,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2·H2O,DMF,Nessuno,100.0,4.0,0.5,0.25,2.0,Sonochemical,2
+739,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2·4H2O,MeOH,Nessuno,80.0,4.0,0.5,0.25,2.0,Solvothermal,2
+740,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Al,AlCl3·6H2O,DMA,Nessuno,140.0,36.0,0.2,0.167,1.2,Room Temperature,2
+741,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Zr,ZrOCl2·8H2O,EtOH/H2O,Nessuno,25.0,24.0,0.5,0.5,1.0,Solvothermal,2
+742,2-Methylimidazole,Imidazolati,Mg,Mg(NO3)2·6H2O,DMF/H2O,Nessuno,100.0,18.0,0.05,0.025,2.0,Solvothermal,2
+743,"1,2,4-Triazole",Triazole,Al,AlCl3·6H2O,EtOH/H2O,Nessuno,140.0,18.0,1.0,5.0,0.2,Microwave,2
+744,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Mn,Mn(OAc)2·4H2O,EtOH/H2O,Nessuno,80.0,24.0,1.0,1.25,0.8,Solvothermal,2
+745,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Zr,ZrCl4,DMF/H2O,Nessuno,60.0,4.0,2.0,1.333,1.5,Hydrothermal,2
+746,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Cu,Cu(NO3)2·3H2O,H2O,Nessuno,160.0,12.0,0.2,0.133,1.5,Hydrothermal,2
+747,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Zr,ZrOCl2·8H2O,DMF,Nessuno,160.0,4.0,2.0,4.0,0.5,Solvothermal,2
+748,Fumaric acid,Carbossilati aromatici,Ni,Ni(OAc)2·4H2O,MeOH,Nessuno,80.0,12.0,1.0,0.5,2.0,Solvothermal,2
+749,"1,2,4-Triazole",Triazole,Co,Co(NO3)2·6H2O,DMF/EtOH/H2O,Nessuno,100.0,36.0,2.0,10.0,0.2,Microwave,2
+750,Benzimidazole,Imidazolati,Fe,Fe(NO3)3·9H2O,DMF/H2O,Nessuno,150.0,72.0,0.1,0.303,0.33,Microwave,2
+751,Fumaric acid,Carbossilati aromatici,Mn,Mn(OAc)2·4H2O,DMF/MeOH,Nessuno,140.0,72.0,1.0,1.25,0.8,Room Temperature,2
+752,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Co,Co(OAc)2·4H2O,EtOH/H2O,Nessuno,120.0,72.0,1.0,0.833,1.2,Microwave,2
+753,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Carbossilati aromatici,Cd,Cd(NO3)2·4H2O,DMF/H2O,Nessuno,150.0,24.0,0.5,1.515,0.33,Sonochemical,2
+754,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Mn,Mn(OAc)2·4H2O,H2O,Nessuno,80.0,24.0,0.1,0.067,1.5,Hydrothermal,2
+755,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Ni,Ni(NO3)2·6H2O,EtOH/H2O,Nessuno,25.0,12.0,0.1,0.5,0.2,Hydrothermal,2
+756,Benzimidazole,Imidazolati,Mg,Mg(NO3)2·6H2O,DMF/EtOH/H2O,Nessuno,160.0,36.0,1.0,5.0,0.2,Sonochemical,2
+757,Fumaric acid,Carbossilati aromatici,Zn,Zn(NO3)2·6H2O,DMA,Nessuno,150.0,18.0,0.2,0.606,0.33,Microwave,2
+758,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Al,AlCl3·6H2O,EtOH/H2O,Nessuno,25.0,48.0,0.5,0.5,1.0,Microwave,2
+759,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Mg,Mg(NO3)2·6H2O,EtOH/H2O,Nessuno,150.0,24.0,2.0,1.667,1.2,Solvothermal,2
+760,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Ni,Ni(OAc)2·4H2O,DMA,Nessuno,120.0,24.0,0.1,0.125,0.8,Hydrothermal,2
+761,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Zr,ZrCl4,H2O,Nessuno,120.0,36.0,0.1,0.05,2.0,Microwave,2
+762,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Fe,Fe(NO3)3·9H2O,DEF,Nessuno,80.0,24.0,1.0,5.0,0.2,Solvothermal,2
+763,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Fe,FeCl3·6H2O,EtOH/H2O,Nessuno,80.0,4.0,0.1,0.05,2.0,Solvothermal,2
+764,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Fe,Fe(NO3)3·9H2O,DEF,Nessuno,80.0,12.0,0.05,0.033,1.5,Room Temperature,2
+765,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2·4H2O,DEF,Nessuno,80.0,4.0,1.0,3.03,0.33,Microwave,2
+766,2-Aminoterephthalic acid,Carbossilati aromatici,Al,Al(NO3)3·9H2O,H2O,Nessuno,100.0,4.0,0.05,0.05,1.0,Sonochemical,2
+767,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Carbossilati aromatici,Ni,Ni(OAc)2·4H2O,EtOH/H2O,Nessuno,180.0,18.0,0.5,1.0,0.5,Solvothermal,2
+768,2-Aminoterephthalic acid,Carbossilati aromatici,Mn,Mn(OAc)2·4H2O,MeOH,Nessuno,160.0,72.0,0.05,0.062,0.8,Sonochemical,2
+769,Fumaric acid,Carbossilati aromatici,Al,Al(NO3)3·9H2O,MeOH,Nessuno,180.0,18.0,0.05,0.042,1.2,Solvothermal,2
+770,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Mg,Mg(NO3)2·6H2O,DMF/EtOH/H2O,Nessuno,140.0,36.0,0.05,0.1,0.5,Room Temperature,2
+771,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Carbossilati aromatici,Fe,Fe(NO3)3·9H2O,DMF/EtOH/H2O,Nessuno,80.0,24.0,0.5,0.333,1.5,Solvothermal,2
+772,Benzimidazole,Imidazolati,Cd,Cd(NO3)2·4H2O,EtOH/H2O,Nessuno,120.0,18.0,0.5,2.5,0.2,Microwave,2
+773,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2·H2O,EtOH/H2O,Nessuno,150.0,4.0,0.1,0.1,1.0,Sonochemical,2
+774,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2·6H2O,EtOH/H2O,Nessuno,80.0,72.0,0.2,0.4,0.5,Sonochemical,2
+775,2-Aminoterephthalic acid,Carbossilati aromatici,Cd,Cd(NO3)2·4H2O,DMF/EtOH/H2O,Nessuno,25.0,36.0,0.1,0.05,2.0,Sonochemical,2
+776,"3-amino-4,4'-bipyrazole",Bipyrazole,Zr,ZrOCl2·8H2O,EtOH/H2O,Nessuno,120.0,48.0,1.0,0.5,2.0,Room Temperature,2
+777,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Mn,Mn(OAc)2·4H2O,MeOH,Nessuno,180.0,36.0,2.0,2.5,0.8,Microwave,2
+778,"1,2,4-Triazole",Triazole,Fe,Fe(NO3)3·9H2O,DMA,Nessuno,150.0,18.0,0.2,0.606,0.33,Hydrothermal,2
+779,Fumaric acid,Carbossilati aromatici,Cu,Cu(NO3)2·3H2O,DEF,Nessuno,100.0,24.0,0.05,0.033,1.5,Sonochemical,2
+780,Fumaric acid,Carbossilati aromatici,Zr,ZrCl4,DMF/H2O,Nessuno,180.0,72.0,0.05,0.25,0.2,Microwave,2
+781,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Zr,ZrCl4,DMA,Nessuno,120.0,48.0,1.0,1.25,0.8,Hydrothermal,2
+782,2-Methylimidazole,Imidazolati,Cd,Cd(NO3)2·4H2O,EtOH/H2O,Nessuno,140.0,36.0,1.0,1.25,0.8,Room Temperature,2
+783,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Carbossilati aromatici,Cu,Cu(NO3)2·3H2O,DMF/H2O,Nessuno,100.0,4.0,0.05,0.033,1.5,Hydrothermal,2
+784,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Al,AlCl3·6H2O,DMF,Nessuno,120.0,48.0,0.05,0.025,2.0,Room Temperature,2
+785,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Fe,Fe(NO3)3·9H2O,H2O,Nessuno,140.0,24.0,0.1,0.1,1.0,Microwave,2
+786,"1,2,4-Triazole",Triazole,Cu,Cu(OAc)2·H2O,H2O,Nessuno,60.0,24.0,0.05,0.05,1.0,Microwave,2
+787,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Carbossilati aromatici,Mn,Mn(OAc)2·4H2O,DMF/EtOH/H2O,Nessuno,25.0,36.0,0.5,0.5,1.0,Microwave,2
+788,2-Methylimidazole,Imidazolati,Al,Al(NO3)3·9H2O,DMF/H2O,Nessuno,140.0,12.0,1.0,0.5,2.0,Room Temperature,2
+789,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Carbossilati aromatici,Zr,ZrOCl2·8H2O,H2O,Nessuno,60.0,18.0,0.05,0.05,1.0,Sonochemical,2
+790,"4,4'-Biphenyldicarboxylic acid (BPDC)",Carbossilati aromatici,Zr,ZrCl4,DEF,Nessuno,25.0,18.0,0.05,0.152,0.33,Sonochemical,2
+791,"4,4'-Biphenyldicarboxylic acid (BPDC)",Carbossilati aromatici,Mn,Mn(OAc)2·4H2O,DMF,Nessuno,60.0,4.0,0.05,0.033,1.5,Room Temperature,2
+792,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Mg,Mg(NO3)2·6H2O,MeOH,Nessuno,140.0,24.0,1.0,1.0,1.0,Solvothermal,2
+793,"4,4'-Biphenyldicarboxylic acid (BPDC)",Carbossilati aromatici,Cu,Cu(NO3)2·3H2O,EtOH/H2O,Nessuno,150.0,36.0,0.1,0.1,1.0,Sonochemical,2
+794,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Mn,Mn(OAc)2·4H2O,EtOH/H2O,Nessuno,180.0,48.0,1.0,2.0,0.5,Solvothermal,2
+795,2-Methylimidazole,Imidazolati,Cu,Cu(OAc)2·H2O,DMF,Nessuno,25.0,12.0,0.1,0.067,1.5,Microwave,2
+796,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Zr,ZrOCl2·8H2O,DMA,Nessuno,140.0,18.0,0.5,1.515,0.33,Room Temperature,2
+797,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Fe,Fe(NO3)3·9H2O,EtOH/H2O,Nessuno,180.0,4.0,2.0,2.0,1.0,Sonochemical,2
+798,2-Aminoterephthalic acid,Carbossilati aromatici,Fe,FeCl3·6H2O,DMF/H2O,Nessuno,150.0,48.0,2.0,6.061,0.33,Microwave,2
+799,2-Aminoterephthalic acid,Carbossilati aromatici,Zr,ZrOCl2·8H2O,DEF,Nessuno,80.0,72.0,0.05,0.062,0.8,Hydrothermal,2
+800,"4,4'-Biphenyldicarboxylic acid (BPDC)",Carbossilati aromatici,Zr,ZrCl4,H2O,Nessuno,150.0,12.0,1.0,5.0,0.2,Room Temperature,2
+801,2-Methylimidazole,Imidazolati,Cu,Cu(OAc)2·H2O,H2O,Nessuno,25.0,12.0,0.5,0.625,0.8,Solvothermal,2
+802,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Zn,Zn(NO3)2·6H2O,DEF,Nessuno,140.0,36.0,2.0,2.0,1.0,Hydrothermal,2
+803,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Fe,FeCl3·6H2O,DMF/H2O,Nessuno,180.0,72.0,0.5,0.417,1.2,Room Temperature,2
+804,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2·H2O,H2O,Nessuno,180.0,18.0,1.0,2.0,0.5,Room Temperature,2
+805,2-Aminoterephthalic acid,Carbossilati aromatici,Zn,Zn(NO3)2·6H2O,DEF,Nessuno,140.0,36.0,0.05,0.05,1.0,Solvothermal,2
+806,"1,2,4-Triazole",Triazole,Al,AlCl3·6H2O,DEF,Nessuno,25.0,48.0,0.2,0.2,1.0,Hydrothermal,2
+807,"3-amino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2·4H2O,DMF/EtOH/H2O,Nessuno,140.0,72.0,1.0,0.667,1.5,Room Temperature,2
+808,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Cu,Cu(OAc)2·H2O,DMF,Nessuno,160.0,4.0,0.5,0.5,1.0,Room Temperature,2
+809,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Carbossilati aromatici,Cd,Cd(NO3)2·4H2O,H2O,Nessuno,140.0,48.0,2.0,2.5,0.8,Hydrothermal,2
+810,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Zr,ZrOCl2·8H2O,H2O,Nessuno,80.0,72.0,2.0,1.333,1.5,Room Temperature,2
+811,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2·4H2O,DEF,Nessuno,140.0,18.0,0.05,0.033,1.5,Room Temperature,2
+812,Fumaric acid,Carbossilati aromatici,Zn,Zn(NO3)2·6H2O,MeOH,Nessuno,180.0,4.0,0.5,0.417,1.2,Hydrothermal,2
+813,"3-amino-4,4'-bipyrazole",Bipyrazole,Mn,Mn(OAc)2·4H2O,DMF/MeOH,Nessuno,180.0,24.0,0.05,0.1,0.5,Hydrothermal,2
+814,2-Methylimidazole,Imidazolati,Cd,Cd(NO3)2·4H2O,DMF/MeOH,Nessuno,140.0,12.0,0.2,0.25,0.8,Solvothermal,2
+815,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Ni,Ni(NO3)2·6H2O,EtOH/H2O,Nessuno,140.0,24.0,0.1,0.05,2.0,Hydrothermal,2
+816,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Al,Al(NO3)3·9H2O,DMA,Nessuno,120.0,4.0,2.0,2.0,1.0,Solvothermal,2
+817,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Zn,Zn(OAc)2·2H2O,DMA,Nessuno,150.0,24.0,2.0,1.667,1.2,Room Temperature,2
+818,Benzimidazole,Imidazolati,Ni,Ni(NO3)2·6H2O,MeOH,Nessuno,80.0,18.0,2.0,2.5,0.8,Sonochemical,2
+819,2-Aminoterephthalic acid,Carbossilati aromatici,Fe,FeCl3·6H2O,DMF/MeOH,Nessuno,140.0,48.0,2.0,1.667,1.2,Solvothermal,2
+820,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Zr,ZrOCl2·8H2O,H2O,Nessuno,80.0,36.0,2.0,2.0,1.0,Microwave,2
+821,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2·H2O,DMF/H2O,Nessuno,100.0,4.0,0.5,2.5,0.2,Microwave,2
+822,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Carbossilati aromatici,Zr,ZrCl4,DMA,Nessuno,120.0,48.0,0.5,0.333,1.5,Room Temperature,2
+823,2-Methylimidazole,Imidazolati,Fe,FeCl3·6H2O,DMF/H2O,Nessuno,25.0,48.0,0.1,0.05,2.0,Hydrothermal,2
+824,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Ni,Ni(OAc)2·4H2O,DEF,Nessuno,160.0,12.0,1.0,5.0,0.2,Microwave,2
+825,"3-amino-4,4'-bipyrazole",Bipyrazole,Mn,Mn(OAc)2·4H2O,DMF/EtOH/H2O,Nessuno,160.0,48.0,0.05,0.042,1.2,Room Temperature,2
+826,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Fe,Fe(NO3)3·9H2O,DEF,Nessuno,120.0,18.0,0.5,1.515,0.33,Solvothermal,2
+827,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Cu,Cu(NO3)2·3H2O,DMF,Nessuno,160.0,48.0,1.0,0.5,2.0,Microwave,2
+828,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Fe,FeCl3·6H2O,DMF/EtOH/H2O,Nessuno,120.0,48.0,0.2,0.167,1.2,Microwave,2
+829,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Zn,Zn(NO3)2·6H2O,EtOH/H2O,Nessuno,80.0,18.0,0.5,0.417,1.2,Hydrothermal,2
+830,"3-amino-4,4'-bipyrazole",Bipyrazole,Al,Al(NO3)3·9H2O,DMF/EtOH/H2O,Nessuno,60.0,72.0,2.0,2.0,1.0,Room Temperature,2
+831,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Cd,Cd(NO3)2·4H2O,DMF,Nessuno,180.0,4.0,0.1,0.067,1.5,Solvothermal,2
+832,Benzimidazole,Imidazolati,Co,Co(OAc)2·4H2O,H2O,Nessuno,80.0,72.0,2.0,1.667,1.2,Room Temperature,2
+833,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Co,Co(NO3)2·6H2O,DMF/H2O,Nessuno,160.0,12.0,1.0,0.667,1.5,Microwave,2
+834,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Co,Co(NO3)2·6H2O,DMF/MeOH,Nessuno,140.0,4.0,1.0,1.0,1.0,Solvothermal,2
+835,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Zr,ZrCl4,DMF/MeOH,Nessuno,140.0,12.0,0.2,0.2,1.0,Hydrothermal,2
+836,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Zr,ZrCl4,DMA,Nessuno,140.0,36.0,0.5,0.5,1.0,Microwave,2
+837,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2·4H2O,H2O,Nessuno,120.0,36.0,1.0,1.25,0.8,Microwave,2
+838,2-Aminoterephthalic acid,Carbossilati aromatici,Cu,Cu(OAc)2·H2O,DMF/MeOH,Nessuno,120.0,24.0,0.1,0.083,1.2,Room Temperature,2
+839,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Zn,Zn(OAc)2·2H2O,DMA,Nessuno,160.0,72.0,0.2,0.167,1.2,Hydrothermal,2
+840,"1,2,4-Triazole",Triazole,Al,Al(NO3)3·9H2O,H2O,Nessuno,60.0,4.0,0.5,0.333,1.5,Solvothermal,2
+841,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Fe,Fe(NO3)3·9H2O,DMF/MeOH,Nessuno,100.0,36.0,0.1,0.05,2.0,Sonochemical,2
+842,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Ni,Ni(NO3)2·6H2O,DMA,Nessuno,80.0,36.0,0.2,0.167,1.2,Solvothermal,2
+843,Fumaric acid,Carbossilati aromatici,Zr,ZrCl4,EtOH/H2O,Nessuno,120.0,12.0,0.05,0.042,1.2,Microwave,2
+844,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Co,Co(OAc)2·4H2O,EtOH/H2O,Nessuno,180.0,36.0,0.5,1.515,0.33,Solvothermal,2
+845,"3-amino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(NO3)2·6H2O,DMF/H2O,Nessuno,100.0,4.0,2.0,4.0,0.5,Hydrothermal,2
+846,2-Aminoterephthalic acid,Carbossilati aromatici,Co,Co(NO3)2·6H2O,DEF,Nessuno,60.0,18.0,0.2,0.1,2.0,Solvothermal,2
+847,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Fe,Fe(NO3)3·9H2O,DMF/H2O,Nessuno,140.0,4.0,1.0,0.833,1.2,Microwave,2
+848,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Zr,ZrCl4,DMF,Nessuno,140.0,12.0,1.0,3.03,0.33,Microwave,2
+849,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Co,Co(NO3)2·6H2O,DMF,Nessuno,100.0,4.0,2.0,2.5,0.8,Solvothermal,2
+850,"4,4'-Biphenyldicarboxylic acid (BPDC)",Carbossilati aromatici,Co,Co(OAc)2·4H2O,DMF,Nessuno,150.0,4.0,0.2,0.167,1.2,Sonochemical,2
+851,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Mn,Mn(OAc)2·4H2O,H2O,Nessuno,80.0,12.0,0.2,0.167,1.2,Solvothermal,2
+852,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Carbossilati aromatici,Zr,ZrOCl2·8H2O,DMA,Nessuno,25.0,12.0,0.5,0.333,1.5,Room Temperature,2
+853,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Co,Co(OAc)2·4H2O,MeOH,Nessuno,150.0,18.0,0.2,0.606,0.33,Hydrothermal,2
+854,Benzimidazole,Imidazolati,Zr,ZrOCl2·8H2O,DMF,Nessuno,150.0,72.0,0.1,0.05,2.0,Microwave,2
+855,Fumaric acid,Carbossilati aromatici,Co,Co(OAc)2·4H2O,DMF,Nessuno,180.0,72.0,0.2,0.1,2.0,Room Temperature,2
+856,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Carbossilati aromatici,Co,Co(OAc)2·4H2O,DMA,Nessuno,180.0,72.0,0.2,0.4,0.5,Sonochemical,2
+857,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Cd,Cd(NO3)2·4H2O,H2O,Nessuno,60.0,18.0,0.5,0.25,2.0,Room Temperature,2
+858,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Carbossilati aromatici,Zn,Zn(NO3)2·6H2O,DMA,Nessuno,120.0,48.0,0.1,0.067,1.5,Hydrothermal,2
+859,Fumaric acid,Carbossilati aromatici,Zr,ZrCl4,MeOH,Nessuno,120.0,18.0,0.5,1.0,0.5,Sonochemical,2
+860,2-Methylimidazole,Imidazolati,Zr,ZrOCl2·8H2O,DMF,Nessuno,120.0,24.0,0.1,0.303,0.33,Room Temperature,2
+861,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Fe,Fe(NO3)3·9H2O,DMF/MeOH,Nessuno,120.0,36.0,1.0,3.03,0.33,Solvothermal,2
+862,"1,2,4-Triazole",Triazole,Cu,Cu(NO3)2·3H2O,DMF/MeOH,Nessuno,140.0,24.0,2.0,6.061,0.33,Solvothermal,2
+863,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Al,AlCl3·6H2O,MeOH,Nessuno,25.0,12.0,2.0,10.0,0.2,Room Temperature,2
+864,"3-amino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2·4H2O,DEF,Nessuno,180.0,72.0,2.0,1.667,1.2,Solvothermal,2
+865,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Al,AlCl3·6H2O,DMF/MeOH,Nessuno,60.0,72.0,2.0,4.0,0.5,Sonochemical,2
+866,2-Aminoterephthalic acid,Carbossilati aromatici,Ni,Ni(OAc)2·4H2O,DMF/MeOH,Nessuno,180.0,48.0,1.0,5.0,0.2,Hydrothermal,2
+867,"3-amino-4,4'-bipyrazole",Bipyrazole,Zn,Zn(OAc)2·2H2O,MeOH,Nessuno,120.0,12.0,0.05,0.1,0.5,Sonochemical,2
+868,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Carbossilati aromatici,Zn,Zn(OAc)2·2H2O,H2O,Nessuno,60.0,24.0,1.0,5.0,0.2,Sonochemical,2
+869,Fumaric acid,Carbossilati aromatici,Ni,Ni(OAc)2·4H2O,DMF,Nessuno,120.0,24.0,0.1,0.083,1.2,Hydrothermal,2
+870,"1,2,4-Triazole",Triazole,Fe,FeCl3·6H2O,DMF,Nessuno,80.0,36.0,0.1,0.2,0.5,Microwave,2
+871,2-Methylimidazole,Imidazolati,Fe,FeCl3·6H2O,H2O,Nessuno,100.0,4.0,0.2,0.133,1.5,Room Temperature,2
+872,"4,4'-Biphenyldicarboxylic acid (BPDC)",Carbossilati aromatici,Zr,ZrOCl2·8H2O,MeOH,Nessuno,160.0,48.0,0.05,0.025,2.0,Sonochemical,2
+873,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2·H2O,DMF/MeOH,Nessuno,80.0,18.0,0.05,0.1,0.5,Microwave,2
+874,Benzimidazole,Imidazolati,Al,Al(NO3)3·9H2O,DEF,Nessuno,180.0,12.0,0.05,0.05,1.0,Hydrothermal,2
+875,"3-amino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2·4H2O,DMF,Nessuno,25.0,4.0,0.1,0.2,0.5,Sonochemical,2
+876,"3-amino-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2·6H2O,DMF/H2O,Nessuno,80.0,12.0,0.5,0.625,0.8,Sonochemical,2
+877,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Zn,Zn(OAc)2·2H2O,DEF,Nessuno,80.0,36.0,0.2,0.4,0.5,Microwave,2
+878,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Mn,Mn(OAc)2·4H2O,DMF/EtOH/H2O,Nessuno,150.0,4.0,0.2,0.167,1.2,Microwave,2
+879,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Mn,Mn(OAc)2·4H2O,MeOH,Nessuno,120.0,48.0,0.05,0.152,0.33,Solvothermal,2
+880,"1,2,4-Triazole",Triazole,Cd,Cd(NO3)2·4H2O,DMF/EtOH/H2O,Nessuno,150.0,4.0,2.0,2.0,1.0,Hydrothermal,2
+881,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2·6H2O,EtOH/H2O,Nessuno,150.0,4.0,0.1,0.05,2.0,Room Temperature,2
+882,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2·6H2O,DMF/H2O,Nessuno,60.0,18.0,0.05,0.033,1.5,Hydrothermal,2
+883,Benzimidazole,Imidazolati,Cu,Cu(NO3)2·3H2O,DEF,Nessuno,80.0,36.0,0.1,0.05,2.0,Room Temperature,2
+884,Fumaric acid,Carbossilati aromatici,Fe,Fe(NO3)3·9H2O,MeOH,Nessuno,160.0,4.0,2.0,2.0,1.0,Microwave,2
+885,"3-amino-4,4'-bipyrazole",Bipyrazole,Al,Al(NO3)3·9H2O,DEF,Nessuno,25.0,36.0,2.0,2.5,0.8,Hydrothermal,2
+886,2-Aminoterephthalic acid,Carbossilati aromatici,Cu,Cu(NO3)2·3H2O,DEF,Nessuno,150.0,36.0,0.2,0.606,0.33,Sonochemical,2
+887,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2·6H2O,DMF/MeOH,Nessuno,25.0,36.0,0.05,0.062,0.8,Sonochemical,2
+888,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Fe,Fe(NO3)3·9H2O,DMF/EtOH/H2O,Nessuno,180.0,72.0,0.05,0.05,1.0,Microwave,2
+889,Benzimidazole,Imidazolati,Mn,Mn(OAc)2·4H2O,DMF/H2O,Nessuno,160.0,48.0,0.1,0.125,0.8,Hydrothermal,2
+890,Benzimidazole,Imidazolati,Zn,Zn(NO3)2·6H2O,DMF/EtOH/H2O,Nessuno,25.0,36.0,0.05,0.033,1.5,Solvothermal,2
+891,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2·H2O,EtOH/H2O,Nessuno,120.0,18.0,2.0,1.667,1.2,Microwave,2
+892,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Fe,FeCl3·6H2O,DEF,Nessuno,180.0,72.0,0.2,0.25,0.8,Microwave,2
+893,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Al,Al(NO3)3·9H2O,DEF,Nessuno,180.0,12.0,0.1,0.5,0.2,Solvothermal,2
+894,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Zn,Zn(OAc)2·2H2O,EtOH/H2O,Nessuno,120.0,48.0,0.2,1.0,0.2,Solvothermal,2
+895,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Carbossilati aromatici,Mn,Mn(OAc)2·4H2O,DMF/H2O,Nessuno,60.0,12.0,0.2,0.1,2.0,Solvothermal,2
+896,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Zn,Zn(OAc)2·2H2O,H2O,Nessuno,180.0,4.0,1.0,0.833,1.2,Microwave,2
+897,2-Aminoterephthalic acid,Carbossilati aromatici,Fe,FeCl3·6H2O,DMF/EtOH/H2O,Nessuno,160.0,18.0,1.0,1.25,0.8,Room Temperature,2
+898,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(NO3)2·3H2O,DMF/EtOH/H2O,Nessuno,60.0,24.0,0.05,0.25,0.2,Hydrothermal,2
+899,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Fe,FeCl3·6H2O,DEF,Nessuno,160.0,24.0,0.1,0.1,1.0,Room Temperature,2
+900,2-Aminoterephthalic acid,Carbossilati aromatici,Zn,Zn(OAc)2·2H2O,EtOH/H2O,Nessuno,120.0,36.0,1.0,3.03,0.33,Solvothermal,2
+901,Benzimidazole,Imidazolati,Cu,Cu(NO3)2·3H2O,H2O,Nessuno,160.0,12.0,1.0,1.0,1.0,Room Temperature,2
+902,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Zn,Zn(OAc)2·2H2O,H2O,Nessuno,80.0,24.0,0.2,0.4,0.5,Solvothermal,2
+903,"3-amino-4,4'-bipyrazole",Bipyrazole,Al,Al(NO3)3·9H2O,DMF/EtOH/H2O,Nessuno,120.0,12.0,0.2,0.133,1.5,Microwave,2
+904,"4,4'-Biphenyldicarboxylic acid (BPDC)",Carbossilati aromatici,Co,Co(NO3)2·6H2O,EtOH/H2O,Nessuno,180.0,18.0,0.2,0.606,0.33,Hydrothermal,2
+905,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Co,Co(NO3)2·6H2O,DEF,Nessuno,100.0,12.0,0.5,0.5,1.0,Sonochemical,2
+906,Fumaric acid,Carbossilati aromatici,Zr,ZrOCl2·8H2O,DMF,Nessuno,180.0,4.0,1.0,1.25,0.8,Hydrothermal,2
+907,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Mg,Mg(NO3)2·6H2O,DMA,Nessuno,80.0,48.0,0.1,0.5,0.2,Hydrothermal,2
+908,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Carbossilati aromatici,Cd,Cd(NO3)2·4H2O,EtOH/H2O,Nessuno,140.0,24.0,0.5,0.25,2.0,Microwave,2
+909,2-Aminoterephthalic acid,Carbossilati aromatici,Cu,Cu(OAc)2·H2O,DMF,Nessuno,140.0,4.0,0.05,0.042,1.2,Hydrothermal,2
+910,"4,4'-Biphenyldicarboxylic acid (BPDC)",Carbossilati aromatici,Al,AlCl3·6H2O,DMF/MeOH,Nessuno,80.0,24.0,1.0,1.25,0.8,Sonochemical,2
+911,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Zr,ZrCl4,DMA,Nessuno,80.0,18.0,0.1,0.067,1.5,Hydrothermal,2
+912,2-Aminoterephthalic acid,Carbossilati aromatici,Al,AlCl3·6H2O,DEF,Nessuno,100.0,4.0,0.05,0.05,1.0,Room Temperature,2
+913,Fumaric acid,Carbossilati aromatici,Cd,Cd(NO3)2·4H2O,MeOH,Nessuno,100.0,12.0,0.2,0.167,1.2,Microwave,2
+914,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Cu,Cu(NO3)2·3H2O,DMF,Nessuno,160.0,24.0,1.0,1.0,1.0,Sonochemical,2
+915,"3,3'-dimethyl-4,4'-bipyrazole",Bipyrazole,Zn,Zn(OAc)2·2H2O,DMF/H2O,Nessuno,180.0,36.0,0.05,0.1,0.5,Room Temperature,2
+916,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Zn,Zn(OAc)2·2H2O,DEF,Nessuno,80.0,4.0,0.5,0.25,2.0,Solvothermal,2
+917,2-Aminoterephthalic acid,Carbossilati aromatici,Cd,Cd(NO3)2·4H2O,H2O,Nessuno,180.0,4.0,0.2,0.2,1.0,Sonochemical,2
+918,Benzimidazole,Imidazolati,Co,Co(NO3)2·6H2O,DMF/H2O,Nessuno,120.0,24.0,0.5,1.0,0.5,Hydrothermal,2
+919,Benzimidazole,Imidazolati,Cd,Cd(NO3)2·4H2O,DMF/EtOH/H2O,Nessuno,150.0,4.0,0.5,0.625,0.8,Microwave,2
+920,"3-amino-4,4'-bipyrazole",Bipyrazole,Zn,Zn(OAc)2·2H2O,DMF/EtOH/H2O,Nessuno,140.0,48.0,0.1,0.1,1.0,Sonochemical,2
+921,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2·4H2O,DMF,Nessuno,160.0,36.0,0.1,0.083,1.2,Hydrothermal,2
+922,Benzimidazole,Imidazolati,Cd,Cd(NO3)2·4H2O,DMA,Nessuno,180.0,4.0,0.05,0.042,1.2,Microwave,2
+923,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Fe,FeCl3·6H2O,DMA,Nessuno,80.0,4.0,0.05,0.062,0.8,Solvothermal,2
+924,Benzimidazole,Imidazolati,Cd,Cd(NO3)2·4H2O,DMA,Nessuno,140.0,24.0,0.1,0.5,0.2,Microwave,2
+925,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Zr,ZrCl4,DEF,Nessuno,25.0,4.0,2.0,2.0,1.0,Solvothermal,2
+926,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Al,Al(NO3)3·9H2O,DMF/MeOH,Nessuno,140.0,72.0,0.1,0.083,1.2,Hydrothermal,2
+927,Benzimidazole,Imidazolati,Cd,Cd(NO3)2·4H2O,DEF,Nessuno,150.0,24.0,0.2,0.1,2.0,Solvothermal,2
+928,2-Methylimidazole,Imidazolati,Cu,Cu(NO3)2·3H2O,DMA,Nessuno,180.0,48.0,0.05,0.033,1.5,Solvothermal,2
+929,2-Aminoterephthalic acid,Carbossilati aromatici,Fe,Fe(NO3)3·9H2O,H2O,Nessuno,160.0,12.0,0.5,0.417,1.2,Microwave,2
+930,Benzimidazole,Imidazolati,Cd,Cd(NO3)2·4H2O,MeOH,Nessuno,100.0,24.0,0.1,0.083,1.2,Hydrothermal,2
+931,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Carbossilati aromatici,Cu,Cu(NO3)2·3H2O,DMF/EtOH/H2O,Nessuno,60.0,48.0,0.5,0.333,1.5,Microwave,2
+932,2-Methylimidazole,Imidazolati,Al,Al(NO3)3·9H2O,DMF/H2O,Nessuno,80.0,72.0,1.0,1.0,1.0,Microwave,2
+933,Fumaric acid,Carbossilati aromatici,Fe,Fe(NO3)3·9H2O,DEF,Nessuno,140.0,12.0,1.0,0.833,1.2,Room Temperature,2
+934,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(NO3)2·6H2O,DMF/H2O,Nessuno,80.0,18.0,2.0,2.0,1.0,Sonochemical,2
+935,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Carbossilati aromatici,Cd,Cd(NO3)2·4H2O,DMF,Nessuno,150.0,24.0,1.0,0.833,1.2,Solvothermal,2
+936,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Carbossilati aromatici,Zn,Zn(NO3)2·6H2O,DMF/MeOH,Nessuno,100.0,24.0,0.2,1.0,0.2,Hydrothermal,2
+937,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2·H2O,EtOH/H2O,Nessuno,60.0,24.0,0.1,0.067,1.5,Hydrothermal,2
+938,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Carbossilati aromatici,Zn,Zn(OAc)2·2H2O,MeOH,Nessuno,80.0,18.0,1.0,0.833,1.2,Hydrothermal,2
+939,"1,2,4-Triazole",Triazole,Cu,Cu(NO3)2·3H2O,DEF,Nessuno,160.0,36.0,0.1,0.2,0.5,Solvothermal,2
+940,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2·H2O,MeOH,Nessuno,60.0,72.0,2.0,2.0,1.0,Sonochemical,2
+941,2-Methylimidazole,Imidazolati,Ni,Ni(NO3)2·6H2O,DMA,Nessuno,160.0,72.0,0.1,0.125,0.8,Solvothermal,2
+942,Fumaric acid,Carbossilati aromatici,Zn,Zn(OAc)2·2H2O,DMF,Nessuno,180.0,4.0,0.2,0.606,0.33,Microwave,2
+943,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Zn,Zn(NO3)2·6H2O,DMF,Nessuno,160.0,24.0,0.2,0.2,1.0,Microwave,2
+944,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Cu,Cu(NO3)2·3H2O,DMA,Nessuno,180.0,4.0,0.2,0.25,0.8,Sonochemical,2
+945,"1,2,4-Triazole",Triazole,Zr,ZrCl4,DMF/EtOH/H2O,Nessuno,140.0,24.0,0.2,1.0,0.2,Microwave,2
+946,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Cd,Cd(NO3)2·4H2O,EtOH/H2O,Nessuno,120.0,4.0,0.5,0.25,2.0,Solvothermal,2
+947,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2·4H2O,DMA,Nessuno,100.0,12.0,1.0,5.0,0.2,Hydrothermal,2
+948,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Carbossilati aromatici,Zr,ZrCl4,MeOH,Nessuno,80.0,48.0,0.2,0.2,1.0,Sonochemical,2
+949,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Zr,ZrCl4,DMF,Nessuno,80.0,48.0,0.5,1.515,0.33,Microwave,2
+950,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Fe,FeCl3·6H2O,DEF,Nessuno,180.0,12.0,0.2,1.0,0.2,Sonochemical,2
+951,2-Aminoterephthalic acid,Carbossilati aromatici,Fe,Fe(NO3)3·9H2O,DMA,Nessuno,100.0,72.0,0.1,0.125,0.8,Sonochemical,2
+952,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2·4H2O,DEF,Nessuno,120.0,4.0,2.0,1.0,2.0,Sonochemical,2
+953,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Cd,Cd(NO3)2·4H2O,DMA,Nessuno,60.0,4.0,0.1,0.2,0.5,Hydrothermal,2
+954,Benzimidazole,Imidazolati,Mn,Mn(OAc)2·4H2O,H2O,Nessuno,160.0,4.0,0.05,0.1,0.5,Microwave,2
+955,Benzimidazole,Imidazolati,Cu,Cu(OAc)2·H2O,DMF,Nessuno,25.0,18.0,1.0,0.5,2.0,Sonochemical,2
+956,"3-amino-4,4'-bipyrazole",Bipyrazole,Zr,ZrOCl2·8H2O,DEF,Nessuno,140.0,72.0,0.05,0.25,0.2,Solvothermal,2
+957,"3-amino-4,4'-bipyrazole",Bipyrazole,Mg,Mg(NO3)2·6H2O,DMF/EtOH/H2O,Nessuno,120.0,36.0,0.5,1.0,0.5,Solvothermal,2
+958,2-Aminoterephthalic acid,Carbossilati aromatici,Zn,Zn(OAc)2·2H2O,DMF/MeOH,Nessuno,140.0,18.0,1.0,3.03,0.33,Hydrothermal,2
+959,"3-amino-4,4'-bipyrazole",Bipyrazole,Al,Al(NO3)3·9H2O,DMF,Nessuno,160.0,48.0,0.05,0.05,1.0,Solvothermal,2
+960,"1,2,4-Triazole",Triazole,Co,Co(NO3)2·6H2O,EtOH/H2O,Nessuno,80.0,24.0,0.05,0.25,0.2,Sonochemical,2
+961,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Mn,Mn(OAc)2·4H2O,DMF/H2O,Nessuno,140.0,12.0,2.0,4.0,0.5,Room Temperature,2
+962,Benzimidazole,Imidazolati,Ni,Ni(OAc)2·4H2O,DEF,Nessuno,180.0,18.0,0.1,0.303,0.33,Sonochemical,2
+963,"4,4'-Biphenyldicarboxylic acid (BPDC)",Carbossilati aromatici,Fe,Fe(NO3)3·9H2O,EtOH/H2O,Nessuno,60.0,36.0,0.2,0.25,0.8,Microwave,2
+964,Fumaric acid,Carbossilati aromatici,Zn,Zn(OAc)2·2H2O,DEF,Nessuno,120.0,72.0,1.0,0.667,1.5,Room Temperature,2
+965,"1,2,4-Triazole",Triazole,Cd,Cd(NO3)2·4H2O,DMF/EtOH/H2O,Nessuno,100.0,18.0,0.5,0.333,1.5,Room Temperature,2
+966,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Al,Al(NO3)3·9H2O,DMA,Nessuno,80.0,12.0,1.0,1.25,0.8,Sonochemical,2
+967,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Carbossilati aromatici,Al,AlCl3·6H2O,DMF/H2O,Nessuno,160.0,12.0,0.1,0.083,1.2,Microwave,2
+968,2-Aminoterephthalic acid,Carbossilati aromatici,Mn,Mn(OAc)2·4H2O,DMF/MeOH,Nessuno,180.0,48.0,0.5,0.333,1.5,Room Temperature,2
+969,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Co,Co(NO3)2·6H2O,MeOH,Nessuno,160.0,4.0,0.1,0.1,1.0,Hydrothermal,2
+970,"3,5-diamino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2·H2O,DMF/MeOH,Nessuno,100.0,48.0,1.0,1.25,0.8,Solvothermal,2
+971,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Cd,Cd(NO3)2·4H2O,MeOH,Nessuno,140.0,48.0,0.5,0.417,1.2,Sonochemical,2
+972,"3-amino-4,4'-bipyrazole",Bipyrazole,Ni,Ni(NO3)2·6H2O,H2O,Nessuno,180.0,36.0,0.05,0.025,2.0,Hydrothermal,2
+973,"3,3'-dinitro-4,4'-bipyrazole",Bipyrazole,Zn,Zn(NO3)2·6H2O,DMF/MeOH,Nessuno,60.0,18.0,0.1,0.125,0.8,Microwave,2
+974,"3-amino-4,4'-bipyrazole",Bipyrazole,Cu,Cu(OAc)2·H2O,DMF,Nessuno,150.0,12.0,0.05,0.033,1.5,Sonochemical,2
+975,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Fe,Fe(NO3)3·9H2O,DEF,Nessuno,25.0,72.0,2.0,10.0,0.2,Sonochemical,2
+976,"2,6-Naphthalenedicarboxylic acid",Carbossilati aromatici,Cd,Cd(NO3)2·4H2O,DMF/H2O,Nessuno,150.0,18.0,2.0,10.0,0.2,Hydrothermal,2
+977,2-Methylimidazole,Imidazolati,Zr,ZrOCl2·8H2O,DMF/H2O,Nessuno,150.0,36.0,0.1,0.2,0.5,Hydrothermal,2
+978,"4,4'-Biphenyldicarboxylic acid (BPDC)",Carbossilati aromatici,Co,Co(NO3)2·6H2O,DMF/EtOH/H2O,Nessuno,25.0,18.0,0.2,0.167,1.2,Microwave,2
+979,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Carbossilati aromatici,Zn,Zn(OAc)2·2H2O,MeOH,Nessuno,100.0,36.0,0.2,0.25,0.8,Solvothermal,2
+980,"3-amino-4,4'-bipyrazole",Bipyrazole,Co,Co(OAc)2·4H2O,DMF,Nessuno,140.0,4.0,0.05,0.05,1.0,Microwave,2
+981,"1,2,4-Triazole",Triazole,Zr,ZrOCl2·8H2O,EtOH/H2O,Nessuno,120.0,48.0,2.0,4.0,0.5,Hydrothermal,2
+982,"1,2,4-Triazole",Triazole,Cu,Cu(NO3)2·3H2O,DMA,Nessuno,140.0,12.0,2.0,6.061,0.33,Microwave,2
+983,"1,4-Benzenedicarboxylic acid (H2BDC)",Carbossilati aromatici,Cu,Cu(NO3)2·3H2O,DEF,Nessuno,150.0,48.0,2.0,1.0,2.0,Microwave,2
+984,"1,2,4-Triazole",Triazole,Cu,Cu(OAc)2·H2O,EtOH/H2O,Nessuno,180.0,72.0,2.0,1.667,1.2,Hydrothermal,2
+985,"3-amino-4,4'-bipyrazole",Bipyrazole,Mg,Mg(NO3)2·6H2O,DMF,Nessuno,160.0,24.0,2.0,1.0,2.0,Room Temperature,2
+986,2-Methylimidazole,Imidazolati,Co,Co(OAc)2·4H2O,DMA,Nessuno,120.0,24.0,0.05,0.25,0.2,Microwave,2
+987,Benzimidazole,Imidazolati,Zn,Zn(OAc)2·2H2O,DMA,Nessuno,60.0,72.0,0.5,0.5,1.0,Solvothermal,2
+988,"4,4'-Biphenyldicarboxylic acid (BPDC)",Carbossilati aromatici,Zr,ZrOCl2·8H2O,DMF/MeOH,Nessuno,25.0,72.0,0.1,0.1,1.0,Hydrothermal,2
+989,"3-amino-4,4'-bipyrazole",Bipyrazole,Zr,ZrOCl2·8H2O,DMF/EtOH/H2O,Nessuno,180.0,4.0,0.5,1.0,0.5,Room Temperature,2
+990,Benzimidazole,Imidazolati,Cu,Cu(OAc)2·H2O,DEF,Nessuno,150.0,48.0,0.2,0.167,1.2,Room Temperature,2
+991,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Carbossilati aromatici,Zn,Zn(NO3)2·6H2O,DMF/MeOH,Nessuno,25.0,12.0,0.2,0.2,1.0,Hydrothermal,2
+992,Benzimidazole,Imidazolati,Ni,Ni(OAc)2·4H2O,DMA,Nessuno,80.0,72.0,0.05,0.042,1.2,Microwave,2
+993,Tetrakis(4-carboxyphenyl)porphyrin (TCPP),Carbossilati aromatici,Cu,Cu(NO3)2·3H2O,DEF,Nessuno,60.0,18.0,0.5,0.417,1.2,Hydrothermal,2
+994,2-Aminoterephthalic acid,Carbossilati aromatici,Ni,Ni(OAc)2·4H2O,DMF/EtOH/H2O,Nessuno,60.0,4.0,0.05,0.042,1.2,Sonochemical,2
+995,"2,5-Dihydroxyterephthalic acid (H4DOBDC)",Carbossilati aromatici,Al,AlCl3·6H2O,DMF,Nessuno,140.0,48.0,0.2,0.25,0.8,Sonochemical,2
+996,"1,3,5-Benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Ni,Ni(NO3)2·6H2O,DMA,Nessuno,180.0,36.0,1.0,3.03,0.33,Sonochemical,2
+997,2-Aminoterephthalic acid,Carbossilati aromatici,Cu,Cu(OAc)2·H2O,DMF/EtOH/H2O,Nessuno,100.0,36.0,0.5,0.625,0.8,Microwave,2
+998,2-Methylimidazole,Imidazolati,Al,AlCl3·6H2O,DMF/MeOH,Nessuno,60.0,36.0,2.0,1.333,1.5,Microwave,2
+999,2-Methylimidazole,Imidazolati,Fe,FeCl3·6H2O,DEF,Nessuno,150.0,18.0,0.2,0.2,1.0,Room Temperature,2
+1000,2-Aminoterephthalic acid,Carbossilati aromatici,Ni,Ni(OAc)2·4H2O,DMF/EtOH/H2O,Nessuno,60.0,48.0,1.0,3.03,0.33,Room Temperature,2
