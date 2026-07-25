@@ -65,8 +65,8 @@ with st.sidebar.expander("🌐 Configurazione Agent Web (Tavily)", expanded=Fals
     if tavily_input_key:
         TAVILY_API_KEY = tavily_input_key
 
-def search_tavily_web(query, max_results=3):
-    """Esegue una ricerca web tramite l'API REST di Tavily."""
+def search_tavily_web(query, max_results=3, timeout=4):
+    """Esegue una ricerca web tramite l'API REST di Tavily con timeout gestito in modo sicuro."""
     if not TAVILY_API_KEY:
         return None
     try:
@@ -78,17 +78,19 @@ def search_tavily_web(query, max_results=3):
             "include_answer": True,
             "max_results": max_results
         }
-        response = requests.post(url, json=payload, timeout=5)
+        response = requests.post(url, json=payload, timeout=timeout)
         if response.status_code == 200:
             return response.json()
+    except (requests.exceptions.Timeout, requests.exceptions.RequestException) as e:
+        print(f"[WARNING] Errore/Timeout Tavily: {e}")
     except Exception as e:
-        st.warning(f"Errore ricerca Tavily: {e}")
+        print(f"[ERROR] Eccezione generica Tavily: {e}")
     return None
 
 def search_tavily_for_ligand_smiles(query):
     """Usa l'agente Tavily per cercare lo SMILES di un legante insolito o complesso."""
     search_prompt = f"chemical SMILES string for {query} MOF ligand"
-    res = search_tavily_web(search_prompt)
+    res = search_tavily_web(search_prompt, max_results=2, timeout=3)
     if res and "results" in res:
         for item in res["results"]:
             content = item.get("content", "")
@@ -105,7 +107,7 @@ def fetch_real_doi_from_crossref(query_term):
     headers = {'User-Agent': 'MOFSynthesisPredictor/1.0 (mailto:admin@example.com)'}
     
     try:
-        response = requests.get(url, headers=headers, timeout=4)
+        response = requests.get(url, headers=headers, timeout=3)
         if response.status_code == 200:
             data = response.json()
             items = data.get('message', {}).get('items', [])
@@ -322,7 +324,7 @@ def calculate_hsab_match(metal_hsab, n_cooh, n_aro_n):
     else:
         return 0.5
 
-def resolve_molecule_to_smiles(query):
+def resolve_molecule_to_smiles(query, allow_web_search=True):
     clean_query = str(query).strip().lower()
     if not clean_query or clean_query == 'nan':
         return None
@@ -330,11 +332,15 @@ def resolve_molecule_to_smiles(query):
     if clean_query in COMMON_MOF_LIGANDS:
         return COMMON_MOF_LIGANDS[clean_query]
 
+    if not allow_web_search:
+        return None
+
     headers = {'User-Agent': 'MOF_Predictor_App/1.0'}
     
+    # 1. Prova NIH Cactus con timeout ridotto
     try:
         url_nih = f"https://cactus.nci.nih.gov/chemical/structure/{requests.utils.quote(clean_query)}/smiles"
-        res = requests.get(url_nih, headers=headers, timeout=3)
+        res = requests.get(url_nih, headers=headers, timeout=2)
         if res.status_code == 200 and res.text and "Page not found" not in res.text:
             smiles_candidate = res.text.strip()
             if Chem.MolFromSmiles(smiles_candidate):
@@ -342,14 +348,16 @@ def resolve_molecule_to_smiles(query):
     except Exception:
         pass
 
+    # 2. Prova PubChem con timeout ridotto
     try:
         url_name = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{requests.utils.quote(clean_query)}/property/IsomericSMILES/JSON"
-        res = requests.get(url_name, headers=headers, timeout=3)
+        res = requests.get(url_name, headers=headers, timeout=2)
         if res.status_code == 200:
             return res.json()['PropertyTable']['Properties'][0]['IsomericSMILES']
     except Exception:
         pass
 
+    # 3. Prova Tavily AI come fallback
     if TAVILY_API_KEY:
         tavily_smiles = search_tavily_for_ligand_smiles(clean_query)
         if tavily_smiles:
@@ -376,7 +384,7 @@ def calculate_solvent_mix_properties(solv_p, ml_p, cosolv, ml_cosolv):
         'mix_boiling_pt': (prop_p['boiling_pt'] * f_p) + (prop_co['boiling_pt'] * f_co)
     }
 
-def process_unified_dataset(df):
+def process_unified_dataset(df, is_training_phase=False):
     target_col = None
     for col in ['Esito_ML', 'Target_Esito_Classe', 'Target', 'Esito', 'Classe', 'target', 'esito']:
         if col in df.columns:
@@ -399,7 +407,8 @@ def process_unified_dataset(df):
         if smiles and smiles != 'nan':
             mol = Chem.MolFromSmiles(smiles)
         if not mol and legante_str and legante_str != 'nan':
-            found_smi = resolve_molecule_to_smiles(legante_str)
+            # Durante il training offline disattiviamo la ricerca web per evitare blocchi e timeout lunghi
+            found_smi = resolve_molecule_to_smiles(legante_str, allow_web_search=not is_training_phase)
             if found_smi:
                 mol = Chem.MolFromSmiles(found_smi)
                 smiles = found_smi
@@ -564,7 +573,7 @@ def load_or_train_model():
         st.stop()
         
     raw_df = pd.read_csv(csv_file)
-    df = process_unified_dataset(raw_df)
+    df = process_unified_dataset(raw_df, is_training_phase=True)
     
     groups = df['SMILES_Group'].tolist()
     X = df.drop(columns=['Target_Esito_Classe', 'SMILES_Group'])
@@ -824,7 +833,7 @@ with tab1:
             query_input = st.text_input("Nome, Formula o CAS:", value="Benzoic acid")
             if query_input:
                 with st.spinner("Ricerca molecola nei database e sul Web..."):
-                    found_smiles = resolve_molecule_to_smiles(query_input)
+                    found_smiles = resolve_molecule_to_smiles(query_input, allow_web_search=True)
                     if found_smiles:
                         mol = Chem.MolFromSmiles(found_smiles)
                         st.caption(f"SMILES Identificato: `{found_smiles}`")
@@ -847,7 +856,7 @@ with tab1:
                                 f.write(file_bytes)
                             struct = Structure.from_file(temp_filename)
                             red_formula = struct.composition.reduced_formula
-                            found_smiles = resolve_molecule_to_smiles(red_formula)
+                            found_smiles = resolve_molecule_to_smiles(red_formula, allow_web_search=True)
                             if found_smiles:
                                 mol = Chem.MolFromSmiles(found_smiles)
                             if os.path.exists(temp_filename):
@@ -1020,7 +1029,7 @@ with tab2:
             st.write("📋 **Anteprima dei dati caricati:**", input_batch.head())
             
             if st.button("⚡ Elabora tutte le Sintesi"):
-                processed_batch = process_unified_dataset(input_batch)
+                processed_batch = process_unified_dataset(input_batch, is_training_phase=False)
                 X_batch = processed_batch.drop(columns=['Target_Esito_Classe', 'SMILES_Group'])
                 
                 for col in feature_names:
@@ -1081,7 +1090,7 @@ with tab3:
             opt_query_input = st.text_input("Nome, Formula Bruta o CAS:", value="C8H6O4", key="opt_query")
             if opt_query_input:
                 with st.spinner("Ricerca molecola nei database e sul Web..."):
-                    opt_found_smiles = resolve_molecule_to_smiles(opt_query_input)
+                    opt_found_smiles = resolve_molecule_to_smiles(opt_query_input, allow_web_search=True)
                     if opt_found_smiles:
                         opt_mol = Chem.MolFromSmiles(opt_found_smiles)
                         st.caption(f"SMILES Identificato: `{opt_found_smiles}`")
@@ -1104,7 +1113,7 @@ with tab3:
                                 f.write(file_bytes)
                             struct = Structure.from_file(opt_temp_filename)
                             red_formula = struct.composition.reduced_formula
-                            opt_found_smiles = resolve_molecule_to_smiles(red_formula)
+                            opt_found_smiles = resolve_molecule_to_smiles(red_formula, allow_web_search=True)
                             if opt_found_smiles:
                                 opt_mol = Chem.MolFromSmiles(opt_found_smiles)
                             if os.path.exists(opt_temp_filename):
@@ -1308,7 +1317,7 @@ with tab4:
             st.error("API Key Tavily mancante.")
         else:
             with st.spinner("Ricerca informazioni sul web in corso..."):
-                tavily_res = search_tavily_web(query_tavily, max_results=num_res)
+                tavily_res = search_tavily_web(query_tavily, max_results=num_res, timeout=5)
                 if tavily_res:
                     if tavily_res.get("answer"):
                         st.info(f"💡 **Sintesi Risposta AI Tavily:**\n\n{tavily_res['answer']}")
@@ -1319,4 +1328,4 @@ with tab4:
                         st.write(r.get("content"))
                         st.markdown("---")
                 else:
-                    st.error("Nessun risultato trovato o errore nella richiesta.")
+                    st.error("Nessun risultato trovato o timeout durante la richiesta.")
