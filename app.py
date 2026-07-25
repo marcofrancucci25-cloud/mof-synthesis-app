@@ -74,7 +74,7 @@ def search_tavily_web(query, max_results=3, timeout=4):
         payload = {
             "api_key": TAVILY_API_KEY,
             "query": query,
-            "search_depth": "advanced",
+            "search_depth": "basic",  # Ridotto a basic per risparmiare crediti e aumentare velocità
             "include_answer": True,
             "max_results": max_results
         }
@@ -101,9 +101,42 @@ def search_tavily_for_ligand_smiles(query):
                     return w_clean
     return None
 
-# --- INTEGRAZIONE CROSSREF PER VERIFICA DOI REALI ---
-def fetch_real_doi_from_crossref(query_term):
-    url = f"https://api.crossref.org/works?query={requests.utils.quote(query_term)}&rows=1"
+# --- NUOVA FUNZIONE DI VALIDAZIONE RIGOROSA METALLO-LEGANTE ---
+def valida_articolo_metallo_legante(testo_articolo, metal_symbol, ligand_query=""):
+    """
+    Verifica che il testo/titolo dell'articolo contenga sia il metallo selezionato
+    sia riferimenti al legante ricercato, evitando mismatch di nodo metallico.
+    """
+    testo_lower = testo_articolo.lower()
+    
+    # 1. Verifica la presenza esplicita del metallo
+    m_info = metal_props.get(metal_symbol, {})
+    nome_metallo = m_info.get('Name', '').lower()
+    
+    # Cerca sia il simbolo (es. Zr) come parola intera che il nome esteso (es. Zirconium / Zirconio)
+    simbolo_regex = rf"\b{metal_symbol.lower()}\b"
+    ha_metallo = bool(re.search(simbolo_regex, testo_lower)) or (nome_metallo and nome_metallo in testo_lower)
+    
+    if not ha_metallo:
+        return False
+        
+    # 2. Se è specificato un legante, verifica che vi sia traccia nell'articolo
+    if ligand_query:
+        legante_clean = ligand_query.lower().strip()
+        # Se il legante ha più parole (es. terephthalic acid), controlla almeno la keyword principale
+        keywords = [k for k in legante_clean.split() if len(k) > 2]
+        ha_legante = any(k in testo_lower for k in keywords)
+        if not ha_legante:
+            return False
+            
+    return True
+
+# --- INTEGRAZIONE CROSSREF E TAVILY CON VALIDAZIONE COPPIA METALLO-LEGANTE ---
+def fetch_real_doi_from_crossref(metal_symbol, ligand_term=""):
+    metal_name = metal_props.get(metal_symbol, {}).get('Name', '')
+    query_term = f'"{metal_symbol}" "{metal_name}" "{ligand_term}" MOF synthesis' if ligand_term else f'"{metal_symbol}" "{metal_name}" MOF synthesis'
+    
+    url = f"https://api.crossref.org/works?query={requests.utils.quote(query_term)}&rows=5"
     headers = {'User-Agent': 'MOFSynthesisPredictor/1.0 (mailto:admin@example.com)'}
     
     try:
@@ -111,55 +144,76 @@ def fetch_real_doi_from_crossref(query_term):
         if response.status_code == 200:
             data = response.json()
             items = data.get('message', {}).get('items', [])
-            if items:
-                paper = items[0]
+            for paper in items:
                 doi = paper.get('DOI', '')
                 title_list = paper.get('title', ['Non disponibile'])
                 title = title_list[0] if title_list else 'Non disponibile'
                 container_list = paper.get('container-title', [''])
                 journal = container_list[0] if container_list else 'Rivista N.D.'
                 
-                pub_date = paper.get('published-print', {}).get('date-parts', [[None]])[0][0]
-                if not pub_date:
-                    pub_date = paper.get('published-online', {}).get('date-parts', [[None]])[0][0]
-                year_str = str(pub_date) if pub_date else "N.D."
-                
-                return {
-                    'doi': doi,
-                    'title': title,
-                    'journal': journal,
-                    'year': year_str,
-                    'url': f"https://doi.org/{doi}"
-                }
+                # Valida che sia il metallo specificato sia il legante siano menzionati nel titolo
+                testo_completo = f"{title} {journal}"
+                if valida_articolo_metallo_legante(testo_completo, metal_symbol, ligand_term):
+                    pub_date = paper.get('published-print', {}).get('date-parts', [[None]])[0][0]
+                    if not pub_date:
+                        pub_date = paper.get('published-online', {}).get('date-parts', [[None]])[0][0]
+                    year_str = str(pub_date) if pub_date else "N.D."
+                    
+                    return {
+                        'doi': doi,
+                        'title': title,
+                        'journal': journal,
+                        'year': year_str,
+                        'url': f"https://doi.org/{doi}"
+                    }
     except Exception:
         pass
     return None
 
 def check_known_mof(metal_symbol, mol_obj=None, ligand_query=""):
     known_mappings = {
-        ("Zr", "O=C(O)c1ccc(C(=O)O)cc1"): "UiO-66 synthesis terephthalic acid",
-        ("Cu", "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1"): "HKUST-1 MOF synthesis trimesic acid",
-        ("Zn", "Cc1c[nH]cn1"): "ZIF-8 synthesis 2-methylimidazole",
-        ("Cr", "O=C(O)c1ccc(C(=O)O)cc1"): "MIL-101 Cr synthesis",
-        ("Al", "O=C(O)c1ccc(C(=O)O)cc1"): "MIL-53 Al synthesis",
-        ("Zn", "O=C(O)c1ccc(C(=O)O)cc1"): "MOF-5 synthesis",
-        ("Zr", "O=C(O)c1ccc(C(=O)O)c(N)c1"): "UiO-66-NH2 synthesis"
+        ("Zr", "O=C(O)c1ccc(C(=O)O)cc1"): ("UiO-66", "terephthalic acid"),
+        ("Cu", "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1"): ("HKUST-1", "trimesic acid"),
+        ("Zn", "Cc1c[nH]cn1"): ("ZIF-8", "2-methylimidazole"),
+        ("Cr", "O=C(O)c1ccc(C(=O)O)cc1"): ("MIL-101(Cr)", "terephthalic acid"),
+        ("Al", "O=C(O)c1ccc(C(=O)O)cc1"): ("MIL-53(Al)", "terephthalic acid"),
+        ("Zn", "O=C(O)c1ccc(C(=O)O)cc1"): ("MOF-5", "terephthalic acid"),
+        ("Zr", "O=C(O)c1ccc(C(=O)O)c(N)c1"): ("UiO-66-NH2", "2-aminoterephthalic acid")
     }
     
     input_smiles = Chem.MolToSmiles(mol_obj) if mol_obj else ""
     search_key = (metal_symbol, input_smiles)
     
     if search_key in known_mappings:
-        query = known_mappings[search_key]
-        mof_label = query.split()[0]
+        mof_label, ligand_term = known_mappings[search_key]
     elif ligand_query:
-        query = f"{metal_symbol} MOF {ligand_query} synthesis"
         mof_label = f"MOF ({metal_symbol})"
+        ligand_term = ligand_query
     else:
         return []
 
-    paper_info = fetch_real_doi_from_crossref(query)
+    # 1. Tenta la ricerca con Crossref
+    paper_info = fetch_real_doi_from_crossref(metal_symbol, ligand_term)
     
+    # 2. Se Crossref non trova corrispondenze esatte, usa Tavily AI come fallback con filtro stringente
+    if not paper_info and TAVILY_API_KEY:
+        m_name = metal_props.get(metal_symbol, {}).get('Name', '')
+        tavily_query = f'"{metal_symbol}" "{m_name}" AND "{ligand_term}" MOF synthesis paper doi'
+        res = search_tavily_web(tavily_query, max_results=3, timeout=4)
+        if res and "results" in res:
+            for item in res["results"]:
+                title = item.get("title", "")
+                snippet = item.get("content", "")
+                url = item.get("url", "")
+                
+                if valida_articolo_metallo_legante(f"{title} {snippet}", metal_symbol, ligand_term):
+                    return [{
+                        "name": mof_label,
+                        "ref": f"{title}",
+                        "doi": url.split("/")[-1] if "10." in url else "N.D.",
+                        "url": url
+                    }]
+
     if paper_info:
         return [{
             "name": mof_label,
@@ -977,13 +1031,13 @@ with tab1:
                     doi_url = mof.get('url', f"https://doi.org/{clean_doi}")
 
                     st.info(
-                        f"🟢 **Combinazione nota e verificata tramite Crossref API!**\n\n"
+                        f"🟢 **Combinazione nota e verificata per la coppia specificata ({metallo_sel} + Legante)!**\n\n"
                         f"* **MOF/Sintesi:** `{mof['name']}`\n"
                         f"* **Articolo:** {mof['ref']}\n"
-                        f"* **DOI Verificato:** `{clean_doi}` *(🔗 [Apri Pubblicazione Ufficiale]({doi_url}))*"
+                        f"* **DOI/Link Verificato:** `{clean_doi}` *(🔗 [Apri Pubblicazione Ufficiale]({doi_url}))*"
                     )
             else:
-                st.success("✨ **Combinazione Inedita / Non presente a DB:** Nessun MOF classico censito direttamente per questa specifica coppia.")
+                st.success(f"✨ **Combinazione Inedita / Non presente a DB:** Nessun articolo scientifico rilevato specificamente per la coppia **{metallo_sel} + Legante**.")
 
             df_features = build_feature_row(
                 mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, 
