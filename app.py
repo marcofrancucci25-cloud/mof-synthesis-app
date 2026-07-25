@@ -40,7 +40,7 @@ except Exception:
 
 st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="🧪", layout="wide")
 st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
-st.markdown("Strumento avanzato di Machine Learning per la predizione, ottimizzazione e **spiegabilità chimica** della sintesi di MOF.")
+st.markdown("Strumento avanzato di Machine Learning per la predizione, ottimizzazione e **spiegabilità chimica** della sintesi di MOF con integrazione di letteratura **Open Access**.")
 
 # --- FUNZIONE DI PULIZIA E CONVERSIONE VALORI NUMERICI ---
 def clean_float_val(val, default_val=0.0):
@@ -74,7 +74,7 @@ def search_tavily_web(query, max_results=3, timeout=4):
         payload = {
             "api_key": TAVILY_API_KEY,
             "query": query,
-            "search_depth": "basic",  # Ridotto a basic per risparmiare crediti e aumentare velocità
+            "search_depth": "basic",
             "include_answer": True,
             "max_results": max_results
         }
@@ -101,7 +101,7 @@ def search_tavily_for_ligand_smiles(query):
                     return w_clean
     return None
 
-# --- NUOVA FUNZIONE DI VALIDAZIONE RIGOROSA METALLO-LEGANTE ---
+# --- VALIDAZIONE RIGOROSA METALLO-LEGANTE ---
 def valida_articolo_metallo_legante(testo_articolo, metal_symbol, ligand_query=""):
     """
     Verifica che il testo/titolo dell'articolo contenga sia il metallo selezionato
@@ -113,17 +113,15 @@ def valida_articolo_metallo_legante(testo_articolo, metal_symbol, ligand_query="
     m_info = metal_props.get(metal_symbol, {})
     nome_metallo = m_info.get('Name', '').lower()
     
-    # Cerca sia il simbolo (es. Zr) come parola intera che il nome esteso (es. Zirconium / Zirconio)
     simbolo_regex = rf"\b{metal_symbol.lower()}\b"
     ha_metallo = bool(re.search(simbolo_regex, testo_lower)) or (nome_metallo and nome_metallo in testo_lower)
     
     if not ha_metallo:
         return False
         
-    # 2. Se è specificato un legante, verifica che vi sia traccia nell'articolo
+    # 2. Se è specificato un legante, verifica la presenza di keyword
     if ligand_query:
         legante_clean = ligand_query.lower().strip()
-        # Se il legante ha più parole (es. terephthalic acid), controlla almeno la keyword principale
         keywords = [k for k in legante_clean.split() if len(k) > 2]
         ha_legante = any(k in testo_lower for k in keywords)
         if not ha_legante:
@@ -131,7 +129,61 @@ def valida_articolo_metallo_legante(testo_articolo, metal_symbol, ligand_query="
             
     return True
 
-# --- INTEGRAZIONE CROSSREF E TAVILY CON VALIDAZIONE COPPIA METALLO-LEGANTE ---
+# --- API SEMANTIC SCHOLAR PER ARTICOLI OPEN ACCESS ---
+def fetch_open_access_paper(metal_symbol, ligand_term=""):
+    """
+    Interroga l'API di Semantic Scholar richiedendo specificamente articoli Open Access
+    relativi alla combinazione Metallo + Legante.
+    """
+    metal_name = metal_props.get(metal_symbol, {}).get('Name', '')
+    query_term = f'"{metal_symbol}" "{metal_name}" "{ligand_term}" MOF synthesis' if ligand_term else f'"{metal_symbol}" "{metal_name}" MOF synthesis'
+    
+    url = "https://api.semanticscholar.org/graph/v1/paper/search"
+    params = {
+        "query": query_term,
+        "limit": 5,
+        "fields": "title,authors,year,externalIds,openAccessPdf,isOpenAccess,publicationVenue"
+    }
+    headers = {'User-Agent': 'MOFSynthesisPredictor/1.0'}
+    
+    try:
+        response = requests.get(url, params=params, headers=headers, timeout=4)
+        if response.status_code == 200:
+            data = response.json()
+            papers = data.get('data', [])
+            for paper in papers:
+                title = paper.get('title', 'Titolo Non Disponibile')
+                if valida_articolo_metallo_legante(title, metal_symbol, ligand_term):
+                    oa_info = paper.get('openAccessPdf')
+                    is_oa = paper.get('isOpenAccess', False)
+                    
+                    # Estrazione URL Open Access
+                    link_url = None
+                    if oa_info and 'url' in oa_info:
+                        link_url = oa_info['url']
+                    elif paper.get('externalIds', {}).get('DOI'):
+                        doi = paper['externalIds']['DOI']
+                        link_url = f"https://doi.org/{doi}"
+
+                    if link_url:
+                        authors = paper.get('authors', [])
+                        author_str = authors[0]['name'] if authors else "Autori N.D."
+                        year = paper.get('year', 'N.D.')
+                        venue = paper.get('publicationVenue', {})
+                        venue_name = venue.get('name', 'Rivista N.D.') if venue else 'Rivista N.D.'
+                        
+                        return {
+                            'title': title,
+                            'ref': f"{author_str} et al. ({year}) - {venue_name}",
+                            'url': link_url,
+                            'is_open_access': is_oa or (oa_info is not None),
+                            'doi': paper.get('externalIds', {}).get('DOI', 'N.D.')
+                        }
+    except Exception as e:
+        print(f"[WARNING] Errore Semantic Scholar API: {e}")
+    return None
+
+# --- INTEGRAZIONE CROSSREF COME FALLBACK ---
 def fetch_real_doi_from_crossref(metal_symbol, ligand_term=""):
     metal_name = metal_props.get(metal_symbol, {}).get('Name', '')
     query_term = f'"{metal_symbol}" "{metal_name}" "{ligand_term}" MOF synthesis' if ligand_term else f'"{metal_symbol}" "{metal_name}" MOF synthesis'
@@ -151,7 +203,6 @@ def fetch_real_doi_from_crossref(metal_symbol, ligand_term=""):
                 container_list = paper.get('container-title', [''])
                 journal = container_list[0] if container_list else 'Rivista N.D.'
                 
-                # Valida che sia il metallo specificato sia il legante siano menzionati nel titolo
                 testo_completo = f"{title} {journal}"
                 if valida_articolo_metallo_legante(testo_completo, metal_symbol, ligand_term):
                     pub_date = paper.get('published-print', {}).get('date-parts', [[None]])[0][0]
@@ -164,7 +215,8 @@ def fetch_real_doi_from_crossref(metal_symbol, ligand_term=""):
                         'title': title,
                         'journal': journal,
                         'year': year_str,
-                        'url': f"https://doi.org/{doi}"
+                        'url': f"https://doi.org/{doi}",
+                        'is_open_access': False
                     }
     except Exception:
         pass
@@ -192,13 +244,32 @@ def check_known_mof(metal_symbol, mol_obj=None, ligand_query=""):
     else:
         return []
 
-    # 1. Tenta la ricerca con Crossref
+    # 1. Ricerca prioritaria su Semantic Scholar (filtro Open Access)
+    oa_paper = fetch_open_access_paper(metal_symbol, ligand_term)
+    if oa_paper:
+        return [{
+            "name": mof_label,
+            "ref": f"{oa_paper['title']} — {oa_paper['ref']}",
+            "doi": oa_paper['doi'],
+            "url": oa_paper['url'],
+            "is_oa": oa_paper['is_open_access']
+        }]
+
+    # 2. Fallback su Crossref
     paper_info = fetch_real_doi_from_crossref(metal_symbol, ligand_term)
-    
-    # 2. Se Crossref non trova corrispondenze esatte, usa Tavily AI come fallback con filtro stringente
-    if not paper_info and TAVILY_API_KEY:
+    if paper_info:
+        return [{
+            "name": mof_label,
+            "ref": f"{paper_info['journal']} ({paper_info['year']}) - {paper_info['title']}",
+            "doi": paper_info['doi'],
+            "url": paper_info['url'],
+            "is_oa": False
+        }]
+
+    # 3. Fallback finale su Tavily AI
+    if TAVILY_API_KEY:
         m_name = metal_props.get(metal_symbol, {}).get('Name', '')
-        tavily_query = f'"{metal_symbol}" "{m_name}" AND "{ligand_term}" MOF synthesis paper doi'
+        tavily_query = f'"{metal_symbol}" "{m_name}" AND "{ligand_term}" MOF synthesis paper doi open access'
         res = search_tavily_web(tavily_query, max_results=3, timeout=4)
         if res and "results" in res:
             for item in res["results"]:
@@ -211,17 +282,10 @@ def check_known_mof(metal_symbol, mol_obj=None, ligand_query=""):
                         "name": mof_label,
                         "ref": f"{title}",
                         "doi": url.split("/")[-1] if "10." in url else "N.D.",
-                        "url": url
+                        "url": url,
+                        "is_oa": True
                     }]
 
-    if paper_info:
-        return [{
-            "name": mof_label,
-            "ref": f"{paper_info['journal']} ({paper_info['year']}) - {paper_info['title']}",
-            "doi": paper_info['doi'],
-            "url": paper_info['url']
-        }]
-    
     return []
 
 # --- DATABASE SOLVENTI CON PARAMETRI FISICO-CHIMICI ---
@@ -391,7 +455,6 @@ def resolve_molecule_to_smiles(query, allow_web_search=True):
 
     headers = {'User-Agent': 'MOF_Predictor_App/1.0'}
     
-    # 1. Prova NIH Cactus con timeout ridotto
     try:
         url_nih = f"https://cactus.nci.nih.gov/chemical/structure/{requests.utils.quote(clean_query)}/smiles"
         res = requests.get(url_nih, headers=headers, timeout=2)
@@ -402,7 +465,6 @@ def resolve_molecule_to_smiles(query, allow_web_search=True):
     except Exception:
         pass
 
-    # 2. Prova PubChem con timeout ridotto
     try:
         url_name = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{requests.utils.quote(clean_query)}/property/IsomericSMILES/JSON"
         res = requests.get(url_name, headers=headers, timeout=2)
@@ -411,7 +473,6 @@ def resolve_molecule_to_smiles(query, allow_web_search=True):
     except Exception:
         pass
 
-    # 3. Prova Tavily AI come fallback
     if TAVILY_API_KEY:
         tavily_smiles = search_tavily_for_ligand_smiles(clean_query)
         if tavily_smiles:
@@ -453,7 +514,6 @@ def process_unified_dataset(df, is_training_phase=False):
 
     processed = []
     for idx, row in df.iterrows():
-        # SMILES / Molecola Legante
         smiles = str(row.get('SMILES_Legante', row.get('SMILES', ''))).strip()
         legante_str = str(row.get('Legante standard', row.get('Legante originale', row.get('Legante', '')))).strip()
         
@@ -461,7 +521,6 @@ def process_unified_dataset(df, is_training_phase=False):
         if smiles and smiles != 'nan':
             mol = Chem.MolFromSmiles(smiles)
         if not mol and legante_str and legante_str != 'nan':
-            # Durante il training offline disattiviamo la ricerca web per evitare blocchi e timeout lunghi
             found_smi = resolve_molecule_to_smiles(legante_str, allow_web_search=not is_training_phase)
             if found_smi:
                 mol = Chem.MolFromSmiles(found_smi)
@@ -479,7 +538,6 @@ def process_unified_dataset(df, is_training_phase=False):
         met = str(row.get('Metallo', 'Cu')).strip()
         m_info = metal_props.get(met, metal_props.get('Cu'))
         
-        # Anione
         sale_str = str(row.get('Sale metallico', row.get('Sale_Metallico', row.get('Anione', ''))))
         if 'NO3' in sale_str or 'Nitrato' in sale_str:
             anione_sel = 'Nitrato'
@@ -496,7 +554,6 @@ def process_unified_dataset(df, is_training_phase=False):
         m_sale = clean_float_val(row.get('mmol sale', row.get('mmol_Sale', row.get('mmol_sale', 0.1))), default_val=0.1)
         ratio = clean_float_val(row.get('Rapporto L/M', row.get('Rapporto_LM', m_leg / m_sale if m_sale > 0 else 1.0)))
         
-        # Solvente e Co-Solvente
         solv_raw = str(row.get('Solvente', row.get('Solvente Principale', 'DMF'))).strip()
         if '/' in solv_raw:
             parts = solv_raw.split('/')
@@ -517,7 +574,6 @@ def process_unified_dataset(df, is_training_phase=False):
         
         mix_props = calculate_solvent_mix_properties(solv_p, ml_solv_p, cosolv, ml_cosolv)
         
-        # Additivo
         add_str = str(row.get('Co-linker/Additivo', row.get('Additivo_Colinker', row.get('Additivo_Tipo', 'None')))).lower()
         if 'acid' in add_str or 'ac. ' in add_str or 'hcl' in add_str or 'hcooh' in add_str or 'acoh' in add_str or 'tfa' in add_str:
             add_type = 'Acid'
@@ -654,7 +710,6 @@ def load_or_train_model():
     n_unique_groups = len(np.unique(groups))
     unique_classes = y.nunique()
     
-    # Validazione incrociata flessibile
     try:
         if n_unique_groups >= 3 and unique_classes > 1:
             cv_splits = min(3, n_unique_groups)
@@ -707,9 +762,8 @@ except Exception as e:
     st.sidebar.error(f"Errore caricamento modello: {e}")
     st.stop()
 
-# --- COMPONENTE INTERFACCIA: MENÙ A TENDINA METALLO UNIFORMATO ---
+# --- MENÙ SELEZIONE METALLO ---
 def render_metal_dropdown_selector(key_prefix="pred"):
-    """ Rende un menù a tendina uniforme per la selezione del metallo """
     metal_options = sorted(list(metal_props.keys()))
     default_idx = metal_options.index('Zr') if 'Zr' in metal_options else 0
     
@@ -732,7 +786,7 @@ def render_metal_dropdown_selector(key_prefix="pred"):
     )
     return selected
 
-# --- SIDEBAR (VISUALIZZAZIONE METRICHE OTTIMIZZATA) ---
+# --- SIDEBAR METRICHE ---
 st.sidebar.markdown("---")
 st.sidebar.subheader("📊 Stato & Performance Modello")
 
@@ -1027,14 +1081,15 @@ with tab1:
             st.markdown("---")
             if known_matches:
                 for mof in known_matches:
+                    oa_tag = "📖 **[OPEN ACCESS]**" if mof.get('is_oa', False) else "📄 [LETTERATURA SPERIMENTALE]"
                     clean_doi = mof['doi'].replace("https://doi.org/", "")
-                    doi_url = mof.get('url', f"https://doi.org/{clean_doi}")
 
                     st.info(
                         f"🟢 **Combinazione nota e verificata per la coppia specificata ({metallo_sel} + Legante)!**\n\n"
                         f"* **MOF/Sintesi:** `{mof['name']}`\n"
-                        f"* **Articolo:** {mof['ref']}\n"
-                        f"* **DOI/Link Verificato:** `{clean_doi}` *(🔗 [Apri Pubblicazione Ufficiale]({doi_url}))*"
+                        f"* **Fonte / Articolo:** {mof['ref']}\n"
+                        f"* **Accettazione:** {oa_tag}\n"
+                        f"* **Link Diretto:** [📂 Apri Articolo Scientifico ({clean_doi})]({mof['url']})"
                     )
             else:
                 st.success(f"✨ **Combinazione Inedita / Non presente a DB:** Nessun articolo scientifico rilevato specificamente per la coppia **{metallo_sel} + Legante**.")
@@ -1363,7 +1418,7 @@ with tab4:
     if not TAVILY_API_KEY:
         st.warning("⚠️ Per utilizzare l'Agente Tavily, inserisci la tua **Tavily API Key** nel menu laterale (Sidebar).")
     
-    query_tavily = st.text_input("Inserisci la query di ricerca chimica:", value="UiO-66 synthesis conditions modulator benzoic acid")
+    query_tavily = st.text_input("Inserisci la query di ricerca chimica:", value="UiO-66 synthesis conditions modulator benzoic acid open access paper")
     num_res = st.slider("Numero di risultati:", min_value=1, max_value=5, value=3)
     
     if st.button("🔎 Cerca sul Web con Tavily"):
