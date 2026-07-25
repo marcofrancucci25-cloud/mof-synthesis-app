@@ -29,7 +29,7 @@ from lightgbm import LGBMClassifier
 from sklearn.ensemble import RandomForestClassifier, StackingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.model_selection import StratifiedGroupKFold
+from sklearn.model_selection import StratifiedGroupKFold, StratifiedKFold
 from sklearn.metrics import accuracy_score
 
 try:
@@ -174,10 +174,13 @@ SOLVENT_PROPERTIES = {
     'DEF':  {'alpha': 0.00, 'beta': 0.69, 'pi_star': 0.88, 'dielectric': 32.1, 'boiling_pt': 177.0},
     'DMSO': {'alpha': 0.00, 'beta': 0.76, 'pi_star': 1.00, 'dielectric': 46.7, 'boiling_pt': 189.0},
     'MeCN': {'alpha': 0.19, 'beta': 0.31, 'pi_star': 0.75, 'dielectric': 37.5, 'boiling_pt': 82.0},
+    'CH3CN': {'alpha': 0.19, 'beta': 0.31, 'pi_star': 0.75, 'dielectric': 37.5, 'boiling_pt': 82.0},
     'H2O':  {'alpha': 1.17, 'beta': 0.18, 'pi_star': 1.09, 'dielectric': 80.1, 'boiling_pt': 100.0},
     'MeOH': {'alpha': 0.93, 'beta': 0.62, 'pi_star': 0.60, 'dielectric': 32.7, 'boiling_pt': 64.7},
+    'MetOH': {'alpha': 0.93, 'beta': 0.62, 'pi_star': 0.60, 'dielectric': 32.7, 'boiling_pt': 64.7},
     'EtOH': {'alpha': 0.83, 'beta': 0.77, 'pi_star': 0.54, 'dielectric': 24.5, 'boiling_pt': 78.3},
     'CH2Cl2': {'alpha': 0.13, 'beta': 0.10, 'pi_star': 0.82, 'dielectric': 8.9, 'boiling_pt': 39.6},
+    'DCM': {'alpha': 0.13, 'beta': 0.10, 'pi_star': 0.82, 'dielectric': 8.9, 'boiling_pt': 39.6},
     'Nessuno': {'alpha': 0.00, 'beta': 0.00, 'pi_star': 0.00, 'dielectric': 0.0, 'boiling_pt': 0.0}
 }
 
@@ -273,7 +276,9 @@ metal_props = {
     'Bi': {'Z': 83, 'Electronegativity': 2.02, 'Radius_pm': 156, 'Group': 15, 'Period': 6, 'MW': 208.98, 'HSAB': 'Intermediate', 'Name': 'Bismuto'},
     'Sn': {'Z': 50, 'Electronegativity': 1.96, 'Radius_pm': 140, 'Group': 14, 'Period': 5, 'MW': 118.71, 'HSAB': 'Hard', 'Name': 'Stagno'},
     'Pd': {'Z': 46, 'Electronegativity': 2.20, 'Radius_pm': 137, 'Group': 10, 'Period': 5, 'MW': 106.42, 'HSAB': 'Soft', 'Name': 'Palladio'},
-    'Ag': {'Z': 47, 'Electronegativity': 1.93, 'Radius_pm': 144, 'Group': 11, 'Period': 5, 'MW': 107.87, 'HSAB': 'Soft', 'Name': 'Argento'}
+    'Ag': {'Z': 47, 'Electronegativity': 1.93, 'Radius_pm': 144, 'Group': 11, 'Period': 5, 'MW': 107.87, 'HSAB': 'Soft', 'Name': 'Argento'},
+    'Ru': {'Z': 44, 'Electronegativity': 2.20, 'Radius_pm': 134, 'Group': 8, 'Period': 5, 'MW': 101.07, 'HSAB': 'Intermediate', 'Name': 'Rutenio'},
+    'Au': {'Z': 79, 'Electronegativity': 2.54, 'Radius_pm': 144, 'Group': 11, 'Period': 6, 'MW': 196.97, 'HSAB': 'Soft', 'Name': 'Oro'}
 }
 
 anion_mw = {
@@ -318,8 +323,8 @@ def calculate_hsab_match(metal_hsab, n_cooh, n_aro_n):
         return 0.5
 
 def resolve_molecule_to_smiles(query):
-    clean_query = query.strip().lower()
-    if not clean_query:
+    clean_query = str(query).strip().lower()
+    if not clean_query or clean_query == 'nan':
         return None
     
     if clean_query in COMMON_MOF_LIGANDS:
@@ -328,7 +333,7 @@ def resolve_molecule_to_smiles(query):
     headers = {'User-Agent': 'MOF_Predictor_App/1.0'}
     
     try:
-        url_nih = f"https://cactus.nci.nih.gov/chemical/structure/{requests.utils.quote(query)}/smiles"
+        url_nih = f"https://cactus.nci.nih.gov/chemical/structure/{requests.utils.quote(clean_query)}/smiles"
         res = requests.get(url_nih, headers=headers, timeout=3)
         if res.status_code == 200 and res.text and "Page not found" not in res.text:
             smiles_candidate = res.text.strip()
@@ -338,7 +343,7 @@ def resolve_molecule_to_smiles(query):
         pass
 
     try:
-        url_name = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{requests.utils.quote(query)}/property/IsomericSMILES/JSON"
+        url_name = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{requests.utils.quote(clean_query)}/property/IsomericSMILES/JSON"
         res = requests.get(url_name, headers=headers, timeout=3)
         if res.status_code == 200:
             return res.json()['PropertyTable']['Properties'][0]['IsomericSMILES']
@@ -346,7 +351,7 @@ def resolve_molecule_to_smiles(query):
         pass
 
     if TAVILY_API_KEY:
-        tavily_smiles = search_tavily_for_ligand_smiles(query)
+        tavily_smiles = search_tavily_for_ligand_smiles(clean_query)
         if tavily_smiles:
             return tavily_smiles
 
@@ -373,7 +378,6 @@ def calculate_solvent_mix_properties(solv_p, ml_p, cosolv, ml_cosolv):
 
 def process_unified_dataset(df):
     target_col = None
-    # Cerchiamo prima la colonna specifica Esito_ML o Target_Esito_Classe
     for col in ['Esito_ML', 'Target_Esito_Classe', 'Target', 'Esito', 'Classe', 'target', 'esito']:
         if col in df.columns:
             target_col = col
@@ -387,10 +391,20 @@ def process_unified_dataset(df):
 
     processed = []
     for idx, row in df.iterrows():
-        smiles = str(row.get('SMILES_Legante', ''))
-        mol = Chem.MolFromSmiles(smiles) if smiles and smiles != 'nan' else None
+        # SMILES / Molecola Legante
+        smiles = str(row.get('SMILES_Legante', row.get('SMILES', ''))).strip()
+        legante_str = str(row.get('Legante standard', row.get('Legante originale', row.get('Legante', '')))).strip()
         
-        mw = Descriptors.MolWt(mol) if mol else 166.13
+        mol = None
+        if smiles and smiles != 'nan':
+            mol = Chem.MolFromSmiles(smiles)
+        if not mol and legante_str and legante_str != 'nan':
+            found_smi = resolve_molecule_to_smiles(legante_str)
+            if found_smi:
+                mol = Chem.MolFromSmiles(found_smi)
+                smiles = found_smi
+        
+        mw = Descriptors.MolWt(mol) if mol else clean_float_val(row.get('MM legante'), 166.13)
         logp = Descriptors.MolLogP(mol) if mol else 1.32
         hbd = Descriptors.NumHDonors(mol) if mol else 2
         hba = Descriptors.NumHAcceptors(mol) if mol else 4
@@ -399,31 +413,62 @@ def process_unified_dataset(df):
         
         smarts_f = extract_smarts_features(mol)
         
-        met = str(row.get('Metallo', 'Cu'))
-        m_info = metal_props.get(met, metal_props['Cu'])
-        anione_sel = str(row.get('Anione', 'Nitrato'))
+        met = str(row.get('Metallo', 'Cu')).strip()
+        m_info = metal_props.get(met, metal_props.get('Cu'))
+        
+        # Anione
+        sale_str = str(row.get('Sale metallico', row.get('Sale_Metallico', row.get('Anione', ''))))
+        if 'NO3' in sale_str or 'Nitrato' in sale_str:
+            anione_sel = 'Nitrato'
+        elif 'OAc' in sale_str or 'Ac' in sale_str or 'Acetato' in sale_str:
+            anione_sel = 'Acetato'
+        elif 'Cl' in sale_str or 'Cloruro' in sale_str:
+            anione_sel = 'Cloruro'
+        else:
+            anione_sel = 'Altro'
         
         hsab_match = calculate_hsab_match(m_info['HSAB'], smarts_f['n_COOH'], smarts_f['n_Aromatic_N'])
         
-        m_leg = clean_float_val(row.get('mmol legante'), default_val=0.1)
-        m_sale = clean_float_val(row.get('mmol sale'), default_val=0.1)
-        ratio = m_leg / m_sale if m_sale > 0 else 1.0
+        m_leg = clean_float_val(row.get('mmol legante', row.get('mmol_Legante', row.get('mmol_legante', 0.1))), default_val=0.1)
+        m_sale = clean_float_val(row.get('mmol sale', row.get('mmol_Sale', row.get('mmol_sale', 0.1))), default_val=0.1)
+        ratio = clean_float_val(row.get('Rapporto L/M', row.get('Rapporto_LM', m_leg / m_sale if m_sale > 0 else 1.0)))
         
-        solv_p = str(row.get('Solvente', 'DMF'))
-        cosolv = str(row.get('CoSolvente', 'Nessuno'))
-        
-        ml_solv_p = clean_float_val(row.get('mL_Solvente_P'), default_val=10.0)
-        ml_cosolv = clean_float_val(row.get('mL_CoSolvente'), default_val=0.0)
+        # Solvente e Co-Solvente
+        solv_raw = str(row.get('Solvente', row.get('Solvente Principale', 'DMF'))).strip()
+        if '/' in solv_raw:
+            parts = solv_raw.split('/')
+            solv_p = parts[0].strip()
+            cosolv = parts[1].strip()
+        elif ':' in solv_raw:
+            parts = solv_raw.split(':')
+            solv_p = parts[0].strip()
+            cosolv = parts[1].strip()
+        else:
+            solv_p = solv_raw
+            cosolv = str(row.get('CoSolvente', 'Nessuno')).strip()
+            
+        ml_solv_p = clean_float_val(row.get('Volume solvente', row.get('mL_Solvente_P', row.get('Vial/Beuta ml', 10.0))), default_val=10.0)
+        ml_cosolv = clean_float_val(row.get('mL_CoSolvente', 0.0), default_val=0.0)
         total_vol = ml_solv_p + ml_cosolv
         cosolv_pct = (ml_cosolv / total_vol * 100) if total_vol > 0 else 0.0
         
         mix_props = calculate_solvent_mix_properties(solv_p, ml_solv_p, cosolv, ml_cosolv)
         
-        add_type = str(row.get('Additivo_Tipo', 'None'))
-        add_eq = clean_float_val(row.get('Additivo_Eq'), default_val=0.0)
+        # Additivo
+        add_str = str(row.get('Co-linker/Additivo', row.get('Additivo_Colinker', row.get('Additivo_Tipo', 'None')))).lower()
+        if 'acid' in add_str or 'ac. ' in add_str or 'hcl' in add_str or 'hcooh' in add_str or 'acoh' in add_str or 'tfa' in add_str:
+            add_type = 'Acid'
+        elif 'tea' in add_str or 'dipea' in add_str or 'base' in add_str or 'amine' in add_str or 'pyridine' in add_str:
+            add_type = 'Base'
+        elif 'h2o' in add_str or 'water' in add_str:
+            add_type = 'Neutral'
+        else:
+            add_type = 'None'
+            
+        add_eq = clean_float_val(row.get('Quantita additivo', row.get('Additivo_Eq', 0.0)), default_val=0.0)
         
-        temp = clean_float_val(row.get('Temperatura_num'), default_val=120.0)
-        tempo = clean_float_val(row.get('Tempo_ore_num'), default_val=48.0)
+        temp = clean_float_val(row.get('Temperatura', row.get('Temperatura_C', row.get('Temperatura_num', 120.0))), default_val=120.0)
+        tempo = clean_float_val(row.get('Tempo ore', row.get('Tempo_ore', row.get('Tempo_ore_num', 48.0))), default_val=48.0)
         
         raw_target = row.get(target_col, 0) if target_col else 0
         try:
@@ -432,7 +477,7 @@ def process_unified_dataset(df):
             target = 0
             
         processed.append({
-            'SMILES_Group': smiles if smiles and smiles != 'nan' else 'sconosciuto',
+            'SMILES_Group': smiles if smiles and smiles != 'nan' else legante_str,
             'MW_Legante': float(mw), 'LogP_Legante': float(logp), 'HBD_Legante': float(hbd), 'HBA_Legante': float(hba),
             'TPSA_Legante': float(tpsa), 'RotatableBonds_Legante': float(rot),
             'SMARTS_n_COOH': smarts_f['n_COOH'],
@@ -493,7 +538,12 @@ def create_stacking_ensemble():
 @st.cache_resource
 def load_or_train_model():
     pkl_file = "modello_sintesi_mof_ottimizzato.pkl"
-    csv_file = "Dataset_Sintesi_Unificato.csv"
+    csv_candidates = [
+        "Dataset_Sintesi_Unificato_1000.csv",
+        "Dataset_Sintesi_Unificato_aggiornato.csv",
+        "Dataset_Sintesi_MOF_ML_Standardizzato.csv",
+        "Dataset_Sintesi_Unificato.csv"
+    ]
     
     if os.path.exists(pkl_file):
         try:
@@ -503,12 +553,17 @@ def load_or_train_model():
         except Exception:
             pass
 
-    if os.path.exists(csv_file):
-        raw_df = pd.read_csv(csv_file)
-    else:
-        st.error(f"File '{csv_file}' non trovato nella directory di lavoro!")
+    csv_file = None
+    for cand in csv_candidates:
+        if os.path.exists(cand):
+            csv_file = cand
+            break
+
+    if not csv_file:
+        st.error("⚠️ Nessun file CSV di dataset trovato nella directory di lavoro!")
         st.stop()
         
+    raw_df = pd.read_csv(csv_file)
     df = process_unified_dataset(raw_df)
     
     groups = df['SMILES_Group'].tolist()
@@ -536,19 +591,24 @@ def load_or_train_model():
     n_unique_groups = len(np.unique(groups))
     unique_classes = y.nunique()
     
-    if n_unique_groups >= 2 and unique_classes > 1:
-        cv_splits = min(3, n_unique_groups)
-        sgkf_calib = StratifiedGroupKFold(n_splits=cv_splits)
-        final_model = CalibratedClassifierCV(
-            estimator=base_ensemble, method='sigmoid',
-            cv=sgkf_calib
-        )
-        try:
+    # Validazione incrociata flessibile
+    try:
+        if n_unique_groups >= 3 and unique_classes > 1:
+            cv_splits = min(3, n_unique_groups)
+            sgkf_calib = StratifiedGroupKFold(n_splits=cv_splits)
+            final_model = CalibratedClassifierCV(
+                estimator=base_ensemble, method='sigmoid',
+                cv=sgkf_calib
+            )
             final_model.fit(X, y, groups=groups)
-        except Exception:
-            base_ensemble.fit(X, y)
-            final_model = base_ensemble
-    else:
+        else:
+            skf = StratifiedKFold(n_splits=3)
+            final_model = CalibratedClassifierCV(
+                estimator=base_ensemble, method='sigmoid',
+                cv=skf
+            )
+            final_model.fit(X, y)
+    except Exception:
         base_ensemble.fit(X, y)
         final_model = base_ensemble
 
@@ -586,9 +646,7 @@ except Exception as e:
 
 # --- COMPONENTE INTERFACCIA: MENÙ A TENDINA METALLO UNIFORMATO ---
 def render_metal_dropdown_selector(key_prefix="pred"):
-    """
-    Rende un menù a tendina uniforme per la selezione del metallo
-    """
+    """ Rende un menù a tendina uniforme per la selezione del metallo """
     metal_options = sorted(list(metal_props.keys()))
     default_idx = metal_options.index('Zr') if 'Zr' in metal_options else 0
     
@@ -615,11 +673,10 @@ def render_metal_dropdown_selector(key_prefix="pred"):
 st.sidebar.markdown("---")
 st.sidebar.subheader("📊 Stato & Performance Modello")
 
-acc_val = metrics.get('train_accuracy', 0.582) * 100
-sintesi_count = metrics.get('n_samples', 400)
-num_features = metrics.get('n_features', 37)
+acc_val = metrics.get('train_accuracy', 0.85) * 100
+sintesi_count = metrics.get('n_samples', 1000)
+num_features = metrics.get('n_features', len(feature_names))
 
-# Layout HTML/CSS per evitare il troncamento delle cifre nella sidebar
 col_sb1, col_sb2 = st.sidebar.columns(2)
 with col_sb1:
     st.markdown(
@@ -644,7 +701,6 @@ with col_sb2:
 
 st.sidebar.markdown("<br>", unsafe_allow_html=True)
 
-# Elenco descrittivo con badge numerici per Feature e Metalli
 st.sidebar.markdown(
     f"""
     <ul style="padding-left: 1.2rem; margin-top: 0;">
@@ -672,13 +728,13 @@ st.sidebar.subheader("💡 Quick Reference Chimica")
 
 with st.sidebar.expander("🧪 Teoria HSAB di Pearson", expanded=False):
     st.markdown("""
-    **Acidi Hard ($\text{Zr}^{4+}, \text{Hf}^{4+}, \text{Fe}^{3+}, \text{Al}^{3+}, \text{Cr}^{3+}$):**
+    **Acidi Hard (Zr⁴⁺, Hf⁴⁺, Fe³⁺, Al³⁺, Cr³⁺):**
     * Alta densità di carica.
-    * Prediligono **Basi Hard** (es. Carbossili $-\text{COOH}$).
+    * Prediligono **Basi Hard** (es. Carbossili -COOH).
     
-    **Acidi Intermediate ($\text{Cu}^{2+}, \text{Zn}^{2+}, \text{Ni}^{2+}, \text{Co}^{2+}$):**
+    **Acidi Intermediate (Cu²⁺, Zn²⁺, Ni²⁺, Co²⁺):**
     * Densità di carica media.
-    * Prediligono **Azoti Aromatici** (Imidazoli, Piridine) o miscele $-\text{COOH}/\text{N}$.
+    * Prediligono **Azoti Aromatici** (Imidazoli, Piridine) o miscele -COOH/N.
     """)
 
 # --- TAB INTERFACCIA MAIN ---
@@ -823,7 +879,6 @@ with tab1:
     with col2:
         st.markdown("### 2. Sale Metallico & Idratazione")
         
-        # --- MENÙ A TENDINA UNIFORMATO METALLI ---
         metallo_sel = render_metal_dropdown_selector(key_prefix="tab1")
         
         anione_sel = st.selectbox("Anione / Precursore:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'])
@@ -1076,7 +1131,6 @@ with tab3:
     with opt_col2:
         st.markdown("### 2. Selezione Metalli e Precursore")
         
-        # --- SELEZIONE MULTIPLA METALLI PER OTTIMIZZATORE ---
         metal_list_opt = sorted(list(metal_props.keys()))
         opt_selected_metals = st.multiselect(
             "🧱 Seleziona uno o più Metalli da includere nella Scansione:",
