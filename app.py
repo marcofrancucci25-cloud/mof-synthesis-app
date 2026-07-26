@@ -30,7 +30,7 @@ from sklearn.ensemble import RandomForestClassifier, StackingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import StratifiedGroupKFold, StratifiedKFold, cross_val_predict
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, f1_score, balanced_accuracy_score
 
 try:
     from catboost import CatBoostClassifier
@@ -530,6 +530,62 @@ def calculate_solvent_mix_properties(solv_p, ml_p, cosolv, ml_cosolv):
         'mix_boiling_pt': (prop_p['boiling_pt'] * f_p) + (prop_co['boiling_pt'] * f_co)
     }
 
+# --- SUPPORTO: pKa ADDITIVO DA TESTO LIBERO (training/batch) ---
+# In fase di training l'additivo arriva come stringa libera dal CSV, non come
+# chiave esatta di ADDITIVES_DATABASE. Questa funzione replica la stessa logica
+# di rilevamento del tipo (Acid/Base/Neutral/None) già presente in
+# process_unified_dataset, ma prova anche ad associare un pKa preciso quando
+# riconosce un additivo specifico; altrimenti usa un pKa medio rappresentativo
+# per il tipo, invece di ignorare del tutto l'informazione (comportamento
+# precedente: il pKa non era una feature, solo un flag binario Acido/Base/Neutro).
+_ADDITIVE_KEYWORD_TO_NAME = [
+    ('tfa', 'Acido Trifluoroacetico (TFA)'),
+    ('trifluoroacetic', 'Acido Trifluoroacetico (TFA)'),
+    ('hcl', 'Acido Cloridrico (HCl)'),
+    ('hcooh', 'Acido Formico (HCOOH)'),
+    ('formic', 'Acido Formico (HCOOH)'),
+    ('acoh', 'Acido Acetico (AcOH)'),
+    ('acetic', 'Acido Acetico (AcOH)'),
+    ('benzoic', 'Acido Benzoico'),
+    ('hf', 'HF (Acido Fluoridrico)'),
+    ('fluoridric', 'HF (Acido Fluoridrico)'),
+    ('tea', 'Trietilammina (TEA)'),
+    ('triethylamine', 'Trietilammina (TEA)'),
+    ('dipea', 'Diisopropiletilammina (DIPEA)'),
+    ('n-methylmorpholine', 'N-Metilmorfolina'),
+    ('nmm', 'N-Metilmorfolina'),
+    ('pyridine', 'Piridinetilammina / Piridina'),
+    ('piridina', 'Piridinetilammina / Piridina'),
+    ('h2o', 'Acqua (H2O Modulatore)'),
+    ('water', 'Acqua (H2O Modulatore)'),
+    ('acqua', 'Acqua (H2O Modulatore)'),
+]
+_DEFAULT_PKA_BY_TYPE = {'Acid': 4.0, 'Base': 10.5, 'Neutral': 7.0, 'None': 0.0}
+
+def resolve_additive_type_and_pka(add_str):
+    s = str(add_str).lower()
+    if 'acid' in s or 'ac. ' in s or 'hcl' in s or 'hcooh' in s or 'acoh' in s or 'tfa' in s:
+        add_type = 'Acid'
+    elif 'tea' in s or 'dipea' in s or 'base' in s or 'amine' in s or 'pyridine' in s:
+        add_type = 'Base'
+    elif 'h2o' in s or 'water' in s:
+        add_type = 'Neutral'
+    else:
+        add_type = 'None'
+
+    for kw, name in _ADDITIVE_KEYWORD_TO_NAME:
+        if kw in s:
+            return add_type, ADDITIVES_DATABASE[name]['pKa']
+
+    return add_type, _DEFAULT_PKA_BY_TYPE[add_type]
+
+def clean_float_with_missing_flag(val, default_val=0.0):
+    """Come clean_float_val, ma segnala anche se il dato originale era
+    effettivamente assente/vuoto, cosi' il modello puo' distinguere uno zero
+    reale da un valore imputato di default."""
+    was_missing = pd.isna(val) or (isinstance(val, str) and val.strip() == '')
+    return clean_float_val(val, default_val), (1.0 if was_missing else 0.0)
+
 def process_unified_dataset(df, is_training_phase=False):
     target_col = None
     for col in ['Esito_ML', 'Target_Esito_Classe', 'Target', 'Esito', 'Classe', 'target', 'esito']:
@@ -581,8 +637,8 @@ def process_unified_dataset(df, is_training_phase=False):
         
         hsab_match = calculate_hsab_match(m_info['HSAB'], smarts_f['n_COOH'], smarts_f['n_Aromatic_N'])
         
-        m_leg = clean_float_val(row.get('mmol legante', row.get('mmol_Legante', row.get('mmol_legante', 0.1))), default_val=0.1)
-        m_sale = clean_float_val(row.get('mmol sale', row.get('mmol_Sale', row.get('mmol_sale', 0.1))), default_val=0.1)
+        m_leg, m_leg_missing = clean_float_with_missing_flag(row.get('mmol legante', row.get('mmol_Legante', row.get('mmol_legante', np.nan))), default_val=0.1)
+        m_sale, m_sale_missing = clean_float_with_missing_flag(row.get('mmol sale', row.get('mmol_Sale', row.get('mmol_sale', np.nan))), default_val=0.1)
         ratio = clean_float_val(row.get('Rapporto L/M', row.get('Rapporto_LM', m_leg / m_sale if m_sale > 0 else 1.0)))
         
         solv_raw = str(row.get('Solvente', row.get('Solvente Principale', 'DMF'))).strip()
@@ -598,27 +654,20 @@ def process_unified_dataset(df, is_training_phase=False):
             solv_p = solv_raw
             cosolv = str(row.get('CoSolvente', 'Nessuno')).strip()
             
-        ml_solv_p = clean_float_val(row.get('Volume solvente', row.get('mL_Solvente_P', row.get('Vial/Beuta ml', 10.0))), default_val=10.0)
+        ml_solv_p, ml_solv_p_missing = clean_float_with_missing_flag(row.get('Volume solvente', row.get('mL_Solvente_P', row.get('Vial/Beuta ml', np.nan))), default_val=10.0)
         ml_cosolv = clean_float_val(row.get('mL_CoSolvente', 0.0), default_val=0.0)
         total_vol = ml_solv_p + ml_cosolv
         cosolv_pct = (ml_cosolv / total_vol * 100) if total_vol > 0 else 0.0
         
         mix_props = calculate_solvent_mix_properties(solv_p, ml_solv_p, cosolv, ml_cosolv)
         
-        add_str = str(row.get('Co-linker/Additivo', row.get('Additivo_Colinker', row.get('Additivo_Tipo', 'None')))).lower()
-        if 'acid' in add_str or 'ac. ' in add_str or 'hcl' in add_str or 'hcooh' in add_str or 'acoh' in add_str or 'tfa' in add_str:
-            add_type = 'Acid'
-        elif 'tea' in add_str or 'dipea' in add_str or 'base' in add_str or 'amine' in add_str or 'pyridine' in add_str:
-            add_type = 'Base'
-        elif 'h2o' in add_str or 'water' in add_str:
-            add_type = 'Neutral'
-        else:
-            add_type = 'None'
-            
+        add_str = str(row.get('Co-linker/Additivo', row.get('Additivo_Colinker', row.get('Additivo_Tipo', 'None'))))
+        add_type, add_pka = resolve_additive_type_and_pka(add_str)
+
         add_eq = clean_float_val(row.get('Quantita additivo', row.get('Additivo_Eq', 0.0)), default_val=0.0)
         
-        temp = clean_float_val(row.get('Temperatura', row.get('Temperatura_C', row.get('Temperatura_num', 120.0))), default_val=120.0)
-        tempo = clean_float_val(row.get('Tempo ore', row.get('Tempo_ore', row.get('Tempo_ore_num', 48.0))), default_val=48.0)
+        temp, temp_missing = clean_float_with_missing_flag(row.get('Temperatura', row.get('Temperatura_C', row.get('Temperatura_num', np.nan))), default_val=120.0)
+        tempo, tempo_missing = clean_float_with_missing_flag(row.get('Tempo ore', row.get('Tempo_ore', row.get('Tempo_ore_num', np.nan))), default_val=48.0)
         
         raw_target = row.get(target_col, 0) if target_col else 0
         try:
@@ -626,6 +675,17 @@ def process_unified_dataset(df, is_training_phase=False):
         except Exception:
             target = 0
             
+        # Dose termica: proxy dell'energia fornita al sistema durante la crescita
+        # cristallina (combina temperatura e durata invece di trattarle come
+        # variabili indipendenti scorrelate).
+        thermal_dose = float(temp) * float(np.log1p(tempo))
+
+        # Molarità (mol/L, numericamente equivalente a mmol/mL): spesso più
+        # predittiva delle quantità assolute prese singolarmente, perché lega
+        # la quantità di reagente al volume in cui si trova effettivamente.
+        molarity_legante = float(m_leg) / float(total_vol) if total_vol > 0 else 0.0
+        molarity_sale = float(m_sale) / float(total_vol) if total_vol > 0 else 0.0
+
         processed.append({
             'SMILES_Group': smiles if smiles and smiles != 'nan' else legante_str,
             'MW_Legante': float(mw), 'LogP_Legante': float(logp), 'HBD_Legante': float(hbd), 'HBA_Legante': float(hba),
@@ -635,7 +695,9 @@ def process_unified_dataset(df, is_training_phase=False):
             'SMARTS_fraction_sp2': smarts_f['fraction_sp2'],
             'HSAB_Match_Index': hsab_match,
             'Temperatura_num': float(temp), 'Tempo_ore_num': float(tempo),
+            'Thermal_Dose': thermal_dose,
             'mmol legante': float(m_leg), 'mmol sale': float(m_sale), 'Rapporto L/M': float(ratio),
+            'Molarity_Legante': molarity_legante, 'Molarity_Sale': molarity_sale,
             'Metallo_Z': m_info['Z'], 'Metallo_Electronegativity': m_info['Electronegativity'],
             'Metallo_Radius_pm': m_info['Radius_pm'], 'Metallo_Group': m_info['Group'], 'Metallo_Period': m_info['Period'],
             'Anion_Acetato': 1 if anione_sel == 'Acetato' else 0,
@@ -650,32 +712,55 @@ def process_unified_dataset(df, is_training_phase=False):
             'Solvent_Mix_Dielectric': mix_props['mix_dielectric'],
             'Solvent_Mix_BoilingPt': mix_props['mix_boiling_pt'],
             'Additive_Eq': float(add_eq),
+            'Additive_pKa': float(add_pka),
             'Additive_Is_Acid': 1 if add_type == 'Acid' else 0,
             'Additive_Is_Base': 1 if add_type == 'Base' else 0,
             'Additive_Is_Neutral': 1 if add_type == 'Neutral' else 0,
+            # Flag "dato originale mancante": 1 se il CSV non riportava il valore
+            # (era vuoto/NaN) e si e' dovuto usare un default, 0 se il valore era
+            # presente. Permette al modello di distinguere uno zero/default reale
+            # da un'assenza di informazione, invece di confonderli silenziosamente.
+            'Missing_Temperatura': float(temp_missing),
+            'Missing_Tempo': float(tempo_missing),
+            'Missing_mmolLegante': float(m_leg_missing),
+            'Missing_mmolSale': float(m_sale_missing),
+            'Missing_VolSolvente': float(ml_solv_p_missing),
             'Target_Esito_Classe': target
         })
     return pd.DataFrame(processed)
 
 def create_stacking_ensemble():
+    # NOTA SU REGOLARIZZAZIONE: con un dataset relativamente piccolo (~migliaia
+    # di righe) uno stacking a 3 modelli può overfittare facilmente. Rispetto
+    # ai parametri originali ho aggiunto vincoli espliciti (min_child_samples,
+    # reg_alpha/reg_lambda, subsample/colsample per LightGBM; min_samples_leaf,
+    # max_features per RF; l2_leaf_reg per CatBoost) per limitare la complessità
+    # dei singoli alberi e la varianza dell'ensemble. Non ho aggiunto una
+    # ricerca automatica degli iperparametri (es. Optuna/RandomizedSearchCV)
+    # perché eseguita ad ogni cold-start dell'app allungherebbe di molto i
+    # tempi di avvio; se vuoi, posso preparartela come script offline separato.
     estimators = [
         ('lgb', LGBMClassifier(
-            n_estimators=180, learning_rate=0.03, max_depth=6, 
-            num_leaves=31, class_weight='balanced', random_state=42, verbose=-1
+            n_estimators=180, learning_rate=0.03, max_depth=6,
+            num_leaves=31, min_child_samples=15,
+            reg_alpha=0.1, reg_lambda=0.5,
+            subsample=0.8, subsample_freq=1, colsample_bytree=0.8,
+            class_weight='balanced', random_state=42, verbose=-1
         )),
         ('rf', RandomForestClassifier(
-            n_estimators=150, max_depth=8, class_weight='balanced_subsample', 
+            n_estimators=150, max_depth=8, min_samples_leaf=3, max_features='sqrt',
+            class_weight='balanced_subsample',
             random_state=42, n_jobs=-1
         ))
     ]
     
     if HAS_CATBOOST:
         estimators.append(('cat', CatBoostClassifier(
-            iterations=200, learning_rate=0.04, depth=6, 
+            iterations=200, learning_rate=0.04, depth=6, l2_leaf_reg=5.0,
             verbose=0, random_seed=42
         )))
         
-    meta_model = LogisticRegression(class_weight='balanced', max_iter=500)
+    meta_model = LogisticRegression(class_weight='balanced', max_iter=500, C=0.5)
     
     stacking_clf = StackingClassifier(
         estimators=estimators,
@@ -726,7 +811,16 @@ def load_or_train_model():
     groups = [g for i, g in enumerate(groups) if valid_mask.iloc[i]]
     
     X = X.apply(lambda col: col.apply(clean_float_val) if col.dtype == 'object' else col)
-    X = X.apply(pd.to_numeric, errors='coerce').fillna(0.0)
+    X = X.apply(pd.to_numeric, errors='coerce')
+    # Rete di sicurezza per eventuali NaN residui non già intercettati a monte
+    # (la maggior parte delle colonne è già "pulita" da clean_float_val con
+    # default espliciti per campo). Uso la mediana di colonna invece di uno 0
+    # fisso: uno zero letterale su temperatura/tempo/mmol non avrebbe senso
+    # chimico e distorcerebbe la colonna più di un valore centrale plausibile.
+    n_missing_pre_impute = int(X.isna().sum().sum())
+    if n_missing_pre_impute > 0:
+        X = X.fillna(X.median(numeric_only=True))
+    X = X.fillna(0.0)  # eventuali colonne interamente NaN (mediana non calcolabile)
     
     if y.nunique() < 2:
         st.error(
@@ -745,7 +839,10 @@ def load_or_train_model():
     used_groups_for_cv = None
     try:
         if n_unique_groups >= 3 and unique_classes > 1:
-            cv_splits = min(3, n_unique_groups)
+            # Fino a 5 fold quando i dati lo consentono (stime più stabili di
+            # accuratezza CV e calibrazione rispetto ai 3 fold precedenti);
+            # scende automaticamente se ci sono meno gruppi disponibili.
+            cv_splits = max(2, min(5, n_unique_groups))
             sgkf_calib = StratifiedGroupKFold(n_splits=cv_splits)
             final_model = CalibratedClassifierCV(
                 estimator=base_ensemble, method='sigmoid',
@@ -754,7 +851,11 @@ def load_or_train_model():
             final_model.fit(X, y, groups=groups)
             used_cv, used_groups_for_cv = sgkf_calib, groups
         else:
-            skf = StratifiedKFold(n_splits=3)
+            # n_splits non può superare il numero di campioni della classe
+            # meno numerosa, altrimenti StratifiedKFold solleva un errore.
+            min_class_count = int(y.value_counts().min())
+            skf_splits = max(2, min(5, min_class_count))
+            skf = StratifiedKFold(n_splits=skf_splits)
             final_model = CalibratedClassifierCV(
                 estimator=base_ensemble, method='sigmoid',
                 cv=skf
@@ -774,11 +875,14 @@ def load_or_train_model():
     except Exception:
         importances = np.zeros(len(feature_names))
 
-    # ACCURATEZZA: calcolata out-of-fold (ogni predizione viene da un modello
-    # che NON ha visto quel campione in training), non sui dati di training.
-    # accuracy_score(y, final_model.predict(X)) darebbe una stima ottimisticamente
-    # distorta perché quasi tutti i campioni sono stati visti in training da
-    # almeno una parte dell'ensemble calibrato.
+    # ACCURATEZZA + METRICHE COMPLEMENTARI: tutte calcolate out-of-fold (ogni
+    # predizione viene da un modello che NON ha visto quel campione in
+    # training), non sui dati di training. accuracy_score(y, final_model.predict(X))
+    # darebbe una stima ottimisticamente distorta perché quasi tutti i campioni
+    # sono stati visti in training da almeno una parte dell'ensemble calibrato.
+    # F1-macro e balanced accuracy sono aggiunte perché, su un problema a 3
+    # classi potenzialmente sbilanciato, la sola accuratezza può nascondere un
+    # modello che performa bene solo sulla classe maggioritaria.
     try:
         if used_cv is not None:
             oof_preds = cross_val_predict(
@@ -786,18 +890,29 @@ def load_or_train_model():
                 cv=used_cv, groups=used_groups_for_cv, method='predict', n_jobs=None
             )
             cv_accuracy = accuracy_score(y, oof_preds)
+            cv_f1_macro = f1_score(y, oof_preds, average='macro', zero_division=0)
+            cv_balanced_accuracy = balanced_accuracy_score(y, oof_preds)
         else:
-            cv_accuracy = accuracy_score(y, final_model.predict(X))
+            preds_fallback = final_model.predict(X)
+            cv_accuracy = accuracy_score(y, preds_fallback)
+            cv_f1_macro = f1_score(y, preds_fallback, average='macro', zero_division=0)
+            cv_balanced_accuracy = balanced_accuracy_score(y, preds_fallback)
     except Exception:
         # Fallback: se la CV out-of-fold fallisce (es. dataset troppo piccolo),
-        # usa la train accuracy ma non spacciarla per accuratezza "vera".
-        cv_accuracy = accuracy_score(y, final_model.predict(X))
+        # usa le metriche calcolate su tutto X, ma non spacciarle per "vere".
+        preds_fallback = final_model.predict(X)
+        cv_accuracy = accuracy_score(y, preds_fallback)
+        cv_f1_macro = f1_score(y, preds_fallback, average='macro', zero_division=0)
+        cv_balanced_accuracy = balanced_accuracy_score(y, preds_fallback)
 
     metrics = {
         'train_accuracy': cv_accuracy,  # nome mantenuto per compatibilità con .pkl esistenti; ora è CV accuracy
+        'cv_f1_macro': cv_f1_macro,
+        'cv_balanced_accuracy': cv_balanced_accuracy,
         'is_cv_accuracy': used_cv is not None,
         'n_samples': len(X),
-        'n_features': len(feature_names)
+        'n_features': len(feature_names),
+        'n_missing_values_imputed': n_missing_pre_impute
     }
     
     save_dict = {
@@ -875,6 +990,21 @@ with col_sb2:
         unsafe_allow_html=True
     )
 
+f1_macro_val = metrics.get('cv_f1_macro')
+bal_acc_val = metrics.get('cv_balanced_accuracy')
+n_imputed = metrics.get('n_missing_values_imputed', 0)
+if f1_macro_val is not None and bal_acc_val is not None:
+    with st.sidebar.expander("📈 Metriche aggiuntive (robuste a classi sbilanciate)", expanded=False):
+        st.markdown(
+            f"- **F1-macro (CV):** `{f1_macro_val*100:.1f}%`\n"
+            f"- **Balanced Accuracy (CV):** `{bal_acc_val*100:.1f}%`\n\n"
+            "L'accuratezza semplice può risultare alta anche se il modello "
+            "predice bene solo la classe più frequente; queste due metriche "
+            "pesano equamente tutte le classi (successo/parziale/insuccesso)."
+        )
+        if n_imputed > 0:
+            st.caption(f"ℹ️ {n_imputed} valori mancanti nel dataset sono stati imputati con la mediana di colonna.")
+
 st.sidebar.markdown("<br>", unsafe_allow_html=True)
 
 st.sidebar.markdown(
@@ -941,9 +1071,12 @@ def build_feature_row(mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmo
         'HSAB_Match_Index': hsab_match,
         'Temperatura_num': float(temp),
         'Tempo_ore_num': float(tempo),
+        'Thermal_Dose': float(temp) * float(np.log1p(float(tempo))),
         'mmol legante': float(mmol_legante),
         'mmol sale': float(mmol_sale),
         'Rapporto L/M': float(mmol_legante) / float(mmol_sale) if float(mmol_sale) > 0 else 1.0,
+        'Molarity_Legante': float(mmol_legante) / total_vol if total_vol > 0 else 0.0,
+        'Molarity_Sale': float(mmol_sale) / total_vol if total_vol > 0 else 0.0,
         'Metallo_Z': metal_m['Z'],
         'Metallo_Electronegativity': metal_m['Electronegativity'],
         'Metallo_Radius_pm': metal_m['Radius_pm'],
@@ -963,6 +1096,7 @@ def build_feature_row(mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmo
         'Solvent_Mix_Dielectric': mix_props['mix_dielectric'],
         'Solvent_Mix_BoilingPt': mix_props['mix_boiling_pt'],
         'Additive_Eq': float(add_eq),
+        'Additive_pKa': float(add_info.get('pKa', 0.0)),
         'Additive_Is_Acid': 1 if add_type == 'Acid' else 0,
         'Additive_Is_Base': 1 if add_type == 'Base' else 0,
         'Additive_Is_Neutral': 1 if add_type == 'Neutral' else 0,
@@ -1416,7 +1550,10 @@ with tab3:
                         'SMARTS_n_COOH': smarts_f['n_COOH'], 'SMARTS_n_Aromatic_N': smarts_f['n_Aromatic_N'],
                         'SMARTS_fraction_sp2': smarts_f['fraction_sp2'], 'HSAB_Match_Index': hsab_match,
                         'Temperatura_num': temp, 'Tempo_ore_num': tempo,
+                        'Thermal_Dose': float(temp) * float(np.log1p(float(tempo))),
                         'mmol legante': float(opt_mmol_legante), 'mmol sale': float(opt_mmol_sale), 'Rapporto L/M': float(ratio_lm),
+                        'Molarity_Legante': float(opt_mmol_legante) / total_vol if total_vol > 0 else 0.0,
+                        'Molarity_Sale': float(opt_mmol_sale) / total_vol if total_vol > 0 else 0.0,
                         'Metallo_Z': metal_m['Z'], 'Metallo_Electronegativity': metal_m['Electronegativity'],
                         'Metallo_Radius_pm': metal_m['Radius_pm'], 'Metallo_Group': metal_m['Group'], 'Metallo_Period': metal_m['Period'],
                         'Anion_Acetato': 1 if opt_anione == 'Acetato' else 0,
@@ -1429,6 +1566,7 @@ with tab3:
                         'Solvent_Mix_PiStar': mix_props['mix_pi_star'], 'Solvent_Mix_Dielectric': mix_props['mix_dielectric'],
                         'Solvent_Mix_BoilingPt': mix_props['mix_boiling_pt'],
                         'Additive_Eq': add_eq,
+                        'Additive_pKa': float(add_info.get('pKa', 0.0)),
                         'Additive_Is_Acid': 1 if add_type == 'Acid' else 0,
                         'Additive_Is_Base': 1 if add_type == 'Base' else 0,
                         'Additive_Is_Neutral': 1 if add_type == 'Neutral' else 0,
