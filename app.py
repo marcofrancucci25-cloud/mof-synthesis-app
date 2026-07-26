@@ -780,7 +780,7 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v4-diagnostics"
+MODEL_TRAINING_VERSION = "v5-groups-routing-fix"
 
 @st.cache_resource
 def load_or_train_model():
@@ -903,12 +903,21 @@ def load_or_train_model():
                 # "concentrata" su un unico legante.
                 cv_splits = max(2, min(5, n_unique_groups, min_class_count, min_groups_per_class))
                 sgkf_calib = StratifiedGroupKFold(n_splits=cv_splits)
+                # IMPORTANTE: pre-calcoliamo qui gli split usando esplicitamente
+                # 'groups', e passiamo la LISTA di split già pronta a
+                # CalibratedClassifierCV (invece dell'oggetto splitter grezzo).
+                # Motivo: in questa versione di scikit-learn, CalibratedClassifierCV
+                # non inoltra correttamente 'groups' al proprio interno a meno di
+                # abilitare esplicitamente il "metadata routing" (funzionalità
+                # recente, più fragile); passando gli split già calcolati si evita
+                # del tutto il problema, indipendentemente dalla versione installata.
+                precomputed_splits = list(sgkf_calib.split(X, y, groups))
                 final_model = CalibratedClassifierCV(
                     estimator=base_ensemble, method='sigmoid',
-                    cv=sgkf_calib
+                    cv=precomputed_splits
                 )
-                final_model.fit(X, y, groups=groups)
-                used_cv, used_groups_for_cv = sgkf_calib, groups
+                final_model.fit(X, y)
+                used_cv, used_groups_for_cv = precomputed_splits, None
             else:
                 # CV raggruppata non praticabile (troppi pochi gruppi complessivi,
                 # o una classe concentrata in un solo legante): si scende alla
