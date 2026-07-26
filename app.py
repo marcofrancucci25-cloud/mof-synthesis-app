@@ -16,6 +16,14 @@ try:
 except Exception:
     HAS_SHAP = False
 
+# Import opzionale per grafici interattivi (Explainability). Se non installato,
+# l'app ripiega automaticamente sui grafici statici matplotlib.
+try:
+    import plotly.graph_objects as go
+    HAS_PLOTLY = True
+except Exception:
+    HAS_PLOTLY = False
+
 # Import opzionale per lettura CIF tramite pymatgen
 try:
     from pymatgen.core import Structure
@@ -448,6 +456,25 @@ COMMON_MOF_LIGANDS = {
 }
 
 # --- PROPRIETÀ ADDITIVI E MODULATORI ---
+# --- ETICHETTE E COLORI ESITO (usati in Explainability e altrove) ---
+# Etichette leggibili per l'utente finale, al posto di "Classe 0/1/2" che non
+# comunica il significato chimico. Fallback su "Classe X" per eventuali valori
+# imprevisti (dataset con codifica delle classi diversa da 0/1/2).
+CLASS_LABELS = {
+    0: "❌ Nessun Prodotto",
+    1: "🌫️ Prodotto Amorfo/Miscela",
+    2: "💎 Prodotto Cristallino"
+}
+CLASS_COLORS = {
+    0: "#E74C3C",  # rosso
+    1: "#F5B041",  # arancio
+    2: "#2ECC71"   # verde
+}
+def get_class_label(c):
+    return CLASS_LABELS.get(c, f"Classe {c}")
+def get_class_color(c):
+    return CLASS_COLORS.get(c, "#888888")
+
 ADDITIVES_DATABASE = {
     'Nessuno': {'type': 'None', 'MW': 0.0, 'pKa': 0.0},
     'Acido Acetico (AcOH)': {'type': 'Acid', 'MW': 60.05, 'pKa': 4.76},
@@ -1848,14 +1875,49 @@ with tab4:
         }).sort_values(by='Importance', ascending=False)
 
         top_n = st.slider("Numero di feature da mostrare:", min_value=5, max_value=min(30, len(feature_names)), value=15)
-        top_fi = fi_df.head(top_n)
+        top_fi = fi_df.head(top_n).iloc[::-1]  # ordine crescente per barre orizzontali (la più importante in alto)
 
-        fig, ax = plt.subplots(figsize=(10, 6))
-        ax.barh(top_fi['Feature'][::-1], top_fi['Importance'][::-1], color='skyblue')
-        ax.set_xlabel("Importanza Relativa")
-        ax.set_title("Top Feature del Modello (LightGBM Estimator)")
-        plt.tight_layout()
-        st.pyplot(fig)
+        with st.expander("ℹ️ Come si legge questo grafico", expanded=False):
+            st.markdown(
+                "Questo grafico mostra, **in media su tutte le sintesi usate per allenare il modello**, "
+                "quali parametri della reazione pesano di più sulle sue decisioni. "
+                "**Più lunga è la barra, più quel parametro influenza la previsione** — non indica se un "
+                "valore alto o basso di quel parametro sia positivo o negativo, solo *quanto* conta."
+            )
+
+        if HAS_PLOTLY:
+            max_imp = top_fi['Importance'].max() if len(top_fi) else 1.0
+            fig_fi = go.Figure(go.Bar(
+                x=top_fi['Importance'],
+                y=top_fi['Feature'],
+                orientation='h',
+                marker=dict(
+                    color=top_fi['Importance'],
+                    colorscale=[[0, '#AED6F1'], [1, '#1B4F72']],
+                    line=dict(width=0)
+                ),
+                text=top_fi['Importance'].round(1),
+                textposition='outside',
+                hovertemplate='<b>%{y}</b><br>Importanza: %{x:.1f}<extra></extra>'
+            ))
+            fig_fi.update_layout(
+                title="Top Feature del Modello (LightGBM Estimator)",
+                xaxis_title="Importanza Relativa",
+                yaxis_title=None,
+                height=max(350, 28 * len(top_fi)),
+                margin=dict(l=10, r=40, t=50, b=40),
+                plot_bgcolor='rgba(0,0,0,0)',
+                xaxis=dict(showgrid=True, gridcolor='rgba(128,128,128,0.15)'),
+                font=dict(size=13)
+            )
+            st.plotly_chart(fig_fi, use_container_width=True)
+        else:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.barh(top_fi['Feature'], top_fi['Importance'], color='skyblue')
+            ax.set_xlabel("Importanza Relativa")
+            ax.set_title("Top Feature del Modello (LightGBM Estimator)")
+            plt.tight_layout()
+            st.pyplot(fig)
     else:
         st.info("I dati sull'importanza delle feature non sono disponibili per questo modello.")
 
@@ -1881,7 +1943,7 @@ with tab4:
                     explainer = shap.TreeExplainer(target_estimator)
                     shap_values = explainer.shap_values(df_single)
 
-                    st.markdown("#### Waterfall / Bar Plot SHAP")
+                    st.markdown("#### Contributi delle Feature per Questa Predizione")
 
                     # La libreria SHAP ha cambiato formato di ritorno tra le versioni:
                     # - versioni più vecchie: lista di array, uno per classe, ciascuno
@@ -1894,25 +1956,14 @@ with tab4:
                     # array 2D invece di un vettore 1D).
                     expected_value = explainer.expected_value
 
-                    # Etichette leggibili per l'utente finale, al posto di
-                    # "Classe 0/1/2" che non comunica il significato chimico.
-                    # Fallback su "Classe X" per eventuali valori imprevisti
-                    # (dataset con codifica delle classi diversa da 0/1/2).
-                    CLASS_LABELS = {
-                        0: "❌ Nessun Prodotto",
-                        1: "🌫️ Prodotto Amorfo/Miscela",
-                        2: "💎 Prodotto Cristallino"
-                    }
-                    def _class_label(c):
-                        return CLASS_LABELS.get(c, f"Classe {c}")
-
                     if isinstance(shap_values, list):
                         # Formato "lista di array" (versioni SHAP più datate)
-                        class_names = [_class_label(c) for c in model.classes_]
+                        class_names = [get_class_label(c) for c in model.classes_]
                         selected_class_idx = st.selectbox(
                             "Seleziona Esito per l'analisi SHAP:",
                             range(len(shap_values)), format_func=lambda x: class_names[x]
                         )
+                        selected_class_value = model.classes_[selected_class_idx]
                         sv_to_plot = shap_values[selected_class_idx][0]
                         base_val = (
                             expected_value[selected_class_idx]
@@ -1923,11 +1974,12 @@ with tab4:
                         # (n_samples, n_features, n_classi)
                         n_classes_shap = shap_values.shape[-1]
                         available_classes = list(model.classes_)[:n_classes_shap]
-                        class_names = [_class_label(c) for c in available_classes]
+                        class_names = [get_class_label(c) for c in available_classes]
                         selected_class_idx = st.selectbox(
                             "Seleziona Esito per l'analisi SHAP:",
                             range(n_classes_shap), format_func=lambda x: class_names[x]
                         )
+                        selected_class_value = available_classes[selected_class_idx]
                         sv_to_plot = shap_values[0, :, selected_class_idx]
                         base_val = (
                             expected_value[selected_class_idx]
@@ -1936,6 +1988,7 @@ with tab4:
                         )
                     else:
                         # Output singolo/binario: array 2D (n_samples, n_features)
+                        selected_class_value = model.classes_[-1] if hasattr(model, 'classes_') else None
                         sv_to_plot = np.asarray(shap_values)[0]
                         base_val = (
                             expected_value[0]
@@ -1943,10 +1996,57 @@ with tab4:
                             else expected_value
                         )
 
-                    fig, ax = plt.subplots(figsize=(10, 6))
-                    shap.bar_plot(sv_to_plot, feature_names=df_single.columns, max_display=10, show=False)
-                    plt.tight_layout()
-                    st.pyplot(fig)
+                    selected_label = get_class_label(selected_class_value)
+
+                    with st.expander("ℹ️ Come si legge questo grafico", expanded=False):
+                        st.markdown(
+                            f"Per **questa specifica sintesi**, ecco quali parametri hanno spinto di più "
+                            f"la previsione verso **\"{selected_label}\"**:\n\n"
+                            "- 🟢 le barre **verdi** aumentano la probabilità di questo esito\n"
+                            "- 🔴 le barre **rosse** la diminuiscono\n"
+                            "- più lunga è la barra, maggiore è l'effetto di quel parametro **per questa "
+                            "sintesi specifica** (a differenza del grafico sopra, che mostra l'importanza "
+                            "media su tutte le sintesi)"
+                        )
+
+                    feat_names = list(df_single.columns)
+                    sv_arr = np.asarray(sv_to_plot).flatten()
+                    n_show = min(10, len(sv_arr))
+                    order = np.argsort(np.abs(sv_arr))[::-1][:n_show]
+                    plot_feats = [feat_names[i] for i in order][::-1]
+                    plot_vals = [float(sv_arr[i]) for i in order][::-1]
+
+                    if HAS_PLOTLY:
+                        colors = ['#2ECC71' if v >= 0 else '#E74C3C' for v in plot_vals]
+                        fig_shap = go.Figure(go.Bar(
+                            x=plot_vals,
+                            y=plot_feats,
+                            orientation='h',
+                            marker=dict(color=colors, line=dict(width=0)),
+                            text=[f"{v:+.3f}" for v in plot_vals],
+                            textposition='outside',
+                            hovertemplate='<b>%{y}</b><br>Contributo SHAP: %{x:.4f}<extra></extra>'
+                        ))
+                        fig_shap.update_layout(
+                            title=f"Principali contributi verso: {selected_label}",
+                            xaxis_title="← diminuisce la probabilità   |   aumenta la probabilità →",
+                            yaxis_title=None,
+                            height=max(350, 34 * len(plot_feats)),
+                            margin=dict(l=10, r=40, t=50, b=40),
+                            plot_bgcolor='rgba(0,0,0,0)',
+                            xaxis=dict(
+                                showgrid=True, gridcolor='rgba(128,128,128,0.15)',
+                                zeroline=True, zerolinecolor='rgba(128,128,128,0.5)', zerolinewidth=1.5
+                            ),
+                            font=dict(size=13),
+                            showlegend=False
+                        )
+                        st.plotly_chart(fig_shap, use_container_width=True)
+                    else:
+                        fig, ax = plt.subplots(figsize=(10, 6))
+                        shap.bar_plot(sv_to_plot, feature_names=feat_names, max_display=10, show=False)
+                        plt.tight_layout()
+                        st.pyplot(fig)
                 else:
                     st.error("Impossibile estrarre un sotto-modello basato su alberi per l'analisi TreeSHAP.")
             except Exception as e:
