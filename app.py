@@ -1218,7 +1218,7 @@ with st.sidebar.expander("🧪 Teoria HSAB di Pearson", expanded=False):
     """)
 
 # --- TAB INTERFACCIA MAIN ---
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["🔮 Predizione Singola", "📂 Predizione Batch", "⚡ Ottimizzatore Automatico", "🌐 Ricerca Web (Tavily AI)", "📊 Explainability (SHAP & Feature Importance)"])
+tab1, tab2, tab3, tab4 = st.tabs(["🔮 Predizione Singola", "⚡ Ottimizzatore Automatico", "🌐 Ricerca Web (Tavily AI)", "📊 Explainability (SHAP & Feature Importance)"])
 
 def build_feature_row(mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_p, ml_solv_p, cosolvente, ml_cosolv, additivo_sel, add_eq):
     add_info = ADDITIVES_DATABASE.get(additivo_sel, ADDITIVES_DATABASE['Nessuno'])
@@ -1499,58 +1499,8 @@ with tab1:
             else:
                 st.error("❌ **Insuccesso Probabile.** Si consiglia di rivedere le condizioni di reazione.")
 
-# --- TAB 2: PREDIZIONE BATCH ---
+# --- TAB 2: OTTIMIZZATORE AUTOMATICO MULTI-METALLO ---
 with tab2:
-    st.subheader("Carica un file Excel o CSV con più sintesi da valutare")
-    uploaded_file = st.file_uploader("Scegli un file (.xlsx o .csv)", type=['xlsx', 'csv'])
-    
-    if uploaded_file is not None:
-        try:
-            if uploaded_file.name.endswith('.csv'):
-                input_batch = pd.read_csv(uploaded_file)
-            else:
-                input_batch = pd.read_excel(uploaded_file)
-                
-            st.write("📋 **Anteprima dei dati caricati:**", input_batch.head())
-            
-            if st.button("⚡ Elabora tutte le Sintesi"):
-                processed_batch = process_unified_dataset(input_batch, is_training_phase=False)
-                X_batch = processed_batch.drop(columns=['Target_Esito_Classe', 'SMILES_Group'])
-                
-                for col in feature_names:
-                    if col not in X_batch.columns:
-                        X_batch[col] = 0.0
-                X_batch = X_batch[feature_names]
-                
-                preds = model.predict(X_batch)
-                probs = model.predict_proba(X_batch)
-                
-                classes_list = list(model.classes_)
-                idx0 = classes_list.index(0) if 0 in classes_list else None
-                idx1 = classes_list.index(1) if 1 in classes_list else None
-                idx2 = classes_list.index(2) if 2 in classes_list else None
-                
-                results_df = input_batch.copy()
-                results_df['Predizione_Classe'] = preds
-                results_df['Prob_Insuccesso_%'] = (probs[:, idx0] * 100).round(1) if idx0 is not None else 0.0
-                results_df['Prob_Parziale_%'] = (probs[:, idx1] * 100).round(1) if idx1 is not None else 0.0
-                results_df['Prob_Successo_%'] = (probs[:, idx2] * 100).round(1) if idx2 is not None else 0.0
-                
-                st.success("✅ Predizioni completate con successo!")
-                st.dataframe(results_df)
-                
-                csv_download = results_df.to_csv(index=False).encode('utf-8')
-                st.download_button(
-                    label="📥 Scarica Risultati in CSV",
-                    data=csv_download,
-                    file_name="Risultati_Predizione_MOF.csv",
-                    mime="text/csv"
-                )
-        except Exception as e:
-            st.error(f"Errore durante l'elaborazione del file: {e}")
-
-# --- TAB 3: OTTIMIZZATORE AUTOMATICO MULTI-METALLO ---
-with tab3:
     st.subheader("⚡ Ottimizzatore di Condizioni Sperimentali Multi-Metallo")
     st.markdown("L'IA simulerà ed esaminerà **griglie di combinazioni chimiche in parallelo**, testando anche **più metalli contemporaneamente**.")
     
@@ -1792,8 +1742,8 @@ with tab3:
             st.markdown("### 🏆 Migliori Condizioni Sperimentali Trovate nella Griglia")
             st.dataframe(df_results.head(15))
 
-# --- TAB 4: RICERCA WEB TAVILY AI ---
-with tab4:
+# --- TAB 3: RICERCA WEB TAVILY AI ---
+with tab3:
     st.subheader("🌐 Agente Web Tavily per Sintesi & Letteratura MOF")
     st.markdown("Effettua ricerche live per verificare protocolli di sintesi, informazioni sui leganti o pubblicazioni scientifiche correlate.")
     
@@ -1821,8 +1771,8 @@ with tab4:
                 else:
                     st.error("Nessun risultato trovato o timeout durante la richiesta.")
 
-# --- TAB 5: EXPLAINABILITY (SHAP & FEATURE IMPORTANCE) ---
-with tab5:
+# --- TAB 4: EXPLAINABILITY (SHAP & FEATURE IMPORTANCE) ---
+with tab4:
     st.subheader("📊 Spiegabilità Chimica del Modello ML (Explainability)")
     st.markdown("""
     Questa sezione permette di interpretare le decisioni del modello di Machine Learning, mostrando quali parametri fisico-chimici 
