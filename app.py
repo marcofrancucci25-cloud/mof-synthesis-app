@@ -770,6 +770,17 @@ def create_stacking_ensemble():
     )
     return stacking_clf
 
+# Versione della LOGICA di training (feature set, gestione CV, iperparametri).
+# Va incrementata ogni volta che si modifica in modo sostanziale come il
+# modello viene costruito/allenato. Serve a evitare che un .pkl salvato da
+# una versione precedente del codice (che può sopravvivere su disco tra un
+# riavvio e l'altro dell'app, specialmente se il container non viene
+# ricreato da zero) venga ricaricato silenziosamente mascherando le
+# correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
+# metriche/errori obsoleti può continuare a essere mostrato all'utente anche
+# dopo aver corretto e ridistribuito il codice.
+MODEL_TRAINING_VERSION = "v3-groupcv-fix"
+
 @st.cache_resource
 def load_or_train_model():
     pkl_file = "modello_sintesi_mof_ottimizzato.pkl"
@@ -783,8 +794,14 @@ def load_or_train_model():
     if os.path.exists(pkl_file):
         try:
             saved_data = joblib.load(pkl_file)
-            if isinstance(saved_data, dict) and 'model' in saved_data:
+            if (
+                isinstance(saved_data, dict) and 'model' in saved_data
+                and saved_data.get('model_training_version') == MODEL_TRAINING_VERSION
+            ):
                 return saved_data['model'], saved_data['features'], saved_data.get('metrics', {}), saved_data.get('importances', [])
+            # .pkl presente ma di una versione diversa (o senza il campo di
+            # versione, quindi pre-esistente a questo controllo): non lo si usa,
+            # si procede a riallenare da zero più sotto.
         except Exception:
             pass
 
@@ -970,11 +987,24 @@ def load_or_train_model():
         'model': final_model,
         'features': feature_names,
         'importances': importances,
-        'metrics': metrics
+        'metrics': metrics,
+        'model_training_version': MODEL_TRAINING_VERSION
     }
     
     joblib.dump(save_dict, pkl_file)
     return final_model, feature_names, metrics, importances
+
+with st.sidebar.expander("🛠️ Manutenzione Modello", expanded=False):
+    st.caption(f"Versione logica di training corrente: `{MODEL_TRAINING_VERSION}`")
+    if st.button("🔄 Forza ri-allenamento (ignora .pkl salvato)"):
+        try:
+            if os.path.exists("modello_sintesi_mof_ottimizzato.pkl"):
+                os.remove("modello_sintesi_mof_ottimizzato.pkl")
+            load_or_train_model.clear()  # svuota la cache di st.cache_resource per questa funzione
+            st.success("Cache e .pkl rimossi. Ricaricamento in corso...")
+            st.rerun()
+        except Exception as e:
+            st.error(f"Impossibile forzare il ri-allenamento: {e}")
 
 try:
     model, feature_names, metrics, importances = load_or_train_model()
