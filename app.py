@@ -363,7 +363,27 @@ COMMON_MOF_LIGANDS = {
     "c4h6n2": "Cc1c[nH]cn1",
     "2-mim": "Cc1c[nH]cn1",
     "c10h8n2": "c1cnc(-c2ccncc2)cc1",
-    "4,4'-bipy": "c1cnc(-c2ccncc2)cc1"
+    "4,4'-bipy": "c1cnc(-c2ccncc2)cc1",
+
+    # --- Aggiunti dopo analisi del dataset reale: leganti frequenti nel CSV
+    # dell'utente che non venivano risolti a SMILES reale (finivano su
+    # descrittori molecolari generici di default). SMILES verificati su
+    # PubChem/fornitori chimici (Alfa Chemistry, Santa Cruz Biotechnology,
+    # Fisher Scientific), luglio 2026.
+    "2-aminoterephthalic acid": "C1=CC(=C(C=C1C(=O)O)N)C(=O)O",  # PubChem CID 2724822
+    "benzimidazole": "c1ccc2[nH]cnc2c1",
+    "1,2,4-triazole": "C1=NC=NN1",  # PubChem CID 9257
+    "2,5-dihydroxyterephthalic acid": "C1=C(C(=CC(=C1O)C(=O)O)O)C(=O)O",  # PubChem CID 69131 (H4DOBDC)
+    "h4dobdc": "C1=C(C(=CC(=C1O)C(=O)O)O)C(=O)O",
+
+    # Alias per nomi completi di leganti già presenti sotto sigla abbreviata
+    # (il lookup richiede corrispondenza esatta della stringa, quindi senza
+    # questi alias il nome completo non trovava la sigla già in dizionario).
+    "1,4-benzenedicarboxylic acid": "O=C(O)c1ccc(C(=O)O)cc1",
+    "1,3,5-benzenetricarboxylic acid": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",
+    "2-methylimidazole": "Cc1c[nH]cn1",
+    "4,4'-biphenyldicarboxylic acid": "O=C(O)c1ccc(-c2ccc(C(=O)O)cc2)cc1",
+    "2,6-naphthalenedicarboxylic acid": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1"
 }
 
 # --- PROPRIETÀ ADDITIVI E MODULATORI ---
@@ -481,6 +501,23 @@ def resolve_molecule_to_smiles(query, allow_web_search=True):
     
     if clean_query in COMMON_MOF_LIGANDS:
         return COMMON_MOF_LIGANDS[clean_query]
+
+    # Tentativo aggiuntivo, prima di arrendersi o andare sul web: molti nomi di
+    # leganti MOF riportano la sigla abbreviata tra parentesi, es.
+    # "1,4-Benzenedicarboxylic acid (H2BDC)". Proviamo a estrarla e a
+    # confrontarla col dizionario locale, anche togliendo il prefisso
+    # "H"+cifra tipico delle sigle in forma acida (H2BDC -> BDC, H3BTC -> BTC,
+    # H4DOBDC -> DOBDC), così le sigle già presenti in COMMON_MOF_LIGANDS
+    # vengono trovate anche quando il nome completo non corrisponde parola
+    # per parola a una chiave del dizionario.
+    paren_match = re.search(r'\(([^)]+)\)', clean_query)
+    if paren_match:
+        abbrev = paren_match.group(1).strip().lower()
+        if abbrev in COMMON_MOF_LIGANDS:
+            return COMMON_MOF_LIGANDS[abbrev]
+        stripped = re.sub(r'^h\d+', '', abbrev)
+        if stripped and stripped in COMMON_MOF_LIGANDS:
+            return COMMON_MOF_LIGANDS[stripped]
 
     if not allow_web_search:
         return None
@@ -780,7 +817,7 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v6-single-pass-memory-fix"
+MODEL_TRAINING_VERSION = "v7-ligand-coverage-fix"
 
 @st.cache_resource
 def load_or_train_model():
