@@ -29,7 +29,7 @@ from lightgbm import LGBMClassifier
 from sklearn.ensemble import RandomForestClassifier, StackingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.model_selection import StratifiedGroupKFold, StratifiedKFold
+from sklearn.model_selection import StratifiedGroupKFold, StratifiedKFold, cross_val_predict
 from sklearn.metrics import accuracy_score
 
 try:
@@ -57,11 +57,25 @@ def clean_float_val(val, default_val=0.0):
         return float(default_val)
 
 # --- CONFIGURAZIONE TAVILY AI ---
-DEFAULT_TAVILY_KEY = "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"
-TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", DEFAULT_TAVILY_KEY)
+# IMPORTANTE: nessuna chiave hardcoded nel codice sorgente.
+# La chiave va impostata come secret in Streamlit Cloud (st.secrets) oppure
+# come variabile d'ambiente TAVILY_API_KEY. Se non presente, l'utente può
+# inserirla manualmente nel campo sottostante (non viene mai precompilata
+# con un valore reale, per evitare che resti visibile nel session state/HTML).
+try:
+    TAVILY_API_KEY = st.secrets.get("TAVILY_API_KEY", os.getenv("TAVILY_API_KEY", ""))
+except Exception:
+    TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
 
 with st.sidebar.expander("🌐 Configurazione Agent Web (Tavily)", expanded=False):
-    tavily_input_key = st.text_input("Tavily API Key:", value=TAVILY_API_KEY, type="password")
+    if TAVILY_API_KEY:
+        st.caption("✅ Chiave Tavily configurata tramite secrets/variabile d'ambiente.")
+    tavily_input_key = st.text_input(
+        "Tavily API Key (opzionale, sovrascrive quella di sistema):",
+        value="",
+        type="password",
+        placeholder="tvly-..." if not TAVILY_API_KEY else "Lascia vuoto per usare la chiave configurata"
+    )
     if tavily_input_key:
         TAVILY_API_KEY = tavily_input_key
 
@@ -130,6 +144,7 @@ def valida_articolo_metallo_legante(testo_articolo, metal_symbol, ligand_query="
     return True
 
 # --- API SEMANTIC SCHOLAR PER ARTICOLI OPEN ACCESS ---
+@st.cache_data(ttl=3600, show_spinner=False)
 def fetch_open_access_paper(metal_symbol, ligand_term=""):
     """
     Interroga l'API di Semantic Scholar richiedendo specificamente articoli Open Access
@@ -184,6 +199,7 @@ def fetch_open_access_paper(metal_symbol, ligand_term=""):
     return None
 
 # --- INTEGRAZIONE CROSSREF COME FALLBACK ---
+@st.cache_data(ttl=3600, show_spinner=False)
 def fetch_real_doi_from_crossref(metal_symbol, ligand_term=""):
     metal_name = metal_props.get(metal_symbol, {}).get('Name', '')
     query_term = f'"{metal_symbol}" "{metal_name}" "{ligand_term}" MOF synthesis' if ligand_term else f'"{metal_symbol}" "{metal_name}" MOF synthesis'
@@ -366,45 +382,56 @@ ADDITIVES_DATABASE = {
 }
 
 # --- DATABASE METALLI AMPLIATO (30 METALLI) E HSAB ---
+# NOTA: 'Valence' rappresenta lo stato di ossidazione tipico del precursore
+# metallico usato in sintesi MOF (es. Zr4+, Al3+, Cu2+...). Serve per calcolare
+# correttamente il numero di controioni (nitrato/acetato/cloruro) nel sale.
+# Per metalli con più stati di ossidazione comuni (es. Fe, Sn, Ce, Ru, Au) è
+# indicato quello prevalentemente usato nei precursori commerciali per MOF;
+# se lavori con un sale a valenza diversa, verifica e correggi manualmente.
 metal_props = {
-    'Zr': {'Z': 40, 'Electronegativity': 1.33, 'Radius_pm': 160, 'Group': 4, 'Period': 5, 'MW': 91.22, 'HSAB': 'Hard', 'Name': 'Zirconio'},
-    'Hf': {'Z': 72, 'Electronegativity': 1.30, 'Radius_pm': 159, 'Group': 4, 'Period': 6, 'MW': 178.49, 'HSAB': 'Hard', 'Name': 'Afnio'},
-    'Ti': {'Z': 22, 'Electronegativity': 1.54, 'Radius_pm': 147, 'Group': 4, 'Period': 4, 'MW': 47.87, 'HSAB': 'Hard', 'Name': 'Titanio'},
-    'Cu': {'Z': 29, 'Electronegativity': 1.90, 'Radius_pm': 132, 'Group': 11, 'Period': 4, 'MW': 63.55, 'HSAB': 'Intermediate', 'Name': 'Rame'},
-    'Zn': {'Z': 30, 'Electronegativity': 1.65, 'Radius_pm': 122, 'Group': 12, 'Period': 4, 'MW': 65.38, 'HSAB': 'Intermediate', 'Name': 'Zinco'},
-    'Fe': {'Z': 26, 'Electronegativity': 1.83, 'Radius_pm': 126, 'Group': 8, 'Period': 4, 'MW': 55.85, 'HSAB': 'Hard', 'Name': 'Ferro'},
-    'Co': {'Z': 27, 'Electronegativity': 1.88, 'Radius_pm': 126, 'Group': 9, 'Period': 4, 'MW': 58.93, 'HSAB': 'Intermediate', 'Name': 'Cobalto'},
-    'Ni': {'Z': 28, 'Electronegativity': 1.91, 'Radius_pm': 124, 'Group': 10, 'Period': 4, 'MW': 58.69, 'HSAB': 'Intermediate', 'Name': 'Nichel'},
-    'Mn': {'Z': 25, 'Electronegativity': 1.55, 'Radius_pm': 139, 'Group': 7, 'Period': 4, 'MW': 54.94, 'HSAB': 'Intermediate', 'Name': 'Manganese'},
-    'Cr': {'Z': 24, 'Electronegativity': 1.66, 'Radius_pm': 128, 'Group': 6, 'Period': 4, 'MW': 51.99, 'HSAB': 'Hard', 'Name': 'Cromo'},
-    'V':  {'Z': 23, 'Electronegativity': 1.63, 'Radius_pm': 134, 'Group': 5, 'Period': 4, 'MW': 50.94, 'HSAB': 'Hard', 'Name': 'Vanadio'},
-    'Al': {'Z': 13, 'Electronegativity': 1.61, 'Radius_pm': 121, 'Group': 13, 'Period': 3, 'MW': 26.98, 'HSAB': 'Hard', 'Name': 'Alluminio'},
-    'Ga': {'Z': 31, 'Electronegativity': 1.81, 'Radius_pm': 122, 'Group': 13, 'Period': 4, 'MW': 69.72, 'HSAB': 'Hard', 'Name': 'Gallio'},
-    'In': {'Z': 49, 'Electronegativity': 1.78, 'Radius_pm': 142, 'Group': 13, 'Period': 5, 'MW': 114.82, 'HSAB': 'Hard', 'Name': 'Indio'},
-    'Mg': {'Z': 12, 'Electronegativity': 1.31, 'Radius_pm': 141, 'Group': 2, 'Period': 3, 'MW': 24.31, 'HSAB': 'Hard', 'Name': 'Magnesio'},
-    'Ca': {'Z': 20, 'Electronegativity': 1.00, 'Radius_pm': 174, 'Group': 2, 'Period': 4, 'MW': 40.08, 'HSAB': 'Hard', 'Name': 'Calcio'},
-    'Sr': {'Z': 38, 'Electronegativity': 0.95, 'Radius_pm': 192, 'Group': 2, 'Period': 5, 'MW': 87.62, 'HSAB': 'Hard', 'Name': 'Stronzio'},
-    'Ba': {'Z': 56, 'Electronegativity': 0.89, 'Radius_pm': 198, 'Group': 2, 'Period': 6, 'MW': 137.33, 'HSAB': 'Hard', 'Name': 'Bario'},
-    'Ce': {'Z': 58, 'Electronegativity': 1.12, 'Radius_pm': 181, 'Group': 3, 'Period': 6, 'MW': 140.12, 'HSAB': 'Hard', 'Name': 'Cerio'},
-    'La': {'Z': 57, 'Electronegativity': 1.10, 'Radius_pm': 187, 'Group': 3, 'Period': 6, 'MW': 138.91, 'HSAB': 'Hard', 'Name': 'Lantanio'},
-    'Nd': {'Z': 60, 'Electronegativity': 1.14, 'Radius_pm': 182, 'Group': 3, 'Period': 6, 'MW': 144.24, 'HSAB': 'Hard', 'Name': 'Neodimio'},
-    'Eu': {'Z': 63, 'Electronegativity': 1.20, 'Radius_pm': 180, 'Group': 3, 'Period': 6, 'MW': 151.96, 'HSAB': 'Hard', 'Name': 'Europio'},
-    'Gd': {'Z': 64, 'Electronegativity': 1.20, 'Radius_pm': 180, 'Group': 3, 'Period': 6, 'MW': 157.25, 'HSAB': 'Hard', 'Name': 'Gadolinio'},
-    'Tb': {'Z': 65, 'Electronegativity': 1.20, 'Radius_pm': 177, 'Group': 3, 'Period': 6, 'MW': 158.93, 'HSAB': 'Hard', 'Name': 'Terbio'},
-    'Y':  {'Z': 39, 'Electronegativity': 1.22, 'Radius_pm': 180, 'Group': 3, 'Period': 5, 'MW': 88.91,  'HSAB': 'Hard', 'Name': 'Ittrio'},
-    'Cd': {'Z': 48, 'Electronegativity': 1.69, 'Radius_pm': 151, 'Group': 12, 'Period': 5, 'MW': 112.41, 'HSAB': 'Soft', 'Name': 'Cadmio'},
-    'Bi': {'Z': 83, 'Electronegativity': 2.02, 'Radius_pm': 156, 'Group': 15, 'Period': 6, 'MW': 208.98, 'HSAB': 'Intermediate', 'Name': 'Bismuto'},
-    'Sn': {'Z': 50, 'Electronegativity': 1.96, 'Radius_pm': 140, 'Group': 14, 'Period': 5, 'MW': 118.71, 'HSAB': 'Hard', 'Name': 'Stagno'},
-    'Pd': {'Z': 46, 'Electronegativity': 2.20, 'Radius_pm': 137, 'Group': 10, 'Period': 5, 'MW': 106.42, 'HSAB': 'Soft', 'Name': 'Palladio'},
-    'Ag': {'Z': 47, 'Electronegativity': 1.93, 'Radius_pm': 144, 'Group': 11, 'Period': 5, 'MW': 107.87, 'HSAB': 'Soft', 'Name': 'Argento'},
-    'Ru': {'Z': 44, 'Electronegativity': 2.20, 'Radius_pm': 134, 'Group': 8, 'Period': 5, 'MW': 101.07, 'HSAB': 'Intermediate', 'Name': 'Rutenio'},
-    'Au': {'Z': 79, 'Electronegativity': 2.54, 'Radius_pm': 144, 'Group': 11, 'Period': 6, 'MW': 196.97, 'HSAB': 'Soft', 'Name': 'Oro'}
+    'Zr': {'Z': 40, 'Electronegativity': 1.33, 'Radius_pm': 160, 'Group': 4, 'Period': 5, 'MW': 91.22, 'HSAB': 'Hard', 'Name': 'Zirconio', 'Valence': 4},
+    'Hf': {'Z': 72, 'Electronegativity': 1.30, 'Radius_pm': 159, 'Group': 4, 'Period': 6, 'MW': 178.49, 'HSAB': 'Hard', 'Name': 'Afnio', 'Valence': 4},
+    'Ti': {'Z': 22, 'Electronegativity': 1.54, 'Radius_pm': 147, 'Group': 4, 'Period': 4, 'MW': 47.87, 'HSAB': 'Hard', 'Name': 'Titanio', 'Valence': 4},
+    'Cu': {'Z': 29, 'Electronegativity': 1.90, 'Radius_pm': 132, 'Group': 11, 'Period': 4, 'MW': 63.55, 'HSAB': 'Intermediate', 'Name': 'Rame', 'Valence': 2},
+    'Zn': {'Z': 30, 'Electronegativity': 1.65, 'Radius_pm': 122, 'Group': 12, 'Period': 4, 'MW': 65.38, 'HSAB': 'Intermediate', 'Name': 'Zinco', 'Valence': 2},
+    'Fe': {'Z': 26, 'Electronegativity': 1.83, 'Radius_pm': 126, 'Group': 8, 'Period': 4, 'MW': 55.85, 'HSAB': 'Hard', 'Name': 'Ferro', 'Valence': 3},
+    'Co': {'Z': 27, 'Electronegativity': 1.88, 'Radius_pm': 126, 'Group': 9, 'Period': 4, 'MW': 58.93, 'HSAB': 'Intermediate', 'Name': 'Cobalto', 'Valence': 2},
+    'Ni': {'Z': 28, 'Electronegativity': 1.91, 'Radius_pm': 124, 'Group': 10, 'Period': 4, 'MW': 58.69, 'HSAB': 'Intermediate', 'Name': 'Nichel', 'Valence': 2},
+    'Mn': {'Z': 25, 'Electronegativity': 1.55, 'Radius_pm': 139, 'Group': 7, 'Period': 4, 'MW': 54.94, 'HSAB': 'Intermediate', 'Name': 'Manganese', 'Valence': 2},
+    'Cr': {'Z': 24, 'Electronegativity': 1.66, 'Radius_pm': 128, 'Group': 6, 'Period': 4, 'MW': 51.99, 'HSAB': 'Hard', 'Name': 'Cromo', 'Valence': 3},
+    'V':  {'Z': 23, 'Electronegativity': 1.63, 'Radius_pm': 134, 'Group': 5, 'Period': 4, 'MW': 50.94, 'HSAB': 'Hard', 'Name': 'Vanadio', 'Valence': 3},
+    'Al': {'Z': 13, 'Electronegativity': 1.61, 'Radius_pm': 121, 'Group': 13, 'Period': 3, 'MW': 26.98, 'HSAB': 'Hard', 'Name': 'Alluminio', 'Valence': 3},
+    'Ga': {'Z': 31, 'Electronegativity': 1.81, 'Radius_pm': 122, 'Group': 13, 'Period': 4, 'MW': 69.72, 'HSAB': 'Hard', 'Name': 'Gallio', 'Valence': 3},
+    'In': {'Z': 49, 'Electronegativity': 1.78, 'Radius_pm': 142, 'Group': 13, 'Period': 5, 'MW': 114.82, 'HSAB': 'Hard', 'Name': 'Indio', 'Valence': 3},
+    'Mg': {'Z': 12, 'Electronegativity': 1.31, 'Radius_pm': 141, 'Group': 2, 'Period': 3, 'MW': 24.31, 'HSAB': 'Hard', 'Name': 'Magnesio', 'Valence': 2},
+    'Ca': {'Z': 20, 'Electronegativity': 1.00, 'Radius_pm': 174, 'Group': 2, 'Period': 4, 'MW': 40.08, 'HSAB': 'Hard', 'Name': 'Calcio', 'Valence': 2},
+    'Sr': {'Z': 38, 'Electronegativity': 0.95, 'Radius_pm': 192, 'Group': 2, 'Period': 5, 'MW': 87.62, 'HSAB': 'Hard', 'Name': 'Stronzio', 'Valence': 2},
+    'Ba': {'Z': 56, 'Electronegativity': 0.89, 'Radius_pm': 198, 'Group': 2, 'Period': 6, 'MW': 137.33, 'HSAB': 'Hard', 'Name': 'Bario', 'Valence': 2},
+    'Ce': {'Z': 58, 'Electronegativity': 1.12, 'Radius_pm': 181, 'Group': 3, 'Period': 6, 'MW': 140.12, 'HSAB': 'Hard', 'Name': 'Cerio', 'Valence': 3},
+    'La': {'Z': 57, 'Electronegativity': 1.10, 'Radius_pm': 187, 'Group': 3, 'Period': 6, 'MW': 138.91, 'HSAB': 'Hard', 'Name': 'Lantanio', 'Valence': 3},
+    'Nd': {'Z': 60, 'Electronegativity': 1.14, 'Radius_pm': 182, 'Group': 3, 'Period': 6, 'MW': 144.24, 'HSAB': 'Hard', 'Name': 'Neodimio', 'Valence': 3},
+    'Eu': {'Z': 63, 'Electronegativity': 1.20, 'Radius_pm': 180, 'Group': 3, 'Period': 6, 'MW': 151.96, 'HSAB': 'Hard', 'Name': 'Europio', 'Valence': 3},
+    'Gd': {'Z': 64, 'Electronegativity': 1.20, 'Radius_pm': 180, 'Group': 3, 'Period': 6, 'MW': 157.25, 'HSAB': 'Hard', 'Name': 'Gadolinio', 'Valence': 3},
+    'Tb': {'Z': 65, 'Electronegativity': 1.20, 'Radius_pm': 177, 'Group': 3, 'Period': 6, 'MW': 158.93, 'HSAB': 'Hard', 'Name': 'Terbio', 'Valence': 3},
+    'Y':  {'Z': 39, 'Electronegativity': 1.22, 'Radius_pm': 180, 'Group': 3, 'Period': 5, 'MW': 88.91,  'HSAB': 'Hard', 'Name': 'Ittrio', 'Valence': 3},
+    'Cd': {'Z': 48, 'Electronegativity': 1.69, 'Radius_pm': 151, 'Group': 12, 'Period': 5, 'MW': 112.41, 'HSAB': 'Soft', 'Name': 'Cadmio', 'Valence': 2},
+    'Bi': {'Z': 83, 'Electronegativity': 2.02, 'Radius_pm': 156, 'Group': 15, 'Period': 6, 'MW': 208.98, 'HSAB': 'Intermediate', 'Name': 'Bismuto', 'Valence': 3},
+    'Sn': {'Z': 50, 'Electronegativity': 1.96, 'Radius_pm': 140, 'Group': 14, 'Period': 5, 'MW': 118.71, 'HSAB': 'Hard', 'Name': 'Stagno', 'Valence': 2},
+    'Pd': {'Z': 46, 'Electronegativity': 2.20, 'Radius_pm': 137, 'Group': 10, 'Period': 5, 'MW': 106.42, 'HSAB': 'Soft', 'Name': 'Palladio', 'Valence': 2},
+    'Ag': {'Z': 47, 'Electronegativity': 1.93, 'Radius_pm': 144, 'Group': 11, 'Period': 5, 'MW': 107.87, 'HSAB': 'Soft', 'Name': 'Argento', 'Valence': 1},
+    'Ru': {'Z': 44, 'Electronegativity': 2.20, 'Radius_pm': 134, 'Group': 8, 'Period': 5, 'MW': 101.07, 'HSAB': 'Intermediate', 'Name': 'Rutenio', 'Valence': 3},
+    'Au': {'Z': 79, 'Electronegativity': 2.54, 'Radius_pm': 144, 'Group': 11, 'Period': 6, 'MW': 196.97, 'HSAB': 'Soft', 'Name': 'Oro', 'Valence': 3}
 }
 
+# Pesi molecolari del SINGOLO anione monovalente (NO3-, CH3COO-, Cl-).
+# Il numero di anioni necessari a bilanciare la carica viene calcolato
+# moltiplicando per la valenza del metallo (metal_props[...]['Valence']),
+# non più fissato a 2 per tutti i metalli (errore precedente: sbagliava
+# per metalli tri/tetravalenti come Zr4+, Al3+, Fe3+, lantanidi, ecc.)
 anion_mw = {
-    'Nitrato': 62.00 * 2,
-    'Acetato': 59.04 * 2,
-    'Cloruro': 35.45 * 2,
+    'Nitrato': 62.00,
+    'Acetato': 59.04,
+    'Cloruro': 35.45,
     'Altro': 60.00
 }
 
@@ -442,7 +469,11 @@ def calculate_hsab_match(metal_hsab, n_cooh, n_aro_n):
     else:
         return 0.5
 
+@st.cache_data(ttl=3600, show_spinner=False)
 def resolve_molecule_to_smiles(query, allow_web_search=True):
+    # NOTA: la cache è basata sugli argomenti (query, allow_web_search) e non
+    # sulla TAVILY_API_KEY corrente. Se cambi la chiave Tavily a metà sessione,
+    # un risultato "None" già in cache non verrà ritentato fino a scadenza (1h).
     clean_query = str(query).strip().lower()
     if not clean_query or clean_query == 'nan':
         return None
@@ -710,6 +741,8 @@ def load_or_train_model():
     n_unique_groups = len(np.unique(groups))
     unique_classes = y.nunique()
     
+    used_cv = None
+    used_groups_for_cv = None
     try:
         if n_unique_groups >= 3 and unique_classes > 1:
             cv_splits = min(3, n_unique_groups)
@@ -719,6 +752,7 @@ def load_or_train_model():
                 cv=sgkf_calib
             )
             final_model.fit(X, y, groups=groups)
+            used_cv, used_groups_for_cv = sgkf_calib, groups
         else:
             skf = StratifiedKFold(n_splits=3)
             final_model = CalibratedClassifierCV(
@@ -726,6 +760,7 @@ def load_or_train_model():
                 cv=skf
             )
             final_model.fit(X, y)
+            used_cv, used_groups_for_cv = skf, None
     except Exception:
         base_ensemble.fit(X, y)
         final_model = base_ensemble
@@ -739,8 +774,28 @@ def load_or_train_model():
     except Exception:
         importances = np.zeros(len(feature_names))
 
+    # ACCURATEZZA: calcolata out-of-fold (ogni predizione viene da un modello
+    # che NON ha visto quel campione in training), non sui dati di training.
+    # accuracy_score(y, final_model.predict(X)) darebbe una stima ottimisticamente
+    # distorta perché quasi tutti i campioni sono stati visti in training da
+    # almeno una parte dell'ensemble calibrato.
+    try:
+        if used_cv is not None:
+            oof_preds = cross_val_predict(
+                create_stacking_ensemble(), X, y,
+                cv=used_cv, groups=used_groups_for_cv, method='predict', n_jobs=None
+            )
+            cv_accuracy = accuracy_score(y, oof_preds)
+        else:
+            cv_accuracy = accuracy_score(y, final_model.predict(X))
+    except Exception:
+        # Fallback: se la CV out-of-fold fallisce (es. dataset troppo piccolo),
+        # usa la train accuracy ma non spacciarla per accuratezza "vera".
+        cv_accuracy = accuracy_score(y, final_model.predict(X))
+
     metrics = {
-        'train_accuracy': accuracy_score(y, final_model.predict(X)),
+        'train_accuracy': cv_accuracy,  # nome mantenuto per compatibilità con .pkl esistenti; ora è CV accuracy
+        'is_cv_accuracy': used_cv is not None,
         'n_samples': len(X),
         'n_features': len(feature_names)
     }
@@ -791,6 +846,8 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("📊 Stato & Performance Modello")
 
 acc_val = metrics.get('train_accuracy', 0.85) * 100
+is_cv_acc = metrics.get('is_cv_accuracy', False)
+acc_label = "Accuratezza (CV)" if is_cv_acc else "Accuratezza (train)"
 sintesi_count = metrics.get('n_samples', 1000)
 num_features = metrics.get('n_features', len(feature_names))
 
@@ -799,12 +856,14 @@ with col_sb1:
     st.markdown(
         f"""
         <div style="background-color: rgba(255, 255, 255, 0.05); padding: 8px 4px; border-radius: 8px; text-align: center;">
-            <span style="font-size: 0.8rem; color: #888;">Accuratezza</span><br>
+            <span style="font-size: 0.8rem; color: #888;">{acc_label}</span><br>
             <strong style="font-size: 1.15rem;">{acc_val:.1f}%</strong>
         </div>
         """,
         unsafe_allow_html=True
     )
+if not is_cv_acc:
+    st.sidebar.caption("⚠️ Valore calcolato su dati di training (modello .pkl precedente alla correzione): cancella il file .pkl per ricalcolare in cross-validation.")
 with col_sb2:
     st.markdown(
         f"""
@@ -1016,10 +1075,16 @@ with tab1:
         )
         
         n_h2o = int(idratazione.split('(')[1].split(' ')[0])
-        base_salt_mw = metal_props[metallo_sel]['MW'] + anion_mw.get(anione_sel, 60.0)
+        metal_valence = metal_props[metallo_sel].get('Valence', 2)
+        n_anioni = metal_valence if anione_sel != 'Altro' else 1
+        base_salt_mw = metal_props[metallo_sel]['MW'] + n_anioni * anion_mw.get(anione_sel, 60.0)
         total_salt_mw = base_salt_mw + (n_h2o * 18.015)
         
-        st.caption(f"🧪 **Massa Molare Sale Idrato:** `{total_salt_mw:.2f} g/mol`")
+        st.caption(
+            f"🧪 **Massa Molare Sale Idrato:** `{total_salt_mw:.2f} g/mol` "
+            f"(formula assunta: M{'³⁺' if metal_valence==3 else ('⁴⁺' if metal_valence==4 else ('²⁺' if metal_valence==2 else '⁺'))} "
+            f"+ {n_anioni}× {anione_sel if anione_sel != 'Altro' else 'controione'}, {n_h2o} H₂O — verifica sempre la formula del tuo reagente commerciale)"
+        )
 
         input_mode_sale = st.radio("Inserisci Sale come:", ["MilliMoli (mmol)", "Massa (mg)"], key="rad_sale", horizontal=True)
         if input_mode_sale == "MilliMoli (mmol)":
@@ -1332,7 +1397,9 @@ with tab3:
                     metal_m = metal_props[cur_metal]
                     hsab_match = float(calculate_hsab_match(metal_m['HSAB'], smarts_f['n_COOH'], smarts_f['n_Aromatic_N']))
                     
-                    opt_base_salt_mw = metal_m['MW'] + anion_mw.get(opt_anione, 60.0)
+                    opt_metal_valence = metal_m.get('Valence', 2)
+                    opt_n_anioni = opt_metal_valence if opt_anione != 'Altro' else 1
+                    opt_base_salt_mw = metal_m['MW'] + opt_n_anioni * anion_mw.get(opt_anione, 60.0)
                     opt_total_salt_mw = opt_base_salt_mw + (opt_n_h2o * 18.015)
                     opt_mg_sale_calc = opt_mmol_sale * opt_total_salt_mw
 
