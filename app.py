@@ -1894,11 +1894,23 @@ with tab4:
                     # array 2D invece di un vettore 1D).
                     expected_value = explainer.expected_value
 
+                    # Etichette leggibili per l'utente finale, al posto di
+                    # "Classe 0/1/2" che non comunica il significato chimico.
+                    # Fallback su "Classe X" per eventuali valori imprevisti
+                    # (dataset con codifica delle classi diversa da 0/1/2).
+                    CLASS_LABELS = {
+                        0: "❌ Nessun Prodotto",
+                        1: "🌫️ Prodotto Amorfo/Miscela",
+                        2: "💎 Prodotto Cristallino"
+                    }
+                    def _class_label(c):
+                        return CLASS_LABELS.get(c, f"Classe {c}")
+
                     if isinstance(shap_values, list):
                         # Formato "lista di array" (versioni SHAP più datate)
-                        class_names = [f"Classe {c}" for c in model.classes_]
+                        class_names = [_class_label(c) for c in model.classes_]
                         selected_class_idx = st.selectbox(
-                            "Seleziona Classe per l'analisi SHAP:",
+                            "Seleziona Esito per l'analisi SHAP:",
                             range(len(shap_values)), format_func=lambda x: class_names[x]
                         )
                         sv_to_plot = shap_values[selected_class_idx][0]
@@ -1911,9 +1923,9 @@ with tab4:
                         # (n_samples, n_features, n_classi)
                         n_classes_shap = shap_values.shape[-1]
                         available_classes = list(model.classes_)[:n_classes_shap]
-                        class_names = [f"Classe {c}" for c in available_classes]
+                        class_names = [_class_label(c) for c in available_classes]
                         selected_class_idx = st.selectbox(
-                            "Seleziona Classe per l'analisi SHAP:",
+                            "Seleziona Esito per l'analisi SHAP:",
                             range(n_classes_shap), format_func=lambda x: class_names[x]
                         )
                         sv_to_plot = shap_values[0, :, selected_class_idx]
