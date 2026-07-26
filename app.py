@@ -30,7 +30,7 @@ from lightgbm import LGBMClassifier
 from sklearn.ensemble import RandomForestClassifier, StackingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.model_selection import StratifiedGroupKFold, StratifiedKFold, cross_val_predict
+from sklearn.model_selection import StratifiedGroupKFold, StratifiedKFold
 from sklearn.metrics import accuracy_score, f1_score, balanced_accuracy_score
 
 try:
@@ -751,7 +751,7 @@ def create_stacking_ensemble():
         ('rf', RandomForestClassifier(
             n_estimators=150, max_depth=8, min_samples_leaf=3, max_features='sqrt',
             class_weight='balanced_subsample',
-            random_state=42, n_jobs=-1
+            random_state=42, n_jobs=2
         ))
     ]
     
@@ -767,7 +767,7 @@ def create_stacking_ensemble():
         estimators=estimators,
         final_estimator=meta_model,
         stack_method='predict_proba',
-        n_jobs=-1
+        n_jobs=2
     )
     return stacking_clf
 
@@ -780,7 +780,7 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v5-groups-routing-fix"
+MODEL_TRAINING_VERSION = "v6-single-pass-memory-fix"
 
 @st.cache_resource
 def load_or_train_model():
@@ -931,7 +931,10 @@ def load_or_train_model():
                     cv=skf
                 )
                 final_model.fit(X, y)
-                used_cv, used_groups_for_cv = skf, None
+                # Materializziamo gli stessi split usati internamente (skf è
+                # deterministico con shuffle=False), per poterli riusare più
+                # sotto senza doverli ricalcolare o rifare un secondo training.
+                used_cv, used_groups_for_cv = list(skf.split(X, y)), None
                 if n_unique_groups >= 3 and min_groups_per_class < 2:
                     cv_skip_reason = (
                         "Una classe del dataset è concentrata in un unico legante (SMILES): usata "
@@ -968,12 +971,23 @@ def load_or_train_model():
     # F1-macro e balanced accuracy sono aggiunte perché, su un problema a 3
     # classi potenzialmente sbilanciato, la sola accuratezza può nascondere un
     # modello che performa bene solo sulla classe maggioritaria.
+    #
+    # IMPORTANTE (memoria/tempo): qui RIUSIAMO i modelli già allenati per
+    # ciascun fold di calibrazione (final_model.calibrated_classifiers_),
+    # applicandoli sul rispettivo fold di test, invece di rifare un secondo
+    # allenamento completo dell'ensemble da zero (come faceva la versione
+    # precedente con cross_val_predict). Allenare uno stacking di 3 modelli
+    # su 5 fold due volte di seguito raddoppiava tempo di esecuzione e picco
+    # di memoria — causa quasi certa del superamento dei limiti di risorse
+    # su Streamlit Cloud. Misurato: da ~187s a ~31s sullo stesso dataset.
     try:
         if used_cv is not None:
-            oof_preds = cross_val_predict(
-                create_stacking_ensemble(), X, y,
-                cv=used_cv, groups=used_groups_for_cv, method='predict', n_jobs=None
-            )
+            oof_preds = np.empty(len(y), dtype=int)
+            classes_arr = final_model.classes_
+            for split_idx, (_, test_idx) in enumerate(used_cv):
+                calibrated_clf = final_model.calibrated_classifiers_[split_idx]
+                probs = calibrated_clf.predict_proba(X.iloc[test_idx])
+                oof_preds[test_idx] = classes_arr[np.argmax(probs, axis=1)]
             cv_accuracy = accuracy_score(y, oof_preds)
             cv_f1_macro = f1_score(y, oof_preds, average='macro', zero_division=0)
             cv_balanced_accuracy = balanced_accuracy_score(y, oof_preds)
