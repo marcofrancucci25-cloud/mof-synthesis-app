@@ -1821,16 +1821,54 @@ with tab4:
                     shap_values = explainer.shap_values(df_single)
 
                     st.markdown("#### Waterfall / Bar Plot SHAP")
-                    
-                    # SHAP per multiclasse restituisce una lista di array (uno per classe)
+
+                    # La libreria SHAP ha cambiato formato di ritorno tra le versioni:
+                    # - versioni più vecchie: lista di array, uno per classe, ciascuno
+                    #   di shape (n_samples, n_features)
+                    # - versioni più recenti: un unico array 3D di shape
+                    #   (n_samples, n_features, n_classi)
+                    # Gestiamo esplicitamente entrambi i casi, invece di assumere solo
+                    # il formato a lista (causa dell'errore precedente: con l'array 3D
+                    # si finiva nel ramo sbagliato e si passava a shap.bar_plot un
+                    # array 2D invece di un vettore 1D).
+                    expected_value = explainer.expected_value
+
                     if isinstance(shap_values, list):
+                        # Formato "lista di array" (versioni SHAP più datate)
                         class_names = [f"Classe {c}" for c in model.classes_]
-                        selected_class_idx = st.selectbox("Seleziona Classe per l'analisi SHAP:", range(len(shap_values)), format_func=lambda x: class_names[x])
+                        selected_class_idx = st.selectbox(
+                            "Seleziona Classe per l'analisi SHAP:",
+                            range(len(shap_values)), format_func=lambda x: class_names[x]
+                        )
                         sv_to_plot = shap_values[selected_class_idx][0]
-                        base_val = explainer.expected_value[selected_class_idx]
+                        base_val = (
+                            expected_value[selected_class_idx]
+                            if hasattr(expected_value, '__len__') else expected_value
+                        )
+                    elif isinstance(shap_values, np.ndarray) and shap_values.ndim == 3:
+                        # Formato "array 3D unico" (versioni SHAP più recenti):
+                        # (n_samples, n_features, n_classi)
+                        n_classes_shap = shap_values.shape[-1]
+                        available_classes = list(model.classes_)[:n_classes_shap]
+                        class_names = [f"Classe {c}" for c in available_classes]
+                        selected_class_idx = st.selectbox(
+                            "Seleziona Classe per l'analisi SHAP:",
+                            range(n_classes_shap), format_func=lambda x: class_names[x]
+                        )
+                        sv_to_plot = shap_values[0, :, selected_class_idx]
+                        base_val = (
+                            expected_value[selected_class_idx]
+                            if hasattr(expected_value, '__len__') and len(expected_value) > selected_class_idx
+                            else expected_value
+                        )
                     else:
-                        sv_to_plot = shap_values[0]
-                        base_val = explainer.expected_value
+                        # Output singolo/binario: array 2D (n_samples, n_features)
+                        sv_to_plot = np.asarray(shap_values)[0]
+                        base_val = (
+                            expected_value[0]
+                            if hasattr(expected_value, '__len__') and len(expected_value) > 0
+                            else expected_value
+                        )
 
                     fig, ax = plt.subplots(figsize=(10, 6))
                     shap.bar_plot(sv_to_plot, feature_names=df_single.columns, max_display=10, show=False)
