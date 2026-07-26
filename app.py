@@ -1306,7 +1306,7 @@ with st.sidebar.expander("🧪 Teoria HSAB di Pearson", expanded=False):
     """)
 
 # --- TAB INTERFACCIA MAIN ---
-tab1, tab2, tab3, tab4 = st.tabs(["🔮 Predizione Singola", "⚡ Ottimizzatore Automatico", "🌐 Ricerca Web (Tavily AI)", "📊 Explainability (SHAP & Feature Importance)"])
+tab1, tab2, tab3 = st.tabs(["🔮 Predizione Singola", "⚡ Ottimizzatore Automatico", "🌐 Ricerca Web (Tavily AI)"])
 
 def build_feature_row(mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_p, ml_solv_p, cosolvente, ml_cosolv, additivo_sel, add_eq):
     add_info = ADDITIVES_DATABASE.get(additivo_sel, ADDITIVES_DATABASE['Nessuno'])
@@ -1372,9 +1372,73 @@ def build_feature_row(mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmo
             
     return df_f[feature_names]
 
-def render_shap_explanation(df_single, key_prefix="shap"):
+def render_feature_importance(key_prefix="fi"):
+    """Mostra il grafico dell'importanza globale delle feature (in media su
+    tutte le sintesi usate per allenare il modello). Estratta in una funzione
+    a sé perché richiamata dentro un expander in Tab1, sotto il grafico SHAP
+    della singola predizione."""
+    if not (len(importances) > 0 and len(importances) == len(feature_names)):
+        st.info("I dati sull'importanza delle feature non sono disponibili per questo modello.")
+        return
+
+    fi_df = pd.DataFrame({
+        'Feature': feature_names,
+        'Importance': importances
+    }).sort_values(by='Importance', ascending=False)
+
+    top_n = st.slider(
+        "Numero di feature da mostrare:", min_value=5, max_value=min(30, len(feature_names)),
+        value=15, key=f"{key_prefix}_slider"
+    )
+    top_fi = fi_df.head(top_n).iloc[::-1]  # ordine crescente per barre orizzontali (la più importante in alto)
+
+    st.markdown(
+        "Questo grafico mostra, **in media su tutte le sintesi usate per allenare il modello**, "
+        "quali parametri della reazione pesano di più sulle sue decisioni (a differenza del grafico "
+        "sopra, che riguarda solo la sintesi che hai appena calcolato). "
+        "**Più lunga è la barra, più quel parametro influenza la previsione** — non indica se un "
+        "valore alto o basso di quel parametro sia positivo o negativo, solo *quanto* conta."
+    )
+
+    if HAS_PLOTLY:
+        fig_fi = go.Figure(go.Bar(
+            x=top_fi['Importance'],
+            y=top_fi['Feature'],
+            orientation='h',
+            marker=dict(
+                color=top_fi['Importance'],
+                colorscale=[[0, '#AED6F1'], [1, '#1B4F72']],
+                line=dict(width=0)
+            ),
+            text=top_fi['Importance'].round(1),
+            textposition='outside',
+            hovertemplate='<b>%{y}</b><br>Importanza: %{x:.1f}<extra></extra>'
+        ))
+        fig_fi.update_layout(
+            title="Top Feature del Modello (LightGBM Estimator)",
+            xaxis_title="Importanza Relativa",
+            yaxis_title=None,
+            height=max(350, 28 * len(top_fi)),
+            margin=dict(l=10, r=40, t=50, b=40),
+            plot_bgcolor='rgba(0,0,0,0)',
+            xaxis=dict(showgrid=True, gridcolor='rgba(128,128,128,0.15)'),
+            font=dict(size=13)
+        )
+        st.plotly_chart(fig_fi, use_container_width=True)
+    else:
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.barh(top_fi['Feature'], top_fi['Importance'], color='skyblue')
+        ax.set_xlabel("Importanza Relativa")
+        ax.set_title("Top Feature del Modello (LightGBM Estimator)")
+        plt.tight_layout()
+        st.pyplot(fig)
+
+def render_shap_explanation(df_single, key_prefix="shap", default_class=None):
     """Mostra il grafico dei contributi SHAP per una singola predizione
     (df_single = una riga di feature già pronta per il modello).
+    default_class: se fornito, il menu a tendina parte già posizionato su
+    quell'esito (tipicamente l'esito effettivamente predetto) invece che
+    sempre sulla prima opzione della lista.
     Estratta in una funzione a sé perché richiamata sia in Tab1 (subito dopo
     il risultato della predizione) sia potenzialmente altrove in futuro."""
     if not HAS_SHAP:
@@ -1409,12 +1473,19 @@ def render_shap_explanation(df_single, key_prefix="shap"):
         # array 2D invece di un vettore 1D).
         expected_value = explainer.expected_value
 
+        def _default_index(available_classes_list):
+            if default_class is not None and default_class in available_classes_list:
+                return available_classes_list.index(default_class)
+            return 0
+
         if isinstance(shap_values, list):
             # Formato "lista di array" (versioni SHAP più datate)
-            class_names = [get_class_label(c) for c in model.classes_]
+            classes_list = list(model.classes_)
+            class_names = [get_class_label(c) for c in classes_list]
             selected_class_idx = st.selectbox(
                 "Seleziona Esito per l'analisi SHAP:",
                 range(len(shap_values)), format_func=lambda x: class_names[x],
+                index=_default_index(classes_list),
                 key=f"{key_prefix}_class_sel"
             )
             selected_class_value = model.classes_[selected_class_idx]
@@ -1428,6 +1499,7 @@ def render_shap_explanation(df_single, key_prefix="shap"):
             selected_class_idx = st.selectbox(
                 "Seleziona Esito per l'analisi SHAP:",
                 range(n_classes_shap), format_func=lambda x: class_names[x],
+                index=_default_index(available_classes),
                 key=f"{key_prefix}_class_sel"
             )
             selected_class_value = available_classes[selected_class_idx]
@@ -1660,23 +1732,6 @@ with tab1:
                 mol_obj=mol, 
                 ligand_query=query_input if mode_legante == "Nome / Formula / CAS" else ""
             )
-            
-            st.markdown("---")
-            if known_matches:
-                for mof in known_matches:
-                    oa_tag = "📖 **[OPEN ACCESS]**" if mof.get('is_oa', False) else "📄 [LETTERATURA SPERIMENTALE]"
-                    clean_doi = mof['doi'].replace("https://doi.org/", "")
-
-                    st.info(
-                        f"🟢 **Combinazione nota e verificata per la coppia specificata ({metallo_sel} + Legante)!**\n\n"
-                        f"* **MOF/Sintesi:** `{mof['name']}`\n"
-                        f"* **Fonte / Articolo:** {mof['ref']}\n"
-                        f"* **Accettazione:** {oa_tag}\n"
-                        f"* **Link Diretto:** [📂 Apri Articolo Scientifico ({clean_doi})]({mof['url']})"
-                    )
-            else:
-                st.success(f"✨ **Combinazione Inedita / Non presente a DB:** Nessun articolo scientifico rilevato specificamente per la coppia **{metallo_sel} + Legante**.")
-
             df_features = build_feature_row(
                 mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, 
                 mmol_legante, mmol_sale, metallo_sel, anione_sel, 
@@ -1685,29 +1740,79 @@ with tab1:
             probs = model.predict_proba(df_features)[0]
             pred_class = model.predict(df_features)[0]
 
-            st.markdown("---")
-            st.subheader("📊 Risultato della Predizione (Ensemble Multi-Algoritmo)")
-            res_col1, res_col2, res_col3 = st.columns(3)
-            
-            classes_map = {cls: idx for idx, cls in enumerate(model.classes_)}
-            p0 = probs[classes_map[0]] * 100 if 0 in classes_map else 0.0
-            p1 = probs[classes_map[1]] * 100 if 1 in classes_map else 0.0
-            p2 = probs[classes_map[2]] * 100 if 2 in classes_map else 0.0
+            # Salviamo tutto in session_state (invece di mostrarlo qui e basta):
+            # senza questo, qualunque interazione successiva con un widget più
+            # sotto (es. il menu a tendina del grafico SHAP) fa tornare
+            # st.button() a False al rerun successivo, e l'intero blocco dei
+            # risultati sparirebbe, costringendo a rifare la ricerca da capo.
+            # Il contatore identifica ogni nuova predizione: serve a dare al
+            # menu SHAP una chiave "fresca" ad ogni nuovo calcolo, così il
+            # menu riparte dall'esito corretto invece di restare bloccato
+            # sulla scelta di una predizione precedente.
+            st.session_state['tab1_pred_counter'] = st.session_state.get('tab1_pred_counter', 0) + 1
+            st.session_state['tab1_result'] = {
+                'known_matches': known_matches,
+                'metallo_sel': metallo_sel,
+                'df_features': df_features,
+                'probs': probs,
+                'pred_class': pred_class,
+                'counter': st.session_state['tab1_pred_counter']
+            }
 
-            res_col1.metric("🔴 Insuccesso (0)", f"{p0:.1f}%")
-            res_col2.metric("🟡 Parziale (1)", f"{p1:.1f}%")
-            res_col3.metric("🟢 Cristalli / Successo (2)", f"{p2:.1f}%")
+    if 'tab1_result' in st.session_state:
+        res = st.session_state['tab1_result']
+        known_matches = res['known_matches']
+        metallo_sel_result = res['metallo_sel']
+        df_features = res['df_features']
+        probs = res['probs']
+        pred_class = res['pred_class']
 
-            if pred_class == 2:
-                st.balloons()
-                st.success("✨ **Sintesi Promettente!** Alta probabilità di formazione di monocristalli o fase pulita.")
-            elif pred_class == 1:
-                st.warning("⚠️ **Risultato Parziale Atteso.** Possibile prodotto amorfo o miscela.")
-            else:
-                st.error("❌ **Insuccesso Probabile.** Si consiglia di rivedere le condizioni di reazione.")
+        st.markdown("---")
+        if known_matches:
+            for mof in known_matches:
+                oa_tag = "📖 **[OPEN ACCESS]**" if mof.get('is_oa', False) else "📄 [LETTERATURA SPERIMENTALE]"
+                clean_doi = mof['doi'].replace("https://doi.org/", "")
 
-            st.markdown("---")
-            render_shap_explanation(df_features, key_prefix="tab1_pred")
+                st.info(
+                    f"🟢 **Combinazione nota e verificata per la coppia specificata ({metallo_sel_result} + Legante)!**\n\n"
+                    f"* **MOF/Sintesi:** `{mof['name']}`\n"
+                    f"* **Fonte / Articolo:** {mof['ref']}\n"
+                    f"* **Accettazione:** {oa_tag}\n"
+                    f"* **Link Diretto:** [📂 Apri Articolo Scientifico ({clean_doi})]({mof['url']})"
+                )
+        else:
+            st.success(f"✨ **Combinazione Inedita / Non presente a DB:** Nessun articolo scientifico rilevato specificamente per la coppia **{metallo_sel_result} + Legante**.")
+
+        st.markdown("---")
+        st.subheader("📊 Risultato della Predizione (Ensemble Multi-Algoritmo)")
+        res_col1, res_col2, res_col3 = st.columns(3)
+        
+        classes_map = {cls: idx for idx, cls in enumerate(model.classes_)}
+        p0 = probs[classes_map[0]] * 100 if 0 in classes_map else 0.0
+        p1 = probs[classes_map[1]] * 100 if 1 in classes_map else 0.0
+        p2 = probs[classes_map[2]] * 100 if 2 in classes_map else 0.0
+
+        res_col1.metric("🔴 Insuccesso (0)", f"{p0:.1f}%")
+        res_col2.metric("🟡 Parziale (1)", f"{p1:.1f}%")
+        res_col3.metric("🟢 Cristalli / Successo (2)", f"{p2:.1f}%")
+
+        if pred_class == 2:
+            st.balloons()
+            st.success("✨ **Sintesi Promettente!** Alta probabilità di formazione di monocristalli o fase pulita.")
+        elif pred_class == 1:
+            st.warning("⚠️ **Risultato Parziale Atteso.** Possibile prodotto amorfo o miscela.")
+        else:
+            st.error("❌ **Insuccesso Probabile.** Si consiglia di rivedere le condizioni di reazione.")
+
+        st.markdown("---")
+        render_shap_explanation(
+            df_features,
+            key_prefix=f"tab1_pred_{res['counter']}",
+            default_class=pred_class
+        )
+
+        with st.expander("📊 Importanza Globale delle Feature (su tutte le sintesi)", expanded=False):
+            render_feature_importance(key_prefix=f"tab1_fi_{res['counter']}")
 
 # --- TAB 2: OTTIMIZZATORE AUTOMATICO MULTI-METALLO ---
 with tab2:
@@ -1980,73 +2085,3 @@ with tab3:
                         st.markdown("---")
                 else:
                     st.error("Nessun risultato trovato o timeout durante la richiesta.")
-
-# --- TAB 4: EXPLAINABILITY (SHAP & FEATURE IMPORTANCE) ---
-with tab4:
-    st.subheader("📊 Spiegabilità Chimica del Modello ML (Explainability)")
-    st.markdown("""
-    Questa sezione mostra quali parametri fisico-chimici e descrittori molecolari hanno, **in media 
-    su tutte le sintesi**, la maggiore influenza sulle predizioni del modello.
-    """)
-
-    st.markdown("### Importanza Globale delle Feature")
-    if len(importances) > 0 and len(importances) == len(feature_names):
-        fi_df = pd.DataFrame({
-            'Feature': feature_names,
-            'Importance': importances
-        }).sort_values(by='Importance', ascending=False)
-
-        top_n = st.slider("Numero di feature da mostrare:", min_value=5, max_value=min(30, len(feature_names)), value=15)
-        top_fi = fi_df.head(top_n).iloc[::-1]  # ordine crescente per barre orizzontali (la più importante in alto)
-
-        with st.expander("ℹ️ Come si legge questo grafico", expanded=False):
-            st.markdown(
-                "Questo grafico mostra, **in media su tutte le sintesi usate per allenare il modello**, "
-                "quali parametri della reazione pesano di più sulle sue decisioni. "
-                "**Più lunga è la barra, più quel parametro influenza la previsione** — non indica se un "
-                "valore alto o basso di quel parametro sia positivo o negativo, solo *quanto* conta."
-            )
-
-        if HAS_PLOTLY:
-            max_imp = top_fi['Importance'].max() if len(top_fi) else 1.0
-            fig_fi = go.Figure(go.Bar(
-                x=top_fi['Importance'],
-                y=top_fi['Feature'],
-                orientation='h',
-                marker=dict(
-                    color=top_fi['Importance'],
-                    colorscale=[[0, '#AED6F1'], [1, '#1B4F72']],
-                    line=dict(width=0)
-                ),
-                text=top_fi['Importance'].round(1),
-                textposition='outside',
-                hovertemplate='<b>%{y}</b><br>Importanza: %{x:.1f}<extra></extra>'
-            ))
-            fig_fi.update_layout(
-                title="Top Feature del Modello (LightGBM Estimator)",
-                xaxis_title="Importanza Relativa",
-                yaxis_title=None,
-                height=max(350, 28 * len(top_fi)),
-                margin=dict(l=10, r=40, t=50, b=40),
-                plot_bgcolor='rgba(0,0,0,0)',
-                xaxis=dict(showgrid=True, gridcolor='rgba(128,128,128,0.15)'),
-                font=dict(size=13)
-            )
-            st.plotly_chart(fig_fi, use_container_width=True)
-        else:
-            fig, ax = plt.subplots(figsize=(10, 6))
-            ax.barh(top_fi['Feature'], top_fi['Importance'], color='skyblue')
-            ax.set_xlabel("Importanza Relativa")
-            ax.set_title("Top Feature del Modello (LightGBM Estimator)")
-            plt.tight_layout()
-            st.pyplot(fig)
-    else:
-        st.info("I dati sull'importanza delle feature non sono disponibili per questo modello.")
-
-    st.markdown("---")
-    st.info(
-        "💡 **L'analisi dei contributi SHAP per la singola predizione si trova ora direttamente "
-        "nel tab '🔮 Predizione Singola'**, subito sotto il risultato di ciascuna previsione — "
-        "così puoi vedere immediatamente cosa modificare per ottimizzare la sintesi, senza dover "
-        "cambiare scheda."
-    )
