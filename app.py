@@ -834,37 +834,60 @@ def load_or_train_model():
     
     n_unique_groups = len(np.unique(groups))
     unique_classes = y.nunique()
+    min_class_count = int(y.value_counts().min())
     
     used_cv = None
     used_groups_for_cv = None
-    try:
-        if n_unique_groups >= 3 and unique_classes > 1:
-            # Fino a 5 fold quando i dati lo consentono (stime più stabili di
-            # accuratezza CV e calibrazione rispetto ai 3 fold precedenti);
-            # scende automaticamente se ci sono meno gruppi disponibili.
-            cv_splits = max(2, min(5, n_unique_groups))
-            sgkf_calib = StratifiedGroupKFold(n_splits=cv_splits)
-            final_model = CalibratedClassifierCV(
-                estimator=base_ensemble, method='sigmoid',
-                cv=sgkf_calib
-            )
-            final_model.fit(X, y, groups=groups)
-            used_cv, used_groups_for_cv = sgkf_calib, groups
-        else:
-            # n_splits non può superare il numero di campioni della classe
-            # meno numerosa, altrimenti StratifiedKFold solleva un errore.
-            min_class_count = int(y.value_counts().min())
-            skf_splits = max(2, min(5, min_class_count))
-            skf = StratifiedKFold(n_splits=skf_splits)
-            final_model = CalibratedClassifierCV(
-                estimator=base_ensemble, method='sigmoid',
-                cv=skf
-            )
-            final_model.fit(X, y)
-            used_cv, used_groups_for_cv = skf, None
-    except Exception:
+    cv_skip_reason = None
+
+    if min_class_count < 2:
+        # Una classe con un solo campione non può essere "spezzata" in fold:
+        # qualunque valore di n_splits >= 2 farebbe fallire la stratificazione.
+        # Niente CV/calibrazione in questo caso: fit diretto, e lo diciamo
+        # esplicitamente invece di lasciare che un'eccezione generica lo nasconda.
         base_ensemble.fit(X, y)
         final_model = base_ensemble
+        cv_skip_reason = (
+            f"La classe meno numerosa nel dataset ha solo {min_class_count} campione. "
+            "Servono almeno 2 esempi per ciascuna classe per fare cross-validation stratificata: "
+            "il modello è stato allenato senza CV/calibrazione. Aggiungi più righe per la classe minoritaria nel CSV."
+        )
+    else:
+        try:
+            if n_unique_groups >= 3 and unique_classes > 1:
+                # Fino a 5 fold quando i dati lo consentono (stime più stabili di
+                # accuratezza CV e calibrazione rispetto ai 3 fold precedenti);
+                # scende automaticamente se ci sono meno gruppi o meno campioni
+                # nella classe minoritaria disponibili.
+                cv_splits = max(2, min(5, n_unique_groups, min_class_count))
+                sgkf_calib = StratifiedGroupKFold(n_splits=cv_splits)
+                final_model = CalibratedClassifierCV(
+                    estimator=base_ensemble, method='sigmoid',
+                    cv=sgkf_calib
+                )
+                final_model.fit(X, y, groups=groups)
+                used_cv, used_groups_for_cv = sgkf_calib, groups
+            else:
+                # n_splits non può superare il numero di campioni della classe
+                # meno numerosa, altrimenti StratifiedKFold solleva un errore.
+                skf_splits = max(2, min(5, min_class_count))
+                skf = StratifiedKFold(n_splits=skf_splits)
+                final_model = CalibratedClassifierCV(
+                    estimator=base_ensemble, method='sigmoid',
+                    cv=skf
+                )
+                final_model.fit(X, y)
+                used_cv, used_groups_for_cv = skf, None
+        except Exception as e:
+            base_ensemble.fit(X, y)
+            final_model = base_ensemble
+            # Non nascondere l'errore: verrà mostrato in sidebar così l'utente
+            # sa che non è un problema di cache/pkl ma un fallimento reale del
+            # training in cross-validation.
+            cv_skip_reason = f"Training con cross-validation fallito ({type(e).__name__}: {e}). Il modello è stato allenato senza CV/calibrazione come fallback."
+
+    if cv_skip_reason:
+        print(f"[WARNING] {cv_skip_reason}")
 
     try:
         if hasattr(final_model, 'calibrated_classifiers_'):
@@ -910,6 +933,7 @@ def load_or_train_model():
         'cv_f1_macro': cv_f1_macro,
         'cv_balanced_accuracy': cv_balanced_accuracy,
         'is_cv_accuracy': used_cv is not None,
+        'cv_skip_reason': cv_skip_reason,
         'n_samples': len(X),
         'n_features': len(feature_names),
         'n_missing_values_imputed': n_missing_pre_impute
@@ -962,6 +986,7 @@ st.sidebar.subheader("📊 Stato & Performance Modello")
 
 acc_val = metrics.get('train_accuracy', 0.85) * 100
 is_cv_acc = metrics.get('is_cv_accuracy', False)
+cv_skip_reason = metrics.get('cv_skip_reason')
 acc_label = "Accuratezza (CV)" if is_cv_acc else "Accuratezza (train)"
 sintesi_count = metrics.get('n_samples', 1000)
 num_features = metrics.get('n_features', len(feature_names))
@@ -978,7 +1003,10 @@ with col_sb1:
         unsafe_allow_html=True
     )
 if not is_cv_acc:
-    st.sidebar.caption("⚠️ Valore calcolato su dati di training (modello .pkl precedente alla correzione): cancella il file .pkl per ricalcolare in cross-validation.")
+    if cv_skip_reason:
+        st.sidebar.caption(f"⚠️ Cross-validation non eseguita: {cv_skip_reason}")
+    else:
+        st.sidebar.caption("⚠️ Valore calcolato su dati di training (modello .pkl salvato prima di questa correzione, senza il motivo registrato): cancella il file .pkl per ricalcolare in cross-validation.")
 with col_sb2:
     st.markdown(
         f"""
