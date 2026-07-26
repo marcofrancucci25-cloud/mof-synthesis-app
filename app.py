@@ -6,6 +6,7 @@ import os
 import re
 import requests
 import itertools
+import traceback
 import matplotlib.pyplot as plt
 
 # Import opzionale per SHAP (spiegabilità AI)
@@ -779,7 +780,7 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v3-groupcv-fix"
+MODEL_TRAINING_VERSION = "v4-diagnostics"
 
 @st.cache_resource
 def load_or_train_model():
@@ -871,6 +872,13 @@ def load_or_train_model():
     used_cv = None
     used_groups_for_cv = None
     cv_skip_reason = None
+    cv_error_traceback = None
+    cv_diagnostics = {
+        'n_unique_groups': n_unique_groups,
+        'unique_classes': unique_classes,
+        'min_class_count': min_class_count,
+        'min_groups_per_class': min_groups_per_class,
+    }
 
     if min_class_count < 2:
         # Una classe con un solo campione non può essere "spezzata" in fold:
@@ -929,6 +937,7 @@ def load_or_train_model():
             # sa che non è un problema di cache/pkl ma un fallimento reale del
             # training in cross-validation.
             cv_skip_reason = f"Training con cross-validation fallito ({type(e).__name__}: {e}). Il modello è stato allenato senza CV/calibrazione come fallback."
+            cv_error_traceback = traceback.format_exc()
 
     if cv_skip_reason:
         print(f"[WARNING] {cv_skip_reason}")
@@ -978,6 +987,8 @@ def load_or_train_model():
         'cv_balanced_accuracy': cv_balanced_accuracy,
         'is_cv_accuracy': used_cv is not None,
         'cv_skip_reason': cv_skip_reason,
+        'cv_error_traceback': cv_error_traceback,
+        'cv_diagnostics': cv_diagnostics,
         'n_samples': len(X),
         'n_features': len(feature_names),
         'n_missing_values_imputed': n_missing_pre_impute
@@ -1062,6 +1073,19 @@ with col_sb1:
 if not is_cv_acc:
     if cv_skip_reason:
         st.sidebar.caption(f"⚠️ Cross-validation non eseguita: {cv_skip_reason}")
+        cv_diag = metrics.get('cv_diagnostics')
+        cv_tb = metrics.get('cv_error_traceback')
+        if cv_diag or cv_tb:
+            with st.sidebar.expander("🔍 Dettagli tecnici (per il debug)", expanded=False):
+                if cv_diag:
+                    st.markdown(
+                        f"- Gruppi SMILES distinti totali: `{cv_diag.get('n_unique_groups')}`\n"
+                        f"- Classi distinte nel target: `{cv_diag.get('unique_classes')}`\n"
+                        f"- Campioni nella classe meno numerosa: `{cv_diag.get('min_class_count')}`\n"
+                        f"- Gruppi distinti nella classe più \"concentrata\": `{cv_diag.get('min_groups_per_class')}`"
+                    )
+                if cv_tb:
+                    st.code(cv_tb, language="text")
     else:
         st.sidebar.caption("⚠️ Valore calcolato su dati di training (modello .pkl salvato prima di questa correzione, senza il motivo registrato): cancella il file .pkl per ricalcolare in cross-validation.")
 elif cv_skip_reason:
