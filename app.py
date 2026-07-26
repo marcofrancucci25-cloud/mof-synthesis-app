@@ -1372,6 +1372,128 @@ def build_feature_row(mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmo
             
     return df_f[feature_names]
 
+def render_shap_explanation(df_single, key_prefix="shap"):
+    """Mostra il grafico dei contributi SHAP per una singola predizione
+    (df_single = una riga di feature già pronta per il modello).
+    Estratta in una funzione a sé perché richiamata sia in Tab1 (subito dopo
+    il risultato della predizione) sia potenzialmente altrove in futuro."""
+    if not HAS_SHAP:
+        st.warning("⚠️ La libreria `shap` non è installata nell'ambiente Python. Installa SHAP (`pip install shap`) per abilitare le spiegazioni dettagliate.")
+        return
+
+    try:
+        # Estrazione dell'estimatore di base (LightGBM) per il calcolo SHAP
+        target_estimator = None
+        if hasattr(model, 'calibrated_classifiers_'):
+            target_estimator = model.calibrated_classifiers_[0].estimator.named_estimators_['lgb']
+        elif hasattr(model, 'named_estimators_'):
+            target_estimator = model.named_estimators_['lgb']
+
+        if target_estimator is None:
+            st.error("Impossibile estrarre un sotto-modello basato su alberi per l'analisi TreeSHAP.")
+            return
+
+        explainer = shap.TreeExplainer(target_estimator)
+        shap_values = explainer.shap_values(df_single)
+
+        st.markdown("#### 🔍 Cosa ha influenzato questa previsione?")
+
+        # La libreria SHAP ha cambiato formato di ritorno tra le versioni:
+        # - versioni più vecchie: lista di array, uno per classe, ciascuno
+        #   di shape (n_samples, n_features)
+        # - versioni più recenti: un unico array 3D di shape
+        #   (n_samples, n_features, n_classi)
+        # Gestiamo esplicitamente entrambi i casi, invece di assumere solo
+        # il formato a lista (causa dell'errore precedente: con l'array 3D
+        # si finiva nel ramo sbagliato e si passava a shap.bar_plot un
+        # array 2D invece di un vettore 1D).
+        expected_value = explainer.expected_value
+
+        if isinstance(shap_values, list):
+            # Formato "lista di array" (versioni SHAP più datate)
+            class_names = [get_class_label(c) for c in model.classes_]
+            selected_class_idx = st.selectbox(
+                "Seleziona Esito per l'analisi SHAP:",
+                range(len(shap_values)), format_func=lambda x: class_names[x],
+                key=f"{key_prefix}_class_sel"
+            )
+            selected_class_value = model.classes_[selected_class_idx]
+            sv_to_plot = shap_values[selected_class_idx][0]
+        elif isinstance(shap_values, np.ndarray) and shap_values.ndim == 3:
+            # Formato "array 3D unico" (versioni SHAP più recenti):
+            # (n_samples, n_features, n_classi)
+            n_classes_shap = shap_values.shape[-1]
+            available_classes = list(model.classes_)[:n_classes_shap]
+            class_names = [get_class_label(c) for c in available_classes]
+            selected_class_idx = st.selectbox(
+                "Seleziona Esito per l'analisi SHAP:",
+                range(n_classes_shap), format_func=lambda x: class_names[x],
+                key=f"{key_prefix}_class_sel"
+            )
+            selected_class_value = available_classes[selected_class_idx]
+            sv_to_plot = shap_values[0, :, selected_class_idx]
+        else:
+            # Output singolo/binario: array 2D (n_samples, n_features)
+            selected_class_value = model.classes_[-1] if hasattr(model, 'classes_') else None
+            sv_to_plot = np.asarray(shap_values)[0]
+
+        selected_label = get_class_label(selected_class_value)
+
+        with st.expander("ℹ️ Come si legge questo grafico", expanded=False):
+            st.markdown(
+                f"Per **questa specifica sintesi**, ecco quali parametri hanno spinto di più "
+                f"la previsione verso **\"{selected_label}\"**:\n\n"
+                "- 🟢 le barre **verdi** aumentano la probabilità di questo esito\n"
+                "- 🔴 le barre **rosse** la diminuiscono\n"
+                "- più lunga è la barra, maggiore è l'effetto di quel parametro **per questa "
+                "sintesi specifica**\n\n"
+                "💡 **Suggerimento pratico:** per aumentare la probabilità di successo, prova a "
+                "modificare i parametri con le barre rosse più lunghe nella direzione opposta al "
+                "loro contributo attuale (es. se un valore alto di temperatura compare in rosso, "
+                "prova ad abbassarla)."
+            )
+
+        feat_names = list(df_single.columns)
+        sv_arr = np.asarray(sv_to_plot).flatten()
+        n_show = min(10, len(sv_arr))
+        order = np.argsort(np.abs(sv_arr))[::-1][:n_show]
+        plot_feats = [feat_names[i] for i in order][::-1]
+        plot_vals = [float(sv_arr[i]) for i in order][::-1]
+
+        if HAS_PLOTLY:
+            colors = ['#2ECC71' if v >= 0 else '#E74C3C' for v in plot_vals]
+            fig_shap = go.Figure(go.Bar(
+                x=plot_vals,
+                y=plot_feats,
+                orientation='h',
+                marker=dict(color=colors, line=dict(width=0)),
+                text=[f"{v:+.3f}" for v in plot_vals],
+                textposition='outside',
+                hovertemplate='<b>%{y}</b><br>Contributo SHAP: %{x:.4f}<extra></extra>'
+            ))
+            fig_shap.update_layout(
+                title=f"Principali contributi verso: {selected_label}",
+                xaxis_title="← diminuisce la probabilità   |   aumenta la probabilità →",
+                yaxis_title=None,
+                height=max(350, 34 * len(plot_feats)),
+                margin=dict(l=10, r=40, t=50, b=40),
+                plot_bgcolor='rgba(0,0,0,0)',
+                xaxis=dict(
+                    showgrid=True, gridcolor='rgba(128,128,128,0.15)',
+                    zeroline=True, zerolinecolor='rgba(128,128,128,0.5)', zerolinewidth=1.5
+                ),
+                font=dict(size=13),
+                showlegend=False
+            )
+            st.plotly_chart(fig_shap, use_container_width=True)
+        else:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            shap.bar_plot(sv_to_plot, feature_names=feat_names, max_display=10, show=False)
+            plt.tight_layout()
+            st.pyplot(fig)
+    except Exception as e:
+        st.error(f"Errore durante il calcolo dei valori SHAP: {e}")
+
 # --- TAB 1: PREDIZIONE SINGOLA ---
 with tab1:
     st.subheader("Inserisci i parametri della reazione")
@@ -1563,9 +1685,6 @@ with tab1:
             probs = model.predict_proba(df_features)[0]
             pred_class = model.predict(df_features)[0]
 
-            # Memorizziamo il DataFrame di input nello stato della sessione per l'analisi SHAP
-            st.session_state['last_df_features'] = df_features
-
             st.markdown("---")
             st.subheader("📊 Risultato della Predizione (Ensemble Multi-Algoritmo)")
             res_col1, res_col2, res_col3 = st.columns(3)
@@ -1586,6 +1705,9 @@ with tab1:
                 st.warning("⚠️ **Risultato Parziale Atteso.** Possibile prodotto amorfo o miscela.")
             else:
                 st.error("❌ **Insuccesso Probabile.** Si consiglia di rivedere le condizioni di reazione.")
+
+            st.markdown("---")
+            render_shap_explanation(df_features, key_prefix="tab1_pred")
 
 # --- TAB 2: OTTIMIZZATORE AUTOMATICO MULTI-METALLO ---
 with tab2:
@@ -1863,11 +1985,11 @@ with tab3:
 with tab4:
     st.subheader("📊 Spiegabilità Chimica del Modello ML (Explainability)")
     st.markdown("""
-    Questa sezione permette di interpretare le decisioni del modello di Machine Learning, mostrando quali parametri fisico-chimici 
-    e descrittori molecolari hanno la maggiore influenza sulle predizioni di sintesi dei MOF.
+    Questa sezione mostra quali parametri fisico-chimici e descrittori molecolari hanno, **in media 
+    su tutte le sintesi**, la maggiore influenza sulle predizioni del modello.
     """)
 
-    st.markdown("### 1. Importanza Globale delle Feature")
+    st.markdown("### Importanza Globale delle Feature")
     if len(importances) > 0 and len(importances) == len(feature_names):
         fi_df = pd.DataFrame({
             'Feature': feature_names,
@@ -1922,134 +2044,9 @@ with tab4:
         st.info("I dati sull'importanza delle feature non sono disponibili per questo modello.")
 
     st.markdown("---")
-    st.markdown("### 2. Spiegazione della Singola Predizione (Valori SHAP)")
-
-    if not HAS_SHAP:
-        st.warning("⚠️ La libreria `shap` non è installata nell'ambiente Python. Installa SHAP (`pip install shap`) per abilitare le spiegazioni dettagliate.")
-    else:
-        if 'last_df_features' in st.session_state:
-            st.markdown("Analisi dei contributi SHAP per l'ultima predizione effettuata nel **Tab 1 (Predizione Singola)**:")
-            df_single = st.session_state['last_df_features']
-
-            try:
-                # Estrazione dell'estimatore di base (LightGBM) per il calcolo SHAP
-                target_estimator = None
-                if hasattr(model, 'calibrated_classifiers_'):
-                    target_estimator = model.calibrated_classifiers_[0].estimator.named_estimators_['lgb']
-                elif hasattr(model, 'named_estimators_'):
-                    target_estimator = model.named_estimators_['lgb']
-                
-                if target_estimator is not None:
-                    explainer = shap.TreeExplainer(target_estimator)
-                    shap_values = explainer.shap_values(df_single)
-
-                    st.markdown("#### Contributi delle Feature per Questa Predizione")
-
-                    # La libreria SHAP ha cambiato formato di ritorno tra le versioni:
-                    # - versioni più vecchie: lista di array, uno per classe, ciascuno
-                    #   di shape (n_samples, n_features)
-                    # - versioni più recenti: un unico array 3D di shape
-                    #   (n_samples, n_features, n_classi)
-                    # Gestiamo esplicitamente entrambi i casi, invece di assumere solo
-                    # il formato a lista (causa dell'errore precedente: con l'array 3D
-                    # si finiva nel ramo sbagliato e si passava a shap.bar_plot un
-                    # array 2D invece di un vettore 1D).
-                    expected_value = explainer.expected_value
-
-                    if isinstance(shap_values, list):
-                        # Formato "lista di array" (versioni SHAP più datate)
-                        class_names = [get_class_label(c) for c in model.classes_]
-                        selected_class_idx = st.selectbox(
-                            "Seleziona Esito per l'analisi SHAP:",
-                            range(len(shap_values)), format_func=lambda x: class_names[x]
-                        )
-                        selected_class_value = model.classes_[selected_class_idx]
-                        sv_to_plot = shap_values[selected_class_idx][0]
-                        base_val = (
-                            expected_value[selected_class_idx]
-                            if hasattr(expected_value, '__len__') else expected_value
-                        )
-                    elif isinstance(shap_values, np.ndarray) and shap_values.ndim == 3:
-                        # Formato "array 3D unico" (versioni SHAP più recenti):
-                        # (n_samples, n_features, n_classi)
-                        n_classes_shap = shap_values.shape[-1]
-                        available_classes = list(model.classes_)[:n_classes_shap]
-                        class_names = [get_class_label(c) for c in available_classes]
-                        selected_class_idx = st.selectbox(
-                            "Seleziona Esito per l'analisi SHAP:",
-                            range(n_classes_shap), format_func=lambda x: class_names[x]
-                        )
-                        selected_class_value = available_classes[selected_class_idx]
-                        sv_to_plot = shap_values[0, :, selected_class_idx]
-                        base_val = (
-                            expected_value[selected_class_idx]
-                            if hasattr(expected_value, '__len__') and len(expected_value) > selected_class_idx
-                            else expected_value
-                        )
-                    else:
-                        # Output singolo/binario: array 2D (n_samples, n_features)
-                        selected_class_value = model.classes_[-1] if hasattr(model, 'classes_') else None
-                        sv_to_plot = np.asarray(shap_values)[0]
-                        base_val = (
-                            expected_value[0]
-                            if hasattr(expected_value, '__len__') and len(expected_value) > 0
-                            else expected_value
-                        )
-
-                    selected_label = get_class_label(selected_class_value)
-
-                    with st.expander("ℹ️ Come si legge questo grafico", expanded=False):
-                        st.markdown(
-                            f"Per **questa specifica sintesi**, ecco quali parametri hanno spinto di più "
-                            f"la previsione verso **\"{selected_label}\"**:\n\n"
-                            "- 🟢 le barre **verdi** aumentano la probabilità di questo esito\n"
-                            "- 🔴 le barre **rosse** la diminuiscono\n"
-                            "- più lunga è la barra, maggiore è l'effetto di quel parametro **per questa "
-                            "sintesi specifica** (a differenza del grafico sopra, che mostra l'importanza "
-                            "media su tutte le sintesi)"
-                        )
-
-                    feat_names = list(df_single.columns)
-                    sv_arr = np.asarray(sv_to_plot).flatten()
-                    n_show = min(10, len(sv_arr))
-                    order = np.argsort(np.abs(sv_arr))[::-1][:n_show]
-                    plot_feats = [feat_names[i] for i in order][::-1]
-                    plot_vals = [float(sv_arr[i]) for i in order][::-1]
-
-                    if HAS_PLOTLY:
-                        colors = ['#2ECC71' if v >= 0 else '#E74C3C' for v in plot_vals]
-                        fig_shap = go.Figure(go.Bar(
-                            x=plot_vals,
-                            y=plot_feats,
-                            orientation='h',
-                            marker=dict(color=colors, line=dict(width=0)),
-                            text=[f"{v:+.3f}" for v in plot_vals],
-                            textposition='outside',
-                            hovertemplate='<b>%{y}</b><br>Contributo SHAP: %{x:.4f}<extra></extra>'
-                        ))
-                        fig_shap.update_layout(
-                            title=f"Principali contributi verso: {selected_label}",
-                            xaxis_title="← diminuisce la probabilità   |   aumenta la probabilità →",
-                            yaxis_title=None,
-                            height=max(350, 34 * len(plot_feats)),
-                            margin=dict(l=10, r=40, t=50, b=40),
-                            plot_bgcolor='rgba(0,0,0,0)',
-                            xaxis=dict(
-                                showgrid=True, gridcolor='rgba(128,128,128,0.15)',
-                                zeroline=True, zerolinecolor='rgba(128,128,128,0.5)', zerolinewidth=1.5
-                            ),
-                            font=dict(size=13),
-                            showlegend=False
-                        )
-                        st.plotly_chart(fig_shap, use_container_width=True)
-                    else:
-                        fig, ax = plt.subplots(figsize=(10, 6))
-                        shap.bar_plot(sv_to_plot, feature_names=feat_names, max_display=10, show=False)
-                        plt.tight_layout()
-                        st.pyplot(fig)
-                else:
-                    st.error("Impossibile estrarre un sotto-modello basato su alberi per l'analisi TreeSHAP.")
-            except Exception as e:
-                st.error(f"Errore durante il calcolo dei valori SHAP: {e}")
-        else:
-            st.info("💡 Esegui prima una predizione nel tab **'🔮 Predizione Singola'** per visualizzare l'analisi SHAP specifica per quel punto di prova.")
+    st.info(
+        "💡 **L'analisi dei contributi SHAP per la singola predizione si trova ora direttamente "
+        "nel tab '🔮 Predizione Singola'**, subito sotto il risultato di ciascuna previsione — "
+        "così puoi vedere immediatamente cosa modificare per ottimizzare la sintesi, senza dover "
+        "cambiare scheda."
+    )
