@@ -835,6 +835,21 @@ def load_or_train_model():
     n_unique_groups = len(np.unique(groups))
     unique_classes = y.nunique()
     min_class_count = int(y.value_counts().min())
+
+    # Numero minimo, tra tutte le classi, di gruppi SMILES distinti in cui
+    # quella classe compare. Se una classe è concentrata in un solo legante
+    # (es. tutte le righe "successo" derivano dallo stesso SMILES), la CV
+    # raggruppata per quella classe è impossibile: non si può distribuire un
+    # unico gruppo su più fold mantenendo lo stesso legante sempre insieme.
+    # Prima causa reale dell'errore "number of groups: 1" visto in sidebar.
+    groups_arr = np.array(groups, dtype=object)
+    y_arr = y.to_numpy()
+    try:
+        min_groups_per_class = min(
+            len(np.unique(groups_arr[y_arr == c])) for c in np.unique(y_arr)
+        )
+    except Exception:
+        min_groups_per_class = 1
     
     used_cv = None
     used_groups_for_cv = None
@@ -853,13 +868,15 @@ def load_or_train_model():
             "il modello è stato allenato senza CV/calibrazione. Aggiungi più righe per la classe minoritaria nel CSV."
         )
     else:
+        can_do_grouped_cv = (n_unique_groups >= 3) and (unique_classes > 1) and (min_groups_per_class >= 2)
         try:
-            if n_unique_groups >= 3 and unique_classes > 1:
+            if can_do_grouped_cv:
                 # Fino a 5 fold quando i dati lo consentono (stime più stabili di
                 # accuratezza CV e calibrazione rispetto ai 3 fold precedenti);
-                # scende automaticamente se ci sono meno gruppi o meno campioni
-                # nella classe minoritaria disponibili.
-                cv_splits = max(2, min(5, n_unique_groups, min_class_count))
+                # scende automaticamente se ci sono meno gruppi, meno campioni
+                # nella classe minoritaria, o meno gruppi per la classe più
+                # "concentrata" su un unico legante.
+                cv_splits = max(2, min(5, n_unique_groups, min_class_count, min_groups_per_class))
                 sgkf_calib = StratifiedGroupKFold(n_splits=cv_splits)
                 final_model = CalibratedClassifierCV(
                     estimator=base_ensemble, method='sigmoid',
@@ -868,6 +885,9 @@ def load_or_train_model():
                 final_model.fit(X, y, groups=groups)
                 used_cv, used_groups_for_cv = sgkf_calib, groups
             else:
+                # CV raggruppata non praticabile (troppi pochi gruppi complessivi,
+                # o una classe concentrata in un solo legante): si scende alla
+                # CV stratificata semplice, che non ha vincoli sui gruppi.
                 # n_splits non può superare il numero di campioni della classe
                 # meno numerosa, altrimenti StratifiedKFold solleva un errore.
                 skf_splits = max(2, min(5, min_class_count))
@@ -878,6 +898,13 @@ def load_or_train_model():
                 )
                 final_model.fit(X, y)
                 used_cv, used_groups_for_cv = skf, None
+                if n_unique_groups >= 3 and min_groups_per_class < 2:
+                    cv_skip_reason = (
+                        "Una classe del dataset è concentrata in un unico legante (SMILES): usata "
+                        "cross-validation stratificata semplice invece che raggruppata per legante "
+                        "(la CV raggruppata garantisce meglio che lo stesso legante non appaia sia in "
+                        "training che in validazione, ma qui non è geometricamente possibile per tutte le classi)."
+                    )
         except Exception as e:
             base_ensemble.fit(X, y)
             final_model = base_ensemble
@@ -1007,6 +1034,11 @@ if not is_cv_acc:
         st.sidebar.caption(f"⚠️ Cross-validation non eseguita: {cv_skip_reason}")
     else:
         st.sidebar.caption("⚠️ Valore calcolato su dati di training (modello .pkl salvato prima di questa correzione, senza il motivo registrato): cancella il file .pkl per ricalcolare in cross-validation.")
+elif cv_skip_reason:
+    # CV eseguita regolarmente (l'accuratezza mostrata è comunque una vera
+    # CV accuracy), ma senza raggruppamento per legante: nota informativa,
+    # non un warning bloccante.
+    st.sidebar.caption(f"ℹ️ {cv_skip_reason}")
 with col_sb2:
     st.markdown(
         f"""
