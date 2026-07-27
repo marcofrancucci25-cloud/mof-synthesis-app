@@ -1935,7 +1935,17 @@ with tab1:
         res_col3.metric("🟢 Cristalli / Successo (2)", f"{p2:.1f}%")
 
         if pred_class == 2:
-            st.balloons()
+            # I palloncini devono partire una sola volta per ogni NUOVA
+            # predizione, non ad ogni rerun (che avviene anche solo
+            # cambiando il metallo o interagendo col menu SHAP più sotto,
+            # dato che questo blocco vive fuori da 'if st.button' per
+            # sopravvivere a quei rerun). Il contatore identifica in modo
+            # univoco ogni predizione: confrontandolo con l'ultimo per cui
+            # abbiamo già mostrato i palloncini, li facciamo partire solo
+            # la prima volta che questo specifico risultato viene mostrato.
+            if st.session_state.get('tab1_last_balloons_counter') != res['counter']:
+                st.balloons()
+                st.session_state['tab1_last_balloons_counter'] = res['counter']
             st.success("✨ **Sintesi Promettente!** Alta probabilità di formazione di monocristalli o fase pulita.")
         elif pred_class == 1:
             st.warning("⚠️ **Risultato Parziale Atteso.** Possibile prodotto amorfo o miscela.")
