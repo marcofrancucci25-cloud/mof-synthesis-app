@@ -806,7 +806,17 @@ def calculate_solvent_mix_properties(solv_p, ml_p, cosolv, ml_cosolv):
     
     tot_vol = ml_p + ml_cosolv
     if tot_vol <= 0:
-        return prop_p
+        # Nessun solvente (es. sintesi meccanochimica): restituiamo comunque
+        # le chiavi 'mix_*' attese dal resto del codice, non il dizionario
+        # grezzo di SOLVENT_PROPERTIES (che ha chiavi diverse e causava un
+        # KeyError a valle).
+        return {
+            'mix_alpha': prop_p['alpha'],
+            'mix_beta': prop_p['beta'],
+            'mix_pi_star': prop_p['pi_star'],
+            'mix_dielectric': prop_p['dielectric'],
+            'mix_boiling_pt': prop_p['boiling_pt']
+        }
         
     f_p = ml_p / tot_vol
     f_co = ml_cosolv / tot_vol
@@ -1075,12 +1085,13 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v11-dataset-merge-1390rows"
+MODEL_TRAINING_VERSION = "v12-literature-negatives-1404rows"
 
 @st.cache_resource
 def load_or_train_model():
     pkl_file = "modello_sintesi_mof_ottimizzato.pkl"
     csv_candidates = [
+        "Dataset_Sintesi_MOF_ML_Standardizzato_v3.csv",
         "Dataset_Sintesi_MOF_ML_Standardizzato_v2.csv",
         "Dataset_Sintesi_Unificato_1000.csv",
         "Dataset_Sintesi_Unificato_aggiornato.csv",
