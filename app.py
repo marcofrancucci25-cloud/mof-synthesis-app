@@ -452,7 +452,88 @@ COMMON_MOF_LIGANDS = {
     "1,3,5-benzenetricarboxylic acid": "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1",
     "2-methylimidazole": "Cc1c[nH]cn1",
     "4,4'-biphenyldicarboxylic acid": "O=C(O)c1ccc(-c2ccc(C(=O)O)cc2)cc1",
-    "2,6-naphthalenedicarboxylic acid": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1"
+    "2,6-naphthalenedicarboxylic acid": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",
+
+    # --- Famiglia BIPIRAZOLO (4,4'-bipyrazole e derivati sostituiti) ---
+    # Struttura di base H2BPZ (CAS 25240-33-9, C6H6N4) verificata via ricerca
+    # chimica e confermata programmaticamente con RDKit: gli anelli sono
+    # collegati in posizione 4-4' (il carbonio NON adiacente a nessun azoto),
+    # non in posizione 3/5 — un errore facile da fare senza verifica esplicita.
+    # Ricerca di conferma: Domasevitch/Galli/Pettinari et al., "Novel
+    # Coordination Frameworks Incorporating the 4,4'-Bipyrazolyl Ditopic
+    # Ligand", Inorg. Chem. 2012; famiglia di leganti ben documentata in
+    # letteratura per MOF a base di bis-pirazolati.
+    # ATTENZIONE: per le varianti "3,5-diamino" e "3,3'-diamino" non ho
+    # trovato una fonte che confermi esplicitamente la formula — sono
+    # costruite per analogia sistematica con la nomenclatura standard dei
+    # pirazoli a partire dallo scaffold verificato, non da una fonte diretta.
+    # Verificale se possibile prima di fidartene ciecamente per un uso critico.
+    "4,4'-bipyrazole": "c1(-c2c[nH]nc2)c[nH]nc1",
+    "bpz": "c1(-c2c[nH]nc2)c[nH]nc1",
+    "h2bpz": "c1(-c2c[nH]nc2)c[nH]nc1",
+    "3-amino-4,4'-bipyrazole": "Nc1n[nH]cc1-c1cn[nH]c1",
+    "h2bpznh2": "Nc1n[nH]cc1-c1cn[nH]c1",
+    "3,5-diamino-4,4'-bipyrazole": "Nc1n[nH]c(N)c1-c1cn[nH]c1",
+    "3,5-diamino-4,4’-bipyrazole": "Nc1n[nH]c(N)c1-c1cn[nH]c1",  # variante con apice tipografico
+    "3,3'-diamino-4,4’-bipyrazole": "Nc1n[nH]cc1-c1cn[nH]c1N",
+    "3,3'-dinitro-4,4'-bipyrazole": "[O-][N+](=O)c1n[nH]cc1-c1cn[nH]c1[N+](=O)[O-]",
+    "(no2)2bpz": "[O-][N+](=O)c1n[nH]cc1-c1cn[nH]c1[N+](=O)[O-]",
+    "3-nitro-4,4'-bipyrazole": "[O-][N+](=O)c1n[nH]cc1-c1cn[nH]c1",
+    "no2bpz": "[O-][N+](=O)c1n[nH]cc1-c1cn[nH]c1",
+    "3,3'-dimethyl-4,4'-bipyrazole": "Cc1n[nH]cc1-c1cn[nH]c1C",
+    "3,3-dimethyl-4,4'-bipyrazole": "Cc1n[nH]cc1-c1cn[nH]c1C",  # variante senza apice nel CSV
+    "me4bpz": "Cc1n[nH]c(C)c1-c1c(C)[nH]nc1C",  # 3,3',5,5'-tetrametil (CD Bioparticles, composto catalogato)
+    "et4bpz": "CCc1n[nH]c(CC)c1-c1c(CC)[nH]nc1CC",
+    "3,5-dimepz-4-cooh": "Cc1n[nH]c(C)c1C(=O)O",
+    "3-mepz-4-cooh": "Cc1n[nH]cc1C(=O)O",
+    "5-mepz-4-cooh": "Cc1[nH]ncc1C(=O)O",
+    "1,4-di(1h-pyrazol-4-yl)benzene": "c1cc(-c2cn[nH]c2)ccc1-c1cn[nH]c1",
+    "1,4-di(1h-pyrazol-4-yl)benzene bdp": "c1cc(-c2cn[nH]c2)ccc1-c1cn[nH]c1",
+    "bdp": "c1cc(-c2cn[nH]c2)ccc1-c1cn[nH]c1",
+    "h2me2bdp": "Cc1n[nH]c(C)c1-c1ccc(-c2c(C)[nH]nc2C)cc1",
+    "pzdc / 1h-3,5-dicarboxylic": "OC(=O)c1cc(C(=O)O)[nH]n1",
+    "pyrazole-3,5-dicarboxylic acid": "OC(=O)c1cc(C(=O)O)[nH]n1",
+    "1h-pyrazole-3,5-dicarboxylic acid": "OC(=O)c1cc(C(=O)O)[nH]n1",
+    "3-(3,5-dimepz4-yl)pentane-2,4-dione": "CC(=O)C(C(C)=O)c1c(C)[nH]nc1C",
+
+    # --- TCPP (porfirina), SMILES verificato da fonte chimica (CAS 14609-54-2,
+    # C48H30N4O8, formula confermata programmaticamente con RDKit) ---
+    "tetrakis(4-carboxyphenyl)porphyrin (tcpp)": "c1cc(ccc1C1=c2ccc(=C(c3ccc(cc3)C(=O)O)C3=NC(=C(c4ccc(cc4)C(=O)O)c4ccc(C(=C5C=CC1=N5)c1ccc(cc1)C(=O)O)[nH]4)C=C3)[nH]2)C(=O)O",
+    "tcpp": "c1cc(ccc1C1=c2ccc(=C(c3ccc(cc3)C(=O)O)C3=NC(=C(c4ccc(cc4)C(=O)O)c4ccc(C(=C5C=CC1=N5)c1ccc(cc1)C(=O)O)[nH]4)C=C3)[nH]2)C(=O)O",
+    "tcpp (tetrakis(4-carboxyphenyl)porphyrin)": "c1cc(ccc1C1=c2ccc(=C(c3ccc(cc3)C(=O)O)C3=NC(=C(c4ccc(cc4)C(=O)O)c4ccc(C(=C5C=CC1=N5)c1ccc(cc1)C(=O)O)[nH]4)C=C3)[nH]2)C(=O)O",
+
+    # --- Leganti standard aggiuntivi (chimica di base, alta confidenza) ---
+    "imidazole": "c1cnc[nH]1",
+    "imidazole-2-carboxaldehyde": "O=Cc1ncc[nH]1",
+    "2-nitroimidazole": "[O-][N+](=O)c1ncc[nH]1",
+    "4,5-dichloroimidazole": "Clc1nc[nH]c1Cl",
+    "2-ethylimidazole": "CCc1ncc[nH]1",
+    "4-methyl-5-imidazolecarboxaldehyde": "Cc1[nH]c(C=O)nc1",
+    "4-amino-4h-1,2,4-triazole": "Nn1cnnc1",
+    "4,4'-bipyridine": "c1cnc(-c2ccncc2)cc1",
+    "adenine": "Nc1ncnc2[nH]cnc12",
+    "citric acid": "OC(=O)CC(O)(CC(=O)O)C(=O)O",
+    "4-aminobenzoic acid": "Nc1ccc(C(=O)O)cc1",
+    "trans-cyclohexane-1,4-dicarboxylic acid": "O=C(O)[C@H]1CC[C@@H](C(=O)O)CC1",
+    "2,5-thiophenedicarboxylic acid": "O=C(O)c1ccc(C(=O)O)s1",
+    "5-methoxyisophthalic acid": "COc1cc(C(=O)O)cc(C(=O)O)c1",
+    "isophthalic acid (1,3-bdc)": "O=C(O)c1cccc(C(=O)O)c1",
+    "5-nitroisophthalic acid": "O=C(O)c1cc(C(=O)O)cc([N+](=O)[O-])c1",
+    "5-aminoisophthalic acid": "O=C(O)c1cc(C(=O)O)cc(N)c1",
+    "2-nitroterephthalic acid": "O=C(O)c1ccc(C(=O)O)c([N+](=O)[O-])c1",
+    "2-bromoterephthalic acid": "O=C(O)c1ccc(C(=O)O)c(Br)c1",
+    "2-fluoroterephthalic acid": "O=C(O)c1ccc(C(=O)O)c(F)c1",
+    "2,5-dimethylterephthalic acid": "O=C(O)c1cc(C)c(C(=O)O)cc1C",
+    "2,5-dinitroterephthalic acid": "O=C(O)c1cc([N+](=O)[O-])c(C(=O)O)cc1[N+](=O)[O-]",
+    "pyrazine-2,3-dicarboxylic acid": "O=C(O)c1nccnc1C(=O)O",
+    "1,2,4,5-benzenetetracarboxylic acid": "O=C(O)c1cc(C(=O)O)c(C(=O)O)cc1C(=O)O",
+    "3,3',5,5'-biphenyltetracarboxylic acid": "OC(=O)c1cc(cc(c1-c1cc(C(=O)O)cc(C(=O)O)c1)C(=O)O)",
+    "biphenyl-3,3',5,5'-tetracarboxylic acid": "OC(=O)c1cc(cc(c1-c1cc(C(=O)O)cc(C(=O)O)c1)C(=O)O)",
+    "2,6-naphthalenedicarboxylic acid (2,6-ndc)": "O=C(O)c1ccc2ccc(C(=O)O)cc2c1",
+    "4,4',4''-triaminotriphenylamine": "Nc1ccc(cc1)N(c1ccc(N)cc1)c1ccc(N)cc1",
+    "1,3,5-tris(4-carboxyphenyl)benzene (btb)": "O=C(O)c1ccc(-c2cc(-c3ccc(C(=O)O)cc3)cc(-c3ccc(C(=O)O)cc3)c2)cc1",
+    "terphenyldicarboxylic acid (tpdc)": "OC(=O)c1ccc(cc1)-c1ccc(cc1)-c1ccc(cc1)C(=O)O",
+    "4,4'-(naphthalene-2,6-diyl)dibenzoic acid": "OC(=O)c1ccc(cc1)-c1ccc2cc(ccc2c1)-c1ccc(cc1)C(=O)O"
 }
 
 # --- PROPRIETÀ ADDITIVI E MODULATORI ---
@@ -547,7 +628,13 @@ anion_mw = {
 # --- SMARTS PATTERNS PER RDKIT ---
 SMARTS_PATTERNS = {
     'COOH': Chem.MolFromSmarts('[CX3](=O)[OX2H1]'),
-    'Aromatic_N': Chem.MolFromSmarts('[n]')
+    'Aromatic_N': Chem.MolFromSmarts('[n]'),
+    # Pattern per il rilevamento automatico della famiglia del legante
+    # (anelli eterociclici a 5 membri più comuni nei leganti MOF).
+    'Pyrazole_ring': Chem.MolFromSmarts('c1cc[nH]n1'),
+    'Imidazole_ring': Chem.MolFromSmarts('c1cnc[nH]1'),
+    'Triazole_124_ring': Chem.MolFromSmarts('c1nc[nH]n1'),
+    'Triazole_123_ring': Chem.MolFromSmarts('c1cnnn1')
 }
 
 def extract_smarts_features(mol):
@@ -569,6 +656,34 @@ def extract_smarts_features(mol):
         'n_Aromatic_N': n_aro_n,
         'fraction_sp2': fraction_sp2
     }
+
+# --- RILEVAMENTO AUTOMATICO FAMIGLIA LEGANTE (da struttura, non da etichetta manuale) ---
+# NOTA IMPORTANTE: questa classificazione è derivata ESCLUSIVAMENTE dalla
+# struttura chimica (via SMARTS), MAI dalla colonna 'Famiglia_Legante' del
+# CSV (che è una categorizzazione manuale non riproducibile in fase di
+# predizione singola, dove l'utente non specifica la famiglia). Usare le
+# due fonti in modo intercambiabile creerebbe un disallineamento tra
+# training e inferenza (train/serve skew), un errore classico che
+# peggiorerebbe le prestazioni reali invece di migliorarle.
+# Limite noto: funziona solo per leganti risolti a SMILES. Per i leganti
+# non risolti (es. gran parte della famiglia bipyrazole in questo dataset),
+# restituisce "Non specificata" sia in training che in predizione — non
+# recupera quindi il segnale specifico su quella famiglia, che richiederebbe
+# di risolvere prima lo SMILES (vedi COMMON_MOF_LIGANDS).
+LIGAND_FAMILY_CATEGORIES = ['Pirazolo', 'Triazolo', 'Imidazolo', 'Carbossilico_Aromatico', 'Altro_Noto', 'Non_Specificata']
+
+def detect_ligand_family(mol, n_cooh=0):
+    if not mol:
+        return 'Non_Specificata'
+    if mol.HasSubstructMatch(SMARTS_PATTERNS['Pyrazole_ring']):
+        return 'Pirazolo'
+    if mol.HasSubstructMatch(SMARTS_PATTERNS['Triazole_124_ring']) or mol.HasSubstructMatch(SMARTS_PATTERNS['Triazole_123_ring']):
+        return 'Triazolo'
+    if mol.HasSubstructMatch(SMARTS_PATTERNS['Imidazole_ring']):
+        return 'Imidazolo'
+    if n_cooh >= 1 and mol.GetRingInfo().NumRings() > 0:
+        return 'Carbossilico_Aromatico'
+    return 'Altro_Noto'
 
 def calculate_hsab_match(metal_hsab, n_cooh, n_aro_n):
     if metal_hsab == 'Hard':
@@ -747,6 +862,7 @@ def process_unified_dataset(df, is_training_phase=False):
         rot = Descriptors.NumRotatableBonds(mol) if mol else 2
         
         smarts_f = extract_smarts_features(mol)
+        ligand_family = detect_ligand_family(mol, smarts_f['n_COOH'])
         
         met = str(row.get('Metallo', 'Cu')).strip()
         m_info = metal_props.get(met, metal_props.get('Cu'))
@@ -819,6 +935,12 @@ def process_unified_dataset(df, is_training_phase=False):
             'SMARTS_n_COOH': smarts_f['n_COOH'],
             'SMARTS_n_Aromatic_N': smarts_f['n_Aromatic_N'],
             'SMARTS_fraction_sp2': smarts_f['fraction_sp2'],
+            'LigFamily_Pirazolo': 1 if ligand_family == 'Pirazolo' else 0,
+            'LigFamily_Triazolo': 1 if ligand_family == 'Triazolo' else 0,
+            'LigFamily_Imidazolo': 1 if ligand_family == 'Imidazolo' else 0,
+            'LigFamily_CarbossilicoAromatico': 1 if ligand_family == 'Carbossilico_Aromatico' else 0,
+            'LigFamily_AltroNoto': 1 if ligand_family == 'Altro_Noto' else 0,
+            'LigFamily_NonSpecificata': 1 if ligand_family == 'Non_Specificata' else 0,
             'HSAB_Match_Index': hsab_match,
             'Temperatura_num': float(temp), 'Tempo_ore_num': float(tempo),
             'Thermal_Dose': thermal_dose,
@@ -905,7 +1027,7 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v7-ligand-coverage-fix"
+MODEL_TRAINING_VERSION = "v9-ligand-db-expansion"
 
 @st.cache_resource
 def load_or_train_model():
@@ -1317,6 +1439,7 @@ def build_feature_row(mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmo
     mix_props = calculate_solvent_mix_properties(solvente_p, float(ml_solv_p), cosolvente, float(ml_cosolv))
     
     smarts_f = extract_smarts_features(mol)
+    ligand_family = detect_ligand_family(mol, smarts_f['n_COOH'])
     metal_m = metal_props[metallo_sel]
     hsab_match = calculate_hsab_match(metal_m['HSAB'], smarts_f['n_COOH'], smarts_f['n_Aromatic_N'])
     
@@ -1330,6 +1453,12 @@ def build_feature_row(mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmo
         'SMARTS_n_COOH': smarts_f['n_COOH'],
         'SMARTS_n_Aromatic_N': smarts_f['n_Aromatic_N'],
         'SMARTS_fraction_sp2': smarts_f['fraction_sp2'],
+        'LigFamily_Pirazolo': 1 if ligand_family == 'Pirazolo' else 0,
+        'LigFamily_Triazolo': 1 if ligand_family == 'Triazolo' else 0,
+        'LigFamily_Imidazolo': 1 if ligand_family == 'Imidazolo' else 0,
+        'LigFamily_CarbossilicoAromatico': 1 if ligand_family == 'Carbossilico_Aromatico' else 0,
+        'LigFamily_AltroNoto': 1 if ligand_family == 'Altro_Noto' else 0,
+        'LigFamily_NonSpecificata': 1 if ligand_family == 'Non_Specificata' else 0,
         'HSAB_Match_Index': hsab_match,
         'Temperatura_num': float(temp),
         'Tempo_ore_num': float(tempo),
@@ -1940,6 +2069,7 @@ with tab2:
             opt_rot = float(Descriptors.NumRotatableBonds(opt_mol))
             
             smarts_f = extract_smarts_features(opt_mol)
+            opt_ligand_family = detect_ligand_family(opt_mol, smarts_f['n_COOH'])
 
             if "Ultra-Veloce" in opt_speed_mode:
                 temperatures = [100.0, 120.0, 140.0]
@@ -1987,7 +2117,14 @@ with tab2:
                         'MW_Legante': opt_mw, 'LogP_Legante': opt_logp, 'HBD_Legante': opt_hbd, 'HBA_Legante': opt_hba,
                         'TPSA_Legante': opt_tpsa, 'RotatableBonds_Legante': opt_rot,
                         'SMARTS_n_COOH': smarts_f['n_COOH'], 'SMARTS_n_Aromatic_N': smarts_f['n_Aromatic_N'],
-                        'SMARTS_fraction_sp2': smarts_f['fraction_sp2'], 'HSAB_Match_Index': hsab_match,
+                        'SMARTS_fraction_sp2': smarts_f['fraction_sp2'],
+                        'LigFamily_Pirazolo': 1 if opt_ligand_family == 'Pirazolo' else 0,
+                        'LigFamily_Triazolo': 1 if opt_ligand_family == 'Triazolo' else 0,
+                        'LigFamily_Imidazolo': 1 if opt_ligand_family == 'Imidazolo' else 0,
+                        'LigFamily_CarbossilicoAromatico': 1 if opt_ligand_family == 'Carbossilico_Aromatico' else 0,
+                        'LigFamily_AltroNoto': 1 if opt_ligand_family == 'Altro_Noto' else 0,
+                        'LigFamily_NonSpecificata': 1 if opt_ligand_family == 'Non_Specificata' else 0,
+                        'HSAB_Match_Index': hsab_match,
                         'Temperatura_num': temp, 'Tempo_ore_num': tempo,
                         'Thermal_Dose': float(temp) * float(np.log1p(float(tempo))),
                         'mmol legante': float(opt_mmol_legante), 'mmol sale': float(opt_mmol_sale), 'Rapporto L/M': float(ratio_lm),
