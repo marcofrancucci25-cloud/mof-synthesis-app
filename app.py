@@ -1036,12 +1036,13 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v10-curcumin-added"
+MODEL_TRAINING_VERSION = "v11-dataset-merge-1390rows"
 
 @st.cache_resource
 def load_or_train_model():
     pkl_file = "modello_sintesi_mof_ottimizzato.pkl"
     csv_candidates = [
+        "Dataset_Sintesi_MOF_ML_Standardizzato_v2.csv",
         "Dataset_Sintesi_Unificato_1000.csv",
         "Dataset_Sintesi_Unificato_aggiornato.csv",
         "Dataset_Sintesi_MOF_ML_Standardizzato.csv",
@@ -2241,3 +2242,4 @@ with tab3:
                         st.markdown("---")
                 else:
                     st.error("Nessun risultato trovato o timeout durante la richiesta.")
+
