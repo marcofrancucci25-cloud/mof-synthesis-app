@@ -6,6 +6,7 @@ import os
 import re
 import requests
 import itertools
+import time
 import traceback
 import matplotlib.pyplot as plt
 
@@ -199,6 +200,15 @@ def fetch_open_access_paper(metal_symbol, ligand_term="", mof_name=None):
 
     try:
         response = requests.get(url, params=params, headers=headers, timeout=5)
+        if response.status_code == 429:
+            # L'API gratuita di Semantic Scholar ha limiti di frequenza
+            # severi, condivisi globalmente tra tutti gli utenti non
+            # autenticati: un singolo 429 è spesso transitorio. Un solo
+            # ritentativo con una breve attesa evita di arrenderci troppo
+            # in fretta e mostrare "nessun risultato" quando in realtà è
+            # solo un rallentamento momentaneo del servizio esterno.
+            time.sleep(1.5)
+            response = requests.get(url, params=params, headers=headers, timeout=5)
         if response.status_code != 200:
             return None
 
