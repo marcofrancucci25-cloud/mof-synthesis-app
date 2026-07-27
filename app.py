@@ -125,6 +125,17 @@ def search_tavily_for_ligand_smiles(query):
     return None
 
 # --- VALIDAZIONE RIGOROSA METALLO-LEGANTE ---
+def extract_ligand_keywords(ligand_query):
+    """Estrae parole chiave significative da un nome di legante, gestendo
+    trattini/virgole/apici come separatori (non solo gli spazi) — molti nomi
+    chimici sono scritti come un'unica stringa senza spazi. Usata sia per
+    validare articoli sia per costruire query di ricerca più efficaci di un
+    'intero nome tra virgolette', che raramente combacia parola per parola
+    con la punteggiatura di un titolo di paper reale."""
+    legante_clean = (ligand_query or "").lower().strip()
+    raw_tokens = re.split(r'[^a-zA-Z0-9]+', legante_clean)
+    return [k for k in raw_tokens if len(k) > 2 and not k.isdigit()]
+
 def valida_articolo_metallo_legante(testo_articolo, metal_symbol, ligand_query=""):
     """
     Verifica che il testo/titolo dell'articolo contenga sia il metallo selezionato
@@ -144,9 +155,8 @@ def valida_articolo_metallo_legante(testo_articolo, metal_symbol, ligand_query="
         
     # 2. Se è specificato un legante, verifica la presenza di keyword
     if ligand_query:
-        legante_clean = ligand_query.lower().strip()
-        keywords = [k for k in legante_clean.split() if len(k) > 2]
-        ha_legante = any(k in testo_lower for k in keywords)
+        keywords = extract_ligand_keywords(ligand_query)
+        ha_legante = any(k in testo_lower for k in keywords) if keywords else True
         if not ha_legante:
             return False
             
@@ -169,7 +179,13 @@ def fetch_open_access_paper(metal_symbol, ligand_term="", mof_name=None):
         # su quel materiale.
         query_term = f'"{mof_name}" MOF synthesis'
     elif ligand_term:
-        query_term = f'"{metal_symbol}" "{metal_name_en}" "{ligand_term}" MOF synthesis'
+        # Uso le parole chiave estratte (non l'intero nome tra virgolette
+        # come frase esatta): un nome chimico completo con locanti e apici
+        # tipografici raramente combacia parola per parola con la
+        # punteggiatura di un titolo pubblicato.
+        lig_keywords = extract_ligand_keywords(ligand_term)
+        lig_query_part = ' '.join(lig_keywords[:4]) if lig_keywords else ligand_term
+        query_term = f'"{metal_symbol}" {metal_name_en} {lig_query_part} MOF synthesis'
     else:
         query_term = f'"{metal_symbol}" "{metal_name_en}" MOF synthesis'
 
@@ -177,7 +193,7 @@ def fetch_open_access_paper(metal_symbol, ligand_term="", mof_name=None):
     params = {
         "query": query_term,
         "limit": 8,
-        "fields": "title,authors,year,externalIds,openAccessPdf,isOpenAccess,publicationVenue"
+        "fields": "title,abstract,authors,year,externalIds,openAccessPdf,isOpenAccess,publicationVenue"
     }
     headers = {'User-Agent': 'MOFSynthesisPredictor/1.0'}
 
@@ -191,6 +207,13 @@ def fetch_open_access_paper(metal_symbol, ligand_term="", mof_name=None):
 
         for paper in papers:
             title = paper.get('title', 'Titolo Non Disponibile')
+            abstract = paper.get('abstract') or ''
+            # Validazione su titolo+abstract combinati: molti paper (specie
+            # quelli che coprono famiglie di più metalli in una singola
+            # pubblicazione) menzionano il metallo specifico solo
+            # nell'abstract, non nel titolo — validare sul solo titolo
+            # perderebbe questi casi.
+            testo_per_validazione = f"{title} {abstract}"
 
             # Validazione: se conosciamo il nome esatto del MOF, richiediamo
             # che compaia nel titolo (segnale di pertinenza molto più forte
@@ -198,9 +221,9 @@ def fetch_open_access_paper(metal_symbol, ligand_term="", mof_name=None):
             # su un MOF completamente diverso con la stessa combinazione
             # approssimativa di metallo e famiglia di legante).
             if mof_name:
-                if mof_name.lower() not in title.lower():
+                if mof_name.lower() not in testo_per_validazione.lower():
                     continue
-            elif not valida_articolo_metallo_legante(title, metal_symbol, ligand_term):
+            elif not valida_articolo_metallo_legante(testo_per_validazione, metal_symbol, ligand_term):
                 continue
 
             oa_info = paper.get('openAccessPdf')
@@ -250,8 +273,12 @@ def fetch_real_doi_from_crossref(metal_symbol, ligand_term="", mof_name=None):
     metal_name_en = metal_props.get(metal_symbol, {}).get('Name_EN', metal_symbol)
     if mof_name:
         query_term = f'"{mof_name}" MOF synthesis'
+    elif ligand_term:
+        lig_keywords = extract_ligand_keywords(ligand_term)
+        lig_query_part = ' '.join(lig_keywords[:4]) if lig_keywords else ligand_term
+        query_term = f'"{metal_symbol}" {metal_name_en} {lig_query_part} MOF synthesis'
     else:
-        query_term = f'"{metal_symbol}" "{metal_name_en}" "{ligand_term}" MOF synthesis' if ligand_term else f'"{metal_symbol}" "{metal_name_en}" MOF synthesis'
+        query_term = f'"{metal_symbol}" "{metal_name_en}" MOF synthesis'
     
     url = f"https://api.crossref.org/works?query={requests.utils.quote(query_term)}&rows=5"
     headers = {'User-Agent': 'MOFSynthesisPredictor/1.0 (mailto:admin@example.com)'}
@@ -350,7 +377,9 @@ def check_known_mof(metal_symbol, mol_obj=None, ligand_query=""):
             tavily_query = f'"{mof_name_for_search}" MOF synthesis paper doi open access'
         else:
             m_name_en = metal_props.get(metal_symbol, {}).get('Name_EN', metal_symbol)
-            tavily_query = f'"{metal_symbol}" "{m_name_en}" AND "{ligand_term}" MOF synthesis paper doi open access'
+            lig_keywords = extract_ligand_keywords(ligand_term)
+            lig_query_part = ' '.join(lig_keywords[:4]) if lig_keywords else ligand_term
+            tavily_query = f'"{metal_symbol}" {m_name_en} {lig_query_part} MOF synthesis paper doi open access'
         res = search_tavily_web(tavily_query, max_results=3, timeout=4)
         if res and "results" in res:
             for item in res["results"]:
