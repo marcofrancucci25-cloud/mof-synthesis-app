@@ -1718,7 +1718,45 @@ def render_synthesis_optimizer(mol, metallo_sel, orig_temp, orig_tempo, orig_ani
     df_results = pd.DataFrame(display_info)
     df_results['Probabilità Successo (%)'] = success_probs
     df_results = df_results[df_results['Probabilità Successo (%)'] >= 0]
-    df_results = df_results.sort_values(by='Probabilità Successo (%)', ascending=False).head(5).reset_index(drop=True)
+    df_results = df_results.sort_values(by='Probabilità Successo (%)', ascending=False).reset_index(drop=True)
+
+    # Selezione DIVERSIFICATA invece delle prime 5 righe pure: quando una
+    # feature (es. Thermal_Dose, temperatura×tempo) domina enormemente
+    # l'importanza rispetto alle altre, le righe con probabilità più alta
+    # tendono a essere quasi tutte varianti minime dello stesso angolo della
+    # griglia (stessa temperatura/tempo, solo additivo/solvente diversi) —
+    # poco utile come ventaglio di strategie alternative. Prendo sempre il
+    # migliore assoluto, poi scelgo greedily le successive righe che
+    # differiscono per almeno 2 parametri dalle già selezionate, così le
+    # top 5 mostrate rappresentano davvero strategie diverse tra loro.
+    diff_cols = ['Temperatura (°C)', 'Tempo (h)', 'Anione', 'Solvente', 'Additivo', 'Rapporto L/M']
+    core_cols = ['Temperatura (°C)', 'Tempo (h)', 'Rapporto L/M']  # su questi vogliamo diversità "vera", non solo su anione/solvente/additivo
+    selected_idx = []
+    for idx, row in df_results.iterrows():
+        if not selected_idx:
+            selected_idx.append(idx)
+            continue
+        is_diverse_enough = all(
+            sum(row[c] != df_results.loc[sel, c] for c in diff_cols) >= 2
+            and any(row[c] != df_results.loc[sel, c] for c in core_cols)
+            for sel in selected_idx
+        )
+        if is_diverse_enough:
+            selected_idx.append(idx)
+        if len(selected_idx) == 5:
+            break
+
+    # Se non si trovano abbastanza righe sufficientemente diverse (griglia
+    # con poche alternative plausibili), completo con le righe migliori
+    # rimanenti per garantire comunque fino a 5 risultati.
+    if len(selected_idx) < 5:
+        for idx in df_results.index:
+            if idx not in selected_idx:
+                selected_idx.append(idx)
+            if len(selected_idx) == 5:
+                break
+
+    df_results = df_results.loc[selected_idx].reset_index(drop=True)
 
     return df_results
 
