@@ -1572,6 +1572,42 @@ def render_feature_importance(key_prefix="fi"):
         plt.tight_layout()
         st.pyplot(fig)
 
+def check_physical_plausibility(temp, tempo, mmol_legante, mmol_sale, rapporto_lm):
+    """Verifica se le condizioni di sintesi sono fisicamente realizzabili in
+    laboratorio, indipendentemente da cosa dice il modello ML.
+
+    Le soglie sono basate sui range REALI osservati nel dataset (1390 sintesi
+    di laboratorio), con un margine di sicurezza ampio per non penalizzare
+    condizioni insolite ma legittime (es. per pubblicazioni con condizioni
+    più estreme del solito). Al di fuori di questi limiti, il modello non ha
+    mai visto dati simili durante il training e la sua predizione non è
+    affidabile — ma soprattutto, condizioni come "36 secondi di reazione" o
+    "rapporto stechiometrico 50000:1" non sono realizzabili in pratica in un
+    laboratorio di sintesi standard, quindi la sintesi va considerata non
+    riuscita a prescindere dalla predizione del modello.
+
+    Range osservati nel dataset -> soglie usate (con margine):
+      Temperatura:  25-220°C osservati  -> soglia 0-250°C
+      Tempo:        0.45-180h osservati -> soglia 0.25-720h (15 min - 30 giorni)
+      mmol:         0.02-12 osservati   -> soglia 0.005-50 mmol
+      Rapporto L/M: 0.05-8 osservati    -> soglia 0.02-50
+    """
+    reasons = []
+    if temp < 0 or temp > 250:
+        reasons.append(f"Temperatura {temp:.0f}°C fuori dal range realizzabile (0-250°C)")
+    if tempo < 0.25:
+        reasons.append(f"Tempo di reazione {tempo:.2f}h troppo breve per una cristallizzazione reale (minimo pratico ~15 minuti)")
+    if tempo > 720:
+        reasons.append(f"Tempo di reazione {tempo:.0f}h eccessivo (oltre 30 giorni)")
+    if mmol_legante < 0.005 or mmol_legante > 50:
+        reasons.append(f"Quantità di legante {mmol_legante:.4f} mmol fuori dal range pesabile/gestibile in laboratorio (0.005-50 mmol)")
+    if mmol_sale < 0.005 or mmol_sale > 50:
+        reasons.append(f"Quantità di sale metallico {mmol_sale:.4f} mmol fuori dal range pesabile/gestibile in laboratorio (0.005-50 mmol)")
+    if rapporto_lm < 0.02 or rapporto_lm > 50:
+        reasons.append(f"Rapporto Legante/Metallo {rapporto_lm:.3g}:1 chimicamente non sensato (un reagente è in eccesso estremo rispetto all'altro)")
+
+    return (len(reasons) == 0), reasons
+
 def render_shap_explanation(df_single, key_prefix="shap", default_class=None):
     """Mostra il grafico dei contributi SHAP per una singola predizione
     (df_single = una riga di feature già pronta per il modello).
@@ -1879,6 +1915,16 @@ with tab1:
             probs = model.predict_proba(df_features)[0]
             pred_class = model.predict(df_features)[0]
 
+            # Controllo di plausibilità fisica: indipendentemente da cosa dice
+            # il modello ML, condizioni fuori dai limiti realizzabili in
+            # laboratorio (tempi assurdamente brevi, rapporti stechiometrici
+            # estremi, ecc.) vengono considerate sintesi non riuscita a
+            # prescindere, perché semplicemente non sono realizzabili.
+            rapporto_lm_check = mmol_legante / mmol_sale if mmol_sale > 0 else 999.0
+            is_plausible, implausibility_reasons = check_physical_plausibility(
+                temp, tempo, mmol_legante, mmol_sale, rapporto_lm_check
+            )
+
             # Salviamo tutto in session_state (invece di mostrarlo qui e basta):
             # senza questo, qualunque interazione successiva con un widget più
             # sotto (es. il menu a tendina del grafico SHAP) fa tornare
@@ -1895,6 +1941,8 @@ with tab1:
                 'df_features': df_features,
                 'probs': probs,
                 'pred_class': pred_class,
+                'is_plausible': is_plausible,
+                'implausibility_reasons': implausibility_reasons,
                 'counter': st.session_state['tab1_pred_counter']
             }
 
@@ -1905,8 +1953,24 @@ with tab1:
         df_features = res['df_features']
         probs = res['probs']
         pred_class = res['pred_class']
+        is_plausible = res.get('is_plausible', True)
+        implausibility_reasons = res.get('implausibility_reasons', [])
+
+        # Se le condizioni non sono fisicamente realizzabili, l'esito è
+        # considerato "Nessun Prodotto" a prescindere da cosa dice il
+        # modello ML — non ha senso fidarsi di una predizione su condizioni
+        # che non si potrebbero nemmeno impostare in laboratorio.
+        effective_pred_class = pred_class if is_plausible else 0
 
         st.markdown("---")
+        if not is_plausible:
+            st.error(
+                "🚫 **Condizioni sperimentali non fisicamente realizzabili.** "
+                "Questa sintesi è considerata **automaticamente non riuscita**, "
+                "indipendentemente dalla predizione del modello:\n\n"
+                + "\n".join(f"- {r}" for r in implausibility_reasons)
+            )
+
         if known_matches:
             for mof in known_matches:
                 oa_tag = "📖 **[OPEN ACCESS]**" if mof.get('is_oa', False) else "📄 [LETTERATURA SPERIMENTALE]"
@@ -1931,11 +1995,14 @@ with tab1:
         p1 = probs[classes_map[1]] * 100 if 1 in classes_map else 0.0
         p2 = probs[classes_map[2]] * 100 if 2 in classes_map else 0.0
 
+        if not is_plausible:
+            st.caption("⚠️ Le percentuali sotto sono il calcolo grezzo del modello, mostrato solo per trasparenza — **non sono affidabili** perché le condizioni sono fuori dal range fisicamente realizzabile, e l'esito finale è forzato a 'Nessun Prodotto' come spiegato sopra.")
+
         res_col1.metric("🔴 Insuccesso (0)", f"{p0:.1f}%")
         res_col2.metric("🟡 Parziale (1)", f"{p1:.1f}%")
         res_col3.metric("🟢 Cristalli / Successo (2)", f"{p2:.1f}%")
 
-        if pred_class == 2:
+        if effective_pred_class == 2:
             # I palloncini devono partire una sola volta per ogni NUOVA
             # predizione, non ad ogni rerun (che avviene anche solo
             # cambiando il metallo o interagendo col menu SHAP più sotto,
@@ -1948,7 +2015,7 @@ with tab1:
                 st.balloons()
                 st.session_state['tab1_last_balloons_counter'] = res['counter']
             st.success("✨ **Sintesi Promettente!** Alta probabilità di formazione di monocristalli o fase pulita.")
-        elif pred_class == 1:
+        elif effective_pred_class == 1:
             st.warning("⚠️ **Risultato Parziale Atteso.** Possibile prodotto amorfo o miscela.")
         else:
             st.error("❌ **Insuccesso Probabile.** Si consiglia di rivedere le condizioni di reazione.")
@@ -1957,7 +2024,7 @@ with tab1:
         render_shap_explanation(
             df_features,
             key_prefix=f"tab1_pred_{res['counter']}",
-            default_class=pred_class
+            default_class=effective_pred_class
         )
 
         with st.expander("📊 Importanza Globale delle Feature (su tutte le sintesi)", expanded=False):
@@ -2206,9 +2273,29 @@ with tab2:
 
                 success_probs = (probs_matrix[:, target_class_idx] * 100.0).round(1)
 
+                # Controllo di plausibilità sulla stechiometria: mmol legante/
+                # sale sono valori FISSI scelti dall'utente per l'intera
+                # griglia (solo metallo/anione/solvente/additivo variano tra
+                # le combinazioni), quindi un solo controllo basta per
+                # l'intera scansione. Se implausibile, la griglia intera
+                # riguarda condizioni non realizzabili in laboratorio.
+                opt_ratio_check = opt_mmol_legante / opt_mmol_sale if opt_mmol_sale > 0 else 999.0
+                opt_is_plausible, opt_implausibility_reasons = check_physical_plausibility(
+                    temp, tempo, opt_mmol_legante, opt_mmol_sale, opt_ratio_check
+                )
+                if not opt_is_plausible:
+                    success_probs = success_probs * 0.0  # azzero: la sintesi non è realizzabile, a prescindere dal modello
+
                 df_results = pd.DataFrame(display_info)
                 df_results['Probabilità Successo (%)'] = success_probs
                 df_results = df_results.sort_values(by='Probabilità Successo (%)', ascending=False).reset_index(drop=True)
+
+            if not opt_is_plausible:
+                st.error(
+                    "🚫 **Stechiometria non fisicamente realizzabile.** Tutte le combinazioni di questa "
+                    "griglia sono considerate automaticamente non riuscite, indipendentemente dalla "
+                    "predizione del modello:\n\n" + "\n".join(f"- {r}" for r in opt_implausibility_reasons)
+                )
 
             st.success(f"⚡ **{len(df_results)} combinazioni analizzate istantaneamente su {len(opt_selected_metals)} metalli differenti!**")
             st.markdown("### 🏆 Migliori Condizioni Sperimentali Trovate nella Griglia")
