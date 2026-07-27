@@ -1477,7 +1477,7 @@ with st.sidebar.expander("🧪 Teoria HSAB di Pearson", expanded=False):
     """)
 
 # --- TAB INTERFACCIA MAIN ---
-tab1, tab2, tab3 = st.tabs(["🔮 Predizione Singola", "⚡ Ottimizzatore Automatico", "🌐 Ricerca Web (Tavily AI)"])
+tab1, tab2 = st.tabs(["🔮 Predizione Singola", "🌐 Ricerca Web (Tavily AI)"])
 
 def build_feature_row(mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_p, ml_solv_p, cosolvente, ml_cosolv, additivo_sel, add_eq):
     add_info = ADDITIVES_DATABASE.get(additivo_sel, ADDITIVES_DATABASE['Nessuno'])
@@ -1610,6 +1610,117 @@ def render_feature_importance(key_prefix="fi"):
         ax.set_title("Top Feature del Modello (LightGBM Estimator)")
         plt.tight_layout()
         st.pyplot(fig)
+
+def render_synthesis_optimizer(mol, metallo_sel, orig_temp, orig_tempo, orig_anione,
+                                 orig_solvente, orig_mmol_legante, orig_mmol_sale, key_prefix="opt"):
+    """Ottimizzatore CONTESTUALE: a differenza del vecchio Ottimizzatore Multi-
+    Metallo (rimosso), qui il metallo resta FISSO (quello appena testato) —
+    l'obiettivo è trovare condizioni migliori per la STESSA combinazione
+    metallo+legante, non suggerire un metallo alternativo. Varia temperatura,
+    tempo, anione, solvente, additivo e rapporto stechiometrico, e mostra le
+    5 combinazioni con probabilità di successo più alta rispetto a quella
+    appena provata."""
+    mw = float(Descriptors.MolWt(mol))
+    logp = float(Descriptors.MolLogP(mol))
+    hbd = float(Descriptors.NumHDonors(mol))
+    hba = float(Descriptors.NumHAcceptors(mol))
+    tpsa = float(Descriptors.TPSA(mol))
+    rot = float(Descriptors.NumRotatableBonds(mol))
+    smarts_f = extract_smarts_features(mol)
+    ligand_family = detect_ligand_family(mol, smarts_f['n_COOH'])
+    metal_m = metal_props[metallo_sel]
+
+    # Griglia di ricerca: dimensionata per restare veloce (~5-6mila
+    # combinazioni, coerente con l'ordine di grandezza già gestito dal
+    # vecchio ottimizzatore multi-metallo) mantenendo comunque una copertura
+    # ampia dello spazio dei parametri.
+    temperatures = [70.0, 100.0, 130.0, 160.0, 200.0]
+    times = [12.0, 24.0, 48.0, 96.0]
+    anioni = ['Nitrato', 'Acetato', 'Cloruro', 'Altro']
+    solventi = ['DMF', 'DMSO', 'MeCN', 'H2O', 'MeOH', 'EtOH']
+    additivi = [('Nessuno', 0.0), ('Acido Acetico (AcOH)', 5.0), ('Acido Trifluoroacetico (TFA)', 5.0), ('Trietilammina (TEA)', 3.0)]
+    rapporti_target = [0.5, 1.0, 1.5, 2.0, 3.0]  # rapporto L/M, variando mmol legante a mmol sale fisso
+
+    ml_solv_fisso = 10.0  # volume standard, non è tra le dimensioni ottimizzate qui per contenere la griglia
+
+    grid_combos = list(itertools.product(temperatures, times, anioni, solventi, additivi, rapporti_target))
+
+    rows_list = []
+    display_info = []
+    for temp, tempo, anione, solv_p, (add_name, add_eq), rapporto in grid_combos:
+        mmol_legante = orig_mmol_sale * rapporto
+        mmol_sale = orig_mmol_sale
+
+        hsab_match = float(calculate_hsab_match(metal_m['HSAB'], smarts_f['n_COOH'], smarts_f['n_Aromatic_N']))
+        add_info = ADDITIVES_DATABASE.get(add_name, ADDITIVES_DATABASE['Nessuno'])
+        add_type = add_info['type']
+        mix_props = calculate_solvent_mix_properties(solv_p, ml_solv_fisso, 'Nessuno', 0.0)
+
+        rows_list.append({
+            'MW_Legante': mw, 'LogP_Legante': logp, 'HBD_Legante': hbd, 'HBA_Legante': hba,
+            'TPSA_Legante': tpsa, 'RotatableBonds_Legante': rot,
+            'SMARTS_n_COOH': smarts_f['n_COOH'], 'SMARTS_n_Aromatic_N': smarts_f['n_Aromatic_N'],
+            'SMARTS_fraction_sp2': smarts_f['fraction_sp2'],
+            'LigFamily_Pirazolo': 1 if ligand_family == 'Pirazolo' else 0,
+            'LigFamily_Triazolo': 1 if ligand_family == 'Triazolo' else 0,
+            'LigFamily_Imidazolo': 1 if ligand_family == 'Imidazolo' else 0,
+            'LigFamily_CarbossilicoAromatico': 1 if ligand_family == 'Carbossilico_Aromatico' else 0,
+            'LigFamily_AltroNoto': 1 if ligand_family == 'Altro_Noto' else 0,
+            'LigFamily_NonSpecificata': 1 if ligand_family == 'Non_Specificata' else 0,
+            'HSAB_Match_Index': hsab_match,
+            'Temperatura_num': temp, 'Tempo_ore_num': tempo,
+            'Thermal_Dose': float(temp) * float(np.log1p(float(tempo))),
+            'mmol legante': float(mmol_legante), 'mmol sale': float(mmol_sale), 'Rapporto L/M': float(rapporto),
+            'Molarity_Legante': float(mmol_legante) / ml_solv_fisso, 'Molarity_Sale': float(mmol_sale) / ml_solv_fisso,
+            'Metallo_Z': metal_m['Z'], 'Metallo_Electronegativity': metal_m['Electronegativity'],
+            'Metallo_Radius_pm': metal_m['Radius_pm'], 'Metallo_Group': metal_m['Group'], 'Metallo_Period': metal_m['Period'],
+            'Anion_Acetato': 1 if anione == 'Acetato' else 0,
+            'Anion_Cloruro': 1 if anione == 'Cloruro' else 0,
+            'Anion_Nitrato': 1 if anione == 'Nitrato' else 0,
+            'Anion_Altro': 1 if anione == 'Altro' else 0,
+            'mL_Solvente_P': ml_solv_fisso, 'mL_CoSolvente': 0.0, 'Total_Volume_mL': ml_solv_fisso, 'CoSolvent_Pct': 0.0,
+            'Solvent_Mix_Alpha': mix_props['mix_alpha'], 'Solvent_Mix_Beta': mix_props['mix_beta'],
+            'Solvent_Mix_PiStar': mix_props['mix_pi_star'], 'Solvent_Mix_Dielectric': mix_props['mix_dielectric'],
+            'Solvent_Mix_BoilingPt': mix_props['mix_boiling_pt'],
+            'Additive_Eq': add_eq, 'Additive_pKa': float(add_info.get('pKa', 0.0)),
+            'Additive_Is_Acid': 1 if add_type == 'Acid' else 0,
+            'Additive_Is_Base': 1 if add_type == 'Base' else 0,
+            'Additive_Is_Neutral': 1 if add_type == 'Neutral' else 0,
+        })
+        display_info.append({
+            'Temperatura (°C)': temp, 'Tempo (h)': tempo, 'Anione': anione, 'Solvente': solv_p,
+            'Additivo': add_name, 'Eq. Additivo': add_eq, 'Rapporto L/M': rapporto,
+            'mmol Legante': round(mmol_legante, 3)
+        })
+
+    df_grid = pd.DataFrame(rows_list)
+    for col in feature_names:
+        if col not in df_grid.columns:
+            df_grid[col] = 0.0
+    df_grid = df_grid[feature_names]
+
+    # Escludiamo dalla griglia le combinazioni fisicamente non realizzabili
+    # (stesso controllo usato per la predizione singola), così l'ottimizzatore
+    # non può mai suggerire una "ricetta" impossibile da eseguire davvero.
+    plausible_mask = []
+    for temp, tempo, anione, solv_p, (add_name, add_eq), rapporto in grid_combos:
+        mmol_legante = orig_mmol_sale * rapporto
+        is_ok, _ = check_physical_plausibility(temp, tempo, mmol_legante, orig_mmol_sale, rapporto)
+        plausible_mask.append(is_ok)
+    plausible_mask = np.array(plausible_mask)
+
+    probs_matrix = model.predict_proba(df_grid)
+    classes_list = [int(c) if str(c).isdigit() else c for c in model.classes_]
+    target_class_idx = classes_list.index(2) if 2 in classes_list else len(classes_list) - 1
+    success_probs = (probs_matrix[:, target_class_idx] * 100.0).round(1)
+    success_probs[~plausible_mask] = -1  # escluse dal ranking
+
+    df_results = pd.DataFrame(display_info)
+    df_results['Probabilità Successo (%)'] = success_probs
+    df_results = df_results[df_results['Probabilità Successo (%)'] >= 0]
+    df_results = df_results.sort_values(by='Probabilità Successo (%)', ascending=False).head(5).reset_index(drop=True)
+
+    return df_results
 
 def check_physical_plausibility(temp, tempo, mmol_legante, mmol_sale, rapporto_lm):
     """Verifica se le condizioni di sintesi sono fisicamente realizzabili in
@@ -1982,7 +2093,17 @@ with tab1:
                 'pred_class': pred_class,
                 'is_plausible': is_plausible,
                 'implausibility_reasons': implausibility_reasons,
-                'counter': st.session_state['tab1_pred_counter']
+                'counter': st.session_state['tab1_pred_counter'],
+                # Parametri originali "congelati" al momento del calcolo,
+                # usati dall'ottimizzatore contestuale: così restano coerenti
+                # anche se l'utente modifica i widget dopo aver premuto Calcola.
+                'mol': mol,
+                'orig_temp': temp,
+                'orig_tempo': tempo,
+                'orig_anione': anione_sel,
+                'orig_solvente': solvente_p,
+                'orig_mmol_legante': mmol_legante,
+                'orig_mmol_sale': mmol_sale
             }
 
     if 'tab1_result' in st.session_state:
@@ -2069,279 +2190,67 @@ with tab1:
         with st.expander("📊 Importanza Globale delle Feature (su tutte le sintesi)", expanded=False):
             render_feature_importance(key_prefix=f"tab1_fi_{res['counter']}")
 
-# --- TAB 2: OTTIMIZZATORE AUTOMATICO MULTI-METALLO ---
-with tab2:
-    st.subheader("⚡ Ottimizzatore di Condizioni Sperimentali Multi-Metallo")
-    st.markdown("L'IA simulerà ed esaminerà **griglie di combinazioni chimiche in parallelo**, testando anche **più metalli contemporaneamente**.")
-    
-    opt_col1, opt_col2, opt_col3 = st.columns(3)
-    
-    with opt_col1:
-        st.markdown("### 1. Legante Chimico")
-        opt_mode_legante = st.radio(
-            "Modalità Input Legante:", 
-            ["SMILES", "Nome / Formula / CAS", "Carica File (.mol / .sdf / .cif)"],
-            horizontal=True,
-            key="opt_mode_leg"
-        )
-        
-        opt_mol = None
-        if opt_mode_legante == "SMILES":
-            opt_smiles_input = st.text_input("SMILES del Legante:", value="O=C(O)c1ccc(C(=O)O)cc1", key="opt_smiles")
-            if opt_smiles_input:
-                opt_mol = Chem.MolFromSmiles(opt_smiles_input)
-                
-        elif opt_mode_legante == "Nome / Formula / CAS":
-            opt_query_input = st.text_input("Nome, Formula Bruta o CAS:", value="C8H6O4", key="opt_query")
-            if opt_query_input:
-                with st.spinner("Ricerca molecola nei database e sul Web..."):
-                    opt_found_smiles = resolve_molecule_to_smiles(opt_query_input, allow_web_search=True)
-                    if opt_found_smiles:
-                        opt_mol = Chem.MolFromSmiles(opt_found_smiles)
-                        st.caption(f"SMILES Identificato: `{opt_found_smiles}`")
-                    else:
-                        st.error("Nessuna molecola trovata per la formula/nome inserito.")
-                        
-        elif opt_mode_legante == "Carica File (.mol / .sdf / .cif)":
-            opt_uploaded_file = st.file_uploader("Carica file .mol, .sdf o .cif", type=['mol', 'sdf', 'cif'], key="opt_file")
-            if opt_uploaded_file is not None:
-                file_ext = opt_uploaded_file.name.split('.')[-1].lower()
-                file_bytes = opt_uploaded_file.getvalue().decode('utf-8', errors='ignore')
-                
-                if file_ext in ['mol', 'sdf']:
-                    opt_mol = Chem.MolFromMolBlock(file_bytes)
-                elif file_ext == 'cif':
-                    if HAS_PYMATGEN:
-                        try:
-                            opt_temp_filename = "temp_opt_upload.cif"
-                            with open(opt_temp_filename, "w", encoding="utf-8") as f:
-                                f.write(file_bytes)
-                            struct = Structure.from_file(opt_temp_filename)
-                            red_formula = struct.composition.reduced_formula
-                            opt_found_smiles = resolve_molecule_to_smiles(red_formula, allow_web_search=True)
-                            if opt_found_smiles:
-                                opt_mol = Chem.MolFromSmiles(opt_found_smiles)
-                            if os.path.exists(opt_temp_filename):
-                                os.remove(opt_temp_filename)
-                        except Exception as e:
-                            st.error(f"Errore lettura CIF: {e}")
+        # Ottimizzatore contestuale: mostrato SOLO quando l'esito non è già
+        # cristallino — non ha senso "ottimizzare" una sintesi che il
+        # modello prevede già di successo.
+        if effective_pred_class != 2:
+            st.markdown("---")
+            st.subheader("🔧 Ottimizza questa Sintesi")
+            st.markdown(
+                "Il modello ha esplorato automaticamente **temperatura, tempo, anione, solvente, "
+                "additivo e rapporto stechiometrico**, mantenendo fisso il metallo appena testato "
+                f"(**{res['metallo_sel']}**), per trovare le condizioni con la probabilità di "
+                "successo più alta per questa combinazione."
+            )
+            if st.button("🚀 Trova le Migliori Condizioni Alternative", key=f"opt_btn_{res['counter']}"):
+                with st.spinner("Esplorazione di migliaia di combinazioni alternative..."):
+                    df_opt_results = render_synthesis_optimizer(
+                        res['mol'], res['metallo_sel'], res['orig_temp'], res['orig_tempo'],
+                        res['orig_anione'], res['orig_solvente'],
+                        res['orig_mmol_legante'], res['orig_mmol_sale'],
+                        key_prefix=f"opt_{res['counter']}"
+                    )
+                st.session_state[f"opt_results_{res['counter']}"] = df_opt_results
 
-        if opt_mol:
-            opt_mw_val = float(Descriptors.MolWt(opt_mol))
-            st.success(f"Molecola acquisita! MW: {opt_mw_val:.2f} g/mol")
-        else:
-            opt_mw_val = 166.13
-
-        opt_input_mode_leg = st.radio("Inserisci Legante per l'ottimizzazione come:", ["MilliMoli (mmol)", "Massa (mg)"], key="opt_rad_leg", horizontal=True)
-        if opt_input_mode_leg == "MilliMoli (mmol)":
-            opt_mmol_legante = st.number_input("mmol Legante:", min_value=0.001, max_value=50.0, value=0.10, step=0.01, key="opt_mmol_leg")
-            opt_mg_legante = opt_mmol_legante * opt_mw_val
-            st.caption(f"⚖️ Corrispondono a **{opt_mg_legante:.2f} mg**")
-        else:
-            opt_mg_legante = st.number_input("Massa Legante (mg):", min_value=0.1, max_value=5000.0, value=16.61, step=1.0, key="opt_mg_leg")
-            opt_mmol_legante = opt_mg_legante / opt_mw_val if opt_mw_val > 0 else 0.1
-            st.caption(f"⚖️ Corrispondono a **{opt_mmol_legante:.3f} mmol**")
-
-    with opt_col2:
-        st.markdown("### 2. Selezione Metalli e Precursore")
-        
-        metal_list_opt = sorted(list(metal_props.keys()))
-        opt_selected_metals = st.multiselect(
-            "🧱 Seleziona uno o più Metalli da includere nella Scansione:",
-            options=metal_list_opt,
-            default=['Zr', 'Cu', 'Zn'] if all(m in metal_list_opt for m in ['Zr', 'Cu', 'Zn']) else [metal_list_opt[0]],
-            format_func=lambda x: f"{x} | {metal_props[x]['Name']} ({metal_props[x]['HSAB']})"
-        )
-        
-        if not opt_selected_metals:
-            st.warning("Seleziona almeno un metallo per procedere con la scansione.")
-            opt_selected_metals = [metal_list_opt[0]]
-
-        opt_anione = st.selectbox("Anione / Precursore:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'], key="opt_an")
-        
-        opt_idratazione = st.selectbox(
-            "Stato di Idratazione (H₂O):",
-            [
-                "Anidro (0 H₂O)",
-                "Monoidrato (1 H₂O)",
-                "Diidrato (2 H₂O)",
-                "Triidrato (3 H₂O)",
-                "Tetraidrato (4 H₂O)",
-                "Pentaidrato (5 H₂O)",
-                "Esaidrato (6 H₂O)",
-                "Nonavidrato (9 H₂O)"
-            ],
-            index=0,
-            key="opt_hydr"
-        )
-        
-        opt_n_h2o = int(opt_idratazione.split('(')[1].split(' ')[0])
-
-        opt_mmol_sale = st.number_input("mmol Sale Metallico (standard per la griglia):", min_value=0.001, max_value=50.0, value=0.10, step=0.01, key="opt_mmol_sale")
-
-    with opt_col3:
-        st.markdown("### 3. Opzioni Scansione")
-        opt_speed_mode = st.radio("Velocità Scansione:", ["Ultra-Veloce ⚡", "Completa 🔍"], index=0, key="opt_speed")
-
-    if st.button("🚀 Avvia Scansione e Ottimizzazione Multi-Metallo", type="primary"):
-        if not opt_mol:
-            st.error("Seleziona o inserisci un legante valido prima di avviare l'ottimizzazione.")
-        else:
-            opt_mw = float(Descriptors.MolWt(opt_mol))
-            opt_logp = float(Descriptors.MolLogP(opt_mol))
-            opt_hbd = float(Descriptors.NumHDonors(opt_mol))
-            opt_hba = float(Descriptors.NumHAcceptors(opt_mol))
-            opt_tpsa = float(Descriptors.TPSA(opt_mol))
-            opt_rot = float(Descriptors.NumRotatableBonds(opt_mol))
-            
-            smarts_f = extract_smarts_features(opt_mol)
-            opt_ligand_family = detect_ligand_family(opt_mol, smarts_f['n_COOH'])
-
-            if "Ultra-Veloce" in opt_speed_mode:
-                temperatures = [100.0, 120.0, 140.0]
-                times = [24.0, 48.0]
-                solvents_p = ['DMF', 'DEF', 'DMSO', 'MeCN', 'MeOH']
-                volumes_p = [10.0]
-                cosolvents = [('Nessuno', 0.0), ('H2O', 1.0), ('MeOH', 2.0)]
-                additives = [('Nessuno', 0.0), ('Acido Acetico (AcOH)', 2.0), ('Trietilammina (TEA)', 1.0)]
-            else:
-                temperatures = [80.0, 100.0, 120.0, 140.0, 160.0]
-                times = [12.0, 24.0, 48.0, 72.0]
-                solvents_p = ['DMF', 'DEF', 'DMSO', 'MeCN', 'H2O', 'MeOH', 'EtOH']
-                volumes_p = [5.0, 10.0, 15.0]
-                cosolvents = [('Nessuno', 0.0), ('H2O', 1.0), ('MeOH', 2.0), ('EtOH', 2.0)]
-                additives = [('Nessuno', 0.0), ('Acido Acetico (AcOH)', 2.0), ('Acido Formico (HCOOH)', 2.0), ('Trietilammina (TEA)', 1.0)]
-
-            with st.spinner(f"⚡ Simulazione vettorizzata su {len(opt_selected_metals)} metalli e centinaia di condizioni..."):
-                grid_combos = list(itertools.product(
-                    opt_selected_metals, temperatures, times, solvents_p, volumes_p, cosolvents, additives
-                ))
-                
-                rows_list = []
-                display_info = []
-
-                ratio_lm = float(opt_mmol_legante) / float(opt_mmol_sale) if float(opt_mmol_sale) > 0 else 1.0
-
-                for cur_metal, temp, tempo, solv_p, ml_solv_p, (cosolv, ml_cosolv), (add_name, add_eq) in grid_combos:
-                    metal_m = metal_props[cur_metal]
-                    hsab_match = float(calculate_hsab_match(metal_m['HSAB'], smarts_f['n_COOH'], smarts_f['n_Aromatic_N']))
-                    
-                    opt_metal_valence = metal_m.get('Valence', 2)
-                    opt_n_anioni = opt_metal_valence if opt_anione != 'Altro' else 1
-                    opt_base_salt_mw = metal_m['MW'] + opt_n_anioni * anion_mw.get(opt_anione, 60.0)
-                    opt_total_salt_mw = opt_base_salt_mw + (opt_n_h2o * 18.015)
-                    opt_mg_sale_calc = opt_mmol_sale * opt_total_salt_mw
-
-                    add_info = ADDITIVES_DATABASE.get(add_name, ADDITIVES_DATABASE['Nessuno'])
-                    add_type = add_info['type']
-                    
-                    total_vol = ml_solv_p + ml_cosolv
-                    cosolv_pct = (ml_cosolv / total_vol * 100.0) if total_vol > 0 else 0.0
-                    mix_props = calculate_solvent_mix_properties(solv_p, ml_solv_p, cosolv, ml_cosolv)
-                    
-                    rows_list.append({
-                        'MW_Legante': opt_mw, 'LogP_Legante': opt_logp, 'HBD_Legante': opt_hbd, 'HBA_Legante': opt_hba,
-                        'TPSA_Legante': opt_tpsa, 'RotatableBonds_Legante': opt_rot,
-                        'SMARTS_n_COOH': smarts_f['n_COOH'], 'SMARTS_n_Aromatic_N': smarts_f['n_Aromatic_N'],
-                        'SMARTS_fraction_sp2': smarts_f['fraction_sp2'],
-                        'LigFamily_Pirazolo': 1 if opt_ligand_family == 'Pirazolo' else 0,
-                        'LigFamily_Triazolo': 1 if opt_ligand_family == 'Triazolo' else 0,
-                        'LigFamily_Imidazolo': 1 if opt_ligand_family == 'Imidazolo' else 0,
-                        'LigFamily_CarbossilicoAromatico': 1 if opt_ligand_family == 'Carbossilico_Aromatico' else 0,
-                        'LigFamily_AltroNoto': 1 if opt_ligand_family == 'Altro_Noto' else 0,
-                        'LigFamily_NonSpecificata': 1 if opt_ligand_family == 'Non_Specificata' else 0,
-                        'HSAB_Match_Index': hsab_match,
-                        'Temperatura_num': temp, 'Tempo_ore_num': tempo,
-                        'Thermal_Dose': float(temp) * float(np.log1p(float(tempo))),
-                        'mmol legante': float(opt_mmol_legante), 'mmol sale': float(opt_mmol_sale), 'Rapporto L/M': float(ratio_lm),
-                        'Molarity_Legante': float(opt_mmol_legante) / total_vol if total_vol > 0 else 0.0,
-                        'Molarity_Sale': float(opt_mmol_sale) / total_vol if total_vol > 0 else 0.0,
-                        'Metallo_Z': metal_m['Z'], 'Metallo_Electronegativity': metal_m['Electronegativity'],
-                        'Metallo_Radius_pm': metal_m['Radius_pm'], 'Metallo_Group': metal_m['Group'], 'Metallo_Period': metal_m['Period'],
-                        'Anion_Acetato': 1 if opt_anione == 'Acetato' else 0,
-                        'Anion_Cloruro': 1 if opt_anione == 'Cloruro' else 0,
-                        'Anion_Nitrato': 1 if opt_anione == 'Nitrato' else 0,
-                        'Anion_Altro': 1 if opt_anione == 'Altro' else 0,
-                        'mL_Solvente_P': ml_solv_p, 'mL_CoSolvente': ml_cosolv, 'Total_Volume_mL': total_vol,
-                        'CoSolvent_Pct': cosolv_pct,
-                        'Solvent_Mix_Alpha': mix_props['mix_alpha'], 'Solvent_Mix_Beta': mix_props['mix_beta'],
-                        'Solvent_Mix_PiStar': mix_props['mix_pi_star'], 'Solvent_Mix_Dielectric': mix_props['mix_dielectric'],
-                        'Solvent_Mix_BoilingPt': mix_props['mix_boiling_pt'],
-                        'Additive_Eq': add_eq,
-                        'Additive_pKa': float(add_info.get('pKa', 0.0)),
-                        'Additive_Is_Acid': 1 if add_type == 'Acid' else 0,
-                        'Additive_Is_Base': 1 if add_type == 'Base' else 0,
-                        'Additive_Is_Neutral': 1 if add_type == 'Neutral' else 0,
-                    })
-                    
-                    add_mmol_calc = add_eq * opt_mmol_legante
-                    
-                    display_info.append({
-                        'Metallo': f"{cur_metal} ({metal_m['Name']})",
-                        'mmol Legante': round(opt_mmol_legante, 3),
-                        'mg Legante': round(opt_mg_legante, 2),
-                        'mmol Sale': round(opt_mmol_sale, 3),
-                        'mg Sale': round(opt_mg_sale_calc, 2),
-                        'Rapporto L/M': round(ratio_lm, 2),
-                        'Temperatura (°C)': temp,
-                        'Tempo (h)': tempo,
-                        'Solvente Principale': solv_p,
-                        'mL Solvente P.': ml_solv_p,
-                        'Co-Solvente': cosolv,
-                        'mL Co-Solvente': ml_cosolv,
-                        'Additivo': add_name,
-                        'Eq. Additivo': add_eq,
-                        'mmol Additivo': round(add_mmol_calc, 3)
-                    })
-
-                df_simulation = pd.DataFrame(rows_list)
-                for col in feature_names:
-                    if col not in df_simulation.columns:
-                        df_simulation[col] = 0.0
-                df_simulation = df_simulation[feature_names]
-
-                probs_matrix = model.predict_proba(df_simulation)
-                
-                classes_list = [int(c) if str(c).isdigit() else c for c in model.classes_]
-                if 2 in classes_list:
-                    target_class_idx = classes_list.index(2)
-                elif 1 in classes_list:
-                    target_class_idx = classes_list.index(1)
+            opt_results_key = f"opt_results_{res['counter']}"
+            if opt_results_key in st.session_state:
+                df_opt_results = st.session_state[opt_results_key]
+                if len(df_opt_results) == 0:
+                    st.warning("Nessuna combinazione alternativa fisicamente realizzabile ha dato risultati migliori.")
                 else:
-                    target_class_idx = len(classes_list) - 1
+                    st.markdown("#### 🏆 Top 5 Condizioni Alternative")
+                    st.dataframe(df_opt_results, use_container_width=True)
 
-                success_probs = (probs_matrix[:, target_class_idx] * 100.0).round(1)
+                    best = df_opt_results.iloc[0]
+                    p2_orig = res['probs'][list(model.classes_).index(2)] * 100 if 2 in list(model.classes_) else 0.0
 
-                # Controllo di plausibilità sulla stechiometria: mmol legante/
-                # sale sono valori FISSI scelti dall'utente per l'intera
-                # griglia (solo metallo/anione/solvente/additivo variano tra
-                # le combinazioni), quindi un solo controllo basta per
-                # l'intera scansione. Se implausibile, la griglia intera
-                # riguarda condizioni non realizzabili in laboratorio.
-                opt_ratio_check = opt_mmol_legante / opt_mmol_sale if opt_mmol_sale > 0 else 999.0
-                opt_is_plausible, opt_implausibility_reasons = check_physical_plausibility(
-                    temp, tempo, opt_mmol_legante, opt_mmol_sale, opt_ratio_check
-                )
-                if not opt_is_plausible:
-                    success_probs = success_probs * 0.0  # azzero: la sintesi non è realizzabile, a prescindere dal modello
+                    suggerimenti = []
+                    if abs(best['Temperatura (°C)'] - res['orig_temp']) >= 10:
+                        direzione = "aumenta" if best['Temperatura (°C)'] > res['orig_temp'] else "diminuisci"
+                        suggerimenti.append(f"**{direzione} la temperatura** da {res['orig_temp']:.0f}°C a **{best['Temperatura (°C)']:.0f}°C**")
+                    if abs(best['Tempo (h)'] - res['orig_tempo']) >= 6:
+                        direzione = "allunga" if best['Tempo (h)'] > res['orig_tempo'] else "accorcia"
+                        suggerimenti.append(f"**{direzione} il tempo di reazione** da {res['orig_tempo']:.0f}h a **{best['Tempo (h)']:.0f}h**")
+                    if best['Anione'] != res['orig_anione']:
+                        suggerimenti.append(f"**cambia l'anione/precursore** da {res['orig_anione']} a **{best['Anione']}**")
+                    if best['Solvente'] != res['orig_solvente']:
+                        suggerimenti.append(f"**cambia il solvente principale** da {res['orig_solvente']} a **{best['Solvente']}**")
+                    if best['Additivo'] != 'Nessuno':
+                        suggerimenti.append(f"**aggiungi un modulatore**: {best['Additivo']} ({best['Eq. Additivo']:.1f} eq.)")
+                    if abs(best['Rapporto L/M'] - (res['orig_mmol_legante']/res['orig_mmol_sale'] if res['orig_mmol_sale'] > 0 else 1.0)) >= 0.4:
+                        suggerimenti.append(f"**cambia il rapporto Legante/Metallo** a circa **{best['Rapporto L/M']:.1f}:1**")
 
-                df_results = pd.DataFrame(display_info)
-                df_results['Probabilità Successo (%)'] = success_probs
-                df_results = df_results.sort_values(by='Probabilità Successo (%)', ascending=False).reset_index(drop=True)
+                    if suggerimenti:
+                        st.success(
+                            f"💡 **Suggerimento principale:** la miglior combinazione trovata porta la probabilità di "
+                            f"successo dal **{p2_orig:.1f}%** attuale al **{best['Probabilità Successo (%)']:.1f}%**, se:\n\n"
+                            + "\n".join(f"- {s}" for s in suggerimenti)
+                        )
+                    else:
+                        st.info("Le condizioni attuali sono già vicine all'ottimo trovato dal modello per questa combinazione.")
 
-            if not opt_is_plausible:
-                st.error(
-                    "🚫 **Stechiometria non fisicamente realizzabile.** Tutte le combinazioni di questa "
-                    "griglia sono considerate automaticamente non riuscite, indipendentemente dalla "
-                    "predizione del modello:\n\n" + "\n".join(f"- {r}" for r in opt_implausibility_reasons)
-                )
-
-            st.success(f"⚡ **{len(df_results)} combinazioni analizzate istantaneamente su {len(opt_selected_metals)} metalli differenti!**")
-            st.markdown("### 🏆 Migliori Condizioni Sperimentali Trovate nella Griglia")
-            st.dataframe(df_results.head(15))
-
-# --- TAB 3: RICERCA WEB TAVILY AI ---
-with tab3:
+# --- TAB 2: RICERCA WEB TAVILY AI ---
+with tab2:
     st.subheader("🌐 Agente Web Tavily per Sintesi & Letteratura MOF")
     st.markdown("Effettua ricerche live per verificare protocolli di sintesi, informazioni sui leganti o pubblicazioni scientifiche correlate.")
     
