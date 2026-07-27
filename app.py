@@ -533,7 +533,16 @@ COMMON_MOF_LIGANDS = {
     "4,4',4''-triaminotriphenylamine": "Nc1ccc(cc1)N(c1ccc(N)cc1)c1ccc(N)cc1",
     "1,3,5-tris(4-carboxyphenyl)benzene (btb)": "O=C(O)c1ccc(-c2cc(-c3ccc(C(=O)O)cc3)cc(-c3ccc(C(=O)O)cc3)c2)cc1",
     "terphenyldicarboxylic acid (tpdc)": "OC(=O)c1ccc(cc1)-c1ccc(cc1)-c1ccc(cc1)C(=O)O",
-    "4,4'-(naphthalene-2,6-diyl)dibenzoic acid": "OC(=O)c1ccc(cc1)-c1ccc2cc(ccc2c1)-c1ccc(cc1)C(=O)O"
+    "4,4'-(naphthalene-2,6-diyl)dibenzoic acid": "OC(=O)c1ccc(cc1)-c1ccc2cc(ccc2c1)-c1ccc(cc1)C(=O)O",
+
+    # Curcumina: legante reale documentato in letteratura MOF (es. medi-MOF-1,
+    # Zn-curcumina). SMILES verificato (formula C21H20O6 confermata con RDKit).
+    # NOTA: nel dataset compaiono varianti con suffissi ("curc(III)", "curc-ind",
+    # "curc(III)_KC") che sembrano derivati/forme specifiche della tua ricerca,
+    # non identificabili con certezza dal solo nome — non li ho quindi inclusi
+    # per non rischiare di associare la struttura sbagliata.
+    "curcumin": "COc1cc(/C=C/C(=O)CC(=O)/C=C/c2ccc(O)c(OC)c2)ccc1O",
+    "curcumina": "COc1cc(/C=C/C(=O)CC(=O)/C=C/c2ccc(O)c(OC)c2)ccc1O"
 }
 
 # --- PROPRIETÀ ADDITIVI E MODULATORI ---
@@ -1027,7 +1036,7 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v9-ligand-db-expansion"
+MODEL_TRAINING_VERSION = "v10-curcumin-added"
 
 @st.cache_resource
 def load_or_train_model():
