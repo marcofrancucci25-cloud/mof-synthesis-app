@@ -1085,12 +1085,13 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v12-literature-negatives-1404rows"
+MODEL_TRAINING_VERSION = "v13-literature-negatives-phase2-1417rows"
 
 @st.cache_resource
 def load_or_train_model():
     pkl_file = "modello_sintesi_mof_ottimizzato.pkl"
     csv_candidates = [
+        "Dataset_Sintesi_MOF_ML_Standardizzato_v4.csv",
         "Dataset_Sintesi_MOF_ML_Standardizzato_v3.csv",
         "Dataset_Sintesi_MOF_ML_Standardizzato_v2.csv",
         "Dataset_Sintesi_Unificato_1000.csv",
