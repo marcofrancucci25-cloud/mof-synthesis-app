@@ -1085,7 +1085,7 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v13-literature-negatives-phase2-1417rows"
+MODEL_TRAINING_VERSION = "v14-condition-stats-panel"
 
 @st.cache_resource
 def load_or_train_model():
@@ -1312,6 +1312,35 @@ def load_or_train_model():
         cv_f1_macro = f1_score(y, preds_fallback, average='macro', zero_division=0)
         cv_balanced_accuracy = balanced_accuracy_score(y, preds_fallback)
 
+    # Statistiche condizioni-successo: calcolate sul dataset di training reale,
+    # usate dal pannello "confronto con le condizioni storicamente favorevoli"
+    # in Tab1. Ricalcolate ad ogni training così restano sempre sincronizzate
+    # col dataset attuale, invece di essere valori fissi nel codice.
+    try:
+        has_additive_mask = (X['Additive_Is_Acid'] + X['Additive_Is_Base']) > 0
+        success_rate_with_additive = float((y[has_additive_mask] == 2).mean()) if has_additive_mask.sum() > 0 else None
+        success_rate_without_additive = float((y[~has_additive_mask] == 2).mean()) if (~has_additive_mask).sum() > 0 else None
+
+        def _bin_success_rates(series, bins):
+            binned = pd.cut(series, bins=bins)
+            rates = {}
+            for b in binned.cat.categories:
+                mask = binned == b
+                if mask.sum() >= 10:  # solo bin con abbastanza campioni da essere affidabili
+                    rates[(float(b.left), float(b.right))] = float((y[mask] == 2).mean())
+            return rates
+
+        condition_stats = {
+            'success_rate_with_additive': success_rate_with_additive,
+            'success_rate_without_additive': success_rate_without_additive,
+            'success_rate_by_tempo': _bin_success_rates(X['Tempo_ore_num'], [0, 6, 24, 48, 96, 200, 800]),
+            'success_rate_by_ratio': _bin_success_rates(X['Rapporto L/M'], [0, 0.5, 1, 1.5, 2, 3, 50]),
+            'success_rate_by_hsab': _bin_success_rates(X['HSAB_Match_Index'], [0, 0.3, 0.6, 0.9, 1.01]),
+            'overall_success_rate': float((y == 2).mean())
+        }
+    except Exception:
+        condition_stats = None
+
     metrics = {
         'train_accuracy': cv_accuracy,  # nome mantenuto per compatibilità con .pkl esistenti; ora è CV accuracy
         'cv_f1_macro': cv_f1_macro,
@@ -1322,7 +1351,8 @@ def load_or_train_model():
         'cv_diagnostics': cv_diagnostics,
         'n_samples': len(X),
         'n_features': len(feature_names),
-        'n_missing_values_imputed': n_missing_pre_impute
+        'n_missing_values_imputed': n_missing_pre_impute,
+        'condition_stats': condition_stats
     }
     
     save_dict = {
@@ -1808,6 +1838,67 @@ def check_physical_plausibility(temp, tempo, mmol_legante, mmol_sale, rapporto_l
 
     return (len(reasons) == 0), reasons
 
+def render_condition_check(condition_stats, has_additive, tempo, rapporto_lm, hsab_match):
+    """Confronta le condizioni della sintesi corrente con le statistiche di
+    successo calcolate sul dataset reale di training, mostrando un pannello
+    leggibile che risponde a 'perché il modello pensa questo' con numeri
+    concreti — complementare alla spiegazione SHAP specifica per questa
+    predizione, ma basato su pattern aggregati su tutte le sintesi."""
+    if not condition_stats:
+        return
+
+    overall = condition_stats.get('overall_success_rate')
+    if overall is None:
+        return
+
+    def _find_bin_rate(value, rate_dict):
+        for (lo, hi), rate in rate_dict.items():
+            if lo < value <= hi:
+                return rate
+        return None
+
+    checks = []
+
+    # Modulatore
+    r_with = condition_stats.get('success_rate_with_additive')
+    r_without = condition_stats.get('success_rate_without_additive')
+    if has_additive and r_with is not None:
+        checks.append(('✅', f"Modulatore presente — nel dataset, le sintesi CON modulatore hanno un tasso di successo del {r_with*100:.0f}% (contro {r_without*100:.0f}% senza)."))
+    elif not has_additive and r_without is not None and r_with is not None and r_without < r_with - 0.1:
+        checks.append(('⚠️', f"Nessun modulatore — nel dataset, le sintesi SENZA modulatore hanno un tasso di successo del {r_without*100:.0f}% (contro {r_with*100:.0f}% con modulatore). Valuta se aggiungerne uno."))
+
+    # Tempo
+    rate_tempo = _find_bin_rate(tempo, condition_stats.get('success_rate_by_tempo', {}))
+    if rate_tempo is not None:
+        if rate_tempo >= overall + 0.05:
+            checks.append(('✅', f"Tempo di reazione ({tempo:.0f}h) in una fascia storicamente favorevole (tasso di successo {rate_tempo*100:.0f}%)."))
+        elif rate_tempo <= overall - 0.1:
+            checks.append(('⚠️', f"Tempo di reazione ({tempo:.0f}h) in una fascia storicamente meno favorevole nel dataset (tasso di successo {rate_tempo*100:.0f}% contro una media del {overall*100:.0f}%)."))
+
+    # Rapporto L/M
+    rate_ratio = _find_bin_rate(rapporto_lm, condition_stats.get('success_rate_by_ratio', {}))
+    if rate_ratio is not None:
+        if rate_ratio >= overall + 0.1:
+            checks.append(('✅', f"Rapporto Legante/Metallo ({rapporto_lm:.2f}:1) in una fascia storicamente molto favorevole (tasso di successo {rate_ratio*100:.0f}%)."))
+        elif rate_ratio <= overall - 0.1:
+            checks.append(('⚠️', f"Rapporto Legante/Metallo ({rapporto_lm:.2f}:1) in una fascia storicamente debole nel dataset (tasso di successo {rate_ratio*100:.0f}%). Prova un rapporto più vicino a 1:1-1.5:1, oppure un eccesso più marcato di uno dei due reagenti."))
+
+    # HSAB
+    rate_hsab = _find_bin_rate(hsab_match, condition_stats.get('success_rate_by_hsab', {}))
+    if rate_hsab is not None and rate_hsab <= overall - 0.15:
+        checks.append(('⚠️', f"Compatibilità HSAB metallo-legante in una fascia storicamente debole (tasso di successo {rate_hsab*100:.0f}%)."))
+
+    if not checks:
+        return
+
+    st.markdown("#### 🧭 Confronto con le Condizioni Storicamente Favorevoli")
+    st.caption(
+        "Pattern statistici osservati su tutte le sintesi del dataset (non specifici per questa combinazione "
+        "metallo-legante) — un secondo punto di vista, complementare alla predizione del modello e al grafico SHAP sopra."
+    )
+    for icon, text in checks:
+        st.markdown(f"{icon} {text}")
+
 def render_shap_explanation(df_single, key_prefix="shap", default_class=None):
     """Mostra il grafico dei contributi SHAP per una singola predizione
     (df_single = una riga di feature già pronta per il modello).
@@ -2235,6 +2326,15 @@ with tab1:
             df_features,
             key_prefix=f"tab1_pred_{res['counter']}",
             default_class=effective_pred_class
+        )
+
+        row0 = df_features.iloc[0]
+        render_condition_check(
+            metrics.get('condition_stats'),
+            has_additive=bool(row0.get('Additive_Is_Acid', 0) or row0.get('Additive_Is_Base', 0)),
+            tempo=float(row0.get('Tempo_ore_num', 0)),
+            rapporto_lm=float(row0.get('Rapporto L/M', 1.0)),
+            hsab_match=float(row0.get('HSAB_Match_Index', 0.5))
         )
 
         with st.expander("📊 Importanza Globale delle Feature (su tutte le sintesi)", expanded=False):
