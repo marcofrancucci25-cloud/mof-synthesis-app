@@ -2528,29 +2528,27 @@ with tab1:
                 st.caption(f"🧪 Corrispondono a **{add_eq:.2f} eq.** rispetto al Legante.")
 
     st.markdown("---")
-    col_reset, col_calc = st.columns([1, 2])
-    with col_reset:
-        if st.button("🔄 Azzera Parametri", use_container_width=True):
-            _tab1_keys_to_clear = [
-                'tab1_mode_legante', 'tab1_smiles_input', 'tab1_query_input', 'tab1_file_uploader',
-                'rad_leg', 'tab1_mmol_legante', 'tab1_mg_legante',
-                'tab1_select_metal', 'tab1_anione_sel', 'tab1_idratazione',
-                'rad_sale', 'tab1_mmol_sale', 'tab1_mg_sale',
-                'tab1_solvente_p', 'tab1_ml_solv_p', 'tab1_co_solvente', 'tab1_ml_cosolv',
-                'tab1_temp', 'tab1_tempo', 'tab1_use_add', 'tab1_additivo_sel',
-                'tab1_add_mode', 'tab1_add_eq', 'tab1_add_mmol',
-                'tab1_result', 'tab1_pred_counter', 'tab1_last_balloons_counter'
-            ]
-            for _k in _tab1_keys_to_clear:
-                if _k in st.session_state:
-                    del st.session_state[_k]
-            # Chiavi dinamiche (una per predizione: risultati ottimizzatore, ecc.)
-            for _k in list(st.session_state.keys()):
-                if _k.startswith('opt_results_') or _k.startswith('opt_btn_') or _k.startswith('tab1_pred_') or _k.startswith('tab1_fi_'):
-                    del st.session_state[_k]
-            st.rerun()
-    with col_calc:
-        calcola_clicked = st.button("🚀 Calcola Probabilità di Successo", type="primary", use_container_width=True)
+    if st.button("🔄 Azzera Parametri", help="Riporta tutti i campi ai valori di default e cancella l'ultimo risultato"):
+        _tab1_keys_to_clear = [
+            'tab1_mode_legante', 'tab1_smiles_input', 'tab1_query_input', 'tab1_file_uploader',
+            'rad_leg', 'tab1_mmol_legante', 'tab1_mg_legante',
+            'tab1_select_metal', 'tab1_anione_sel', 'tab1_idratazione',
+            'rad_sale', 'tab1_mmol_sale', 'tab1_mg_sale',
+            'tab1_solvente_p', 'tab1_ml_solv_p', 'tab1_co_solvente', 'tab1_ml_cosolv',
+            'tab1_temp', 'tab1_tempo', 'tab1_use_add', 'tab1_additivo_sel',
+            'tab1_add_mode', 'tab1_add_eq', 'tab1_add_mmol',
+            'tab1_result', 'tab1_pred_counter', 'tab1_last_balloons_counter'
+        ]
+        for _k in _tab1_keys_to_clear:
+            if _k in st.session_state:
+                del st.session_state[_k]
+        # Chiavi dinamiche (una per predizione: risultati ottimizzatore, ecc.)
+        for _k in list(st.session_state.keys()):
+            if _k.startswith('opt_results_') or _k.startswith('opt_btn_') or _k.startswith('tab1_pred_') or _k.startswith('tab1_fi_'):
+                del st.session_state[_k]
+        st.rerun()
+
+    calcola_clicked = st.button("🚀 Calcola Probabilità di Successo", type="primary")
 
     if calcola_clicked:
         if not mol:
