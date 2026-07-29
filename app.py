@@ -661,6 +661,52 @@ metal_props = {
     'Au': {'Z': 79, 'Electronegativity': 2.54, 'Radius_pm': 144, 'Group': 11, 'Period': 6, 'MW': 196.97, 'HSAB': 'Soft', 'Name': 'Oro', 'Name_EN': 'Gold', 'Valence': 3}
 }
 
+# --- PRIORI DI LETTERATURA PER CONDIZIONI DI SINTESI, PER METALLO ---
+# Range TIPICI ("core") e SOLVENTI/MODULATORI più comuni per ciascun metallo
+# in sintesi solvotermale/idrotermale di MOF, compilati da letteratura
+# generale (review, paper metodologici, non specifici per un singolo
+# legante). Usati per arricchire le statistiche calcolate sul dataset
+# personale: quando un metallo ha pochi campioni nel dataset di training,
+# l'ottimizzatore si affida maggiormente a questi range letterari invece
+# che a una manciata di osservazioni statisticamente deboli.
+# 'modulator_hint': 'high_eq_acid' (10-50 eq, tipico carbossilati hard),
+#   'low_eq_acid' (HF/HNO3/AcOH ~1 eq, es. Cr/V), 'none' (tipico ZIF/azolati),
+#   'special' (sintesi diretta non standard, es. Pd/Au/Ru).
+LITERATURE_CONDITION_PRIORS = {
+    'Zr':  {'temp_core': (100, 120), 'tempo_core': (24, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'H2O'], 'modulator_hint': 'high_eq_acid'},
+    'Hf':  {'temp_core': (110, 120), 'tempo_core': (24, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'H2O'], 'modulator_hint': 'high_eq_acid'},
+    'Ti':  {'temp_core': (100, 150), 'tempo_core': (15, 48),  'ratio_core': (0.5, 1.0), 'solvents': ['DMF', 'MeOH'], 'modulator_hint': 'high_eq_acid'},
+    'Al':  {'temp_core': (120, 135), 'tempo_core': (3, 24),   'ratio_core': (0.5, 1.0), 'solvents': ['H2O', 'DMF'], 'modulator_hint': 'low_eq_acid'},
+    'Cr':  {'temp_core': (200, 220), 'tempo_core': (8, 24),   'ratio_core': (1.0, 1.0), 'solvents': ['H2O', 'DMF'], 'modulator_hint': 'low_eq_acid'},
+    'Fe':  {'temp_core': (100, 150), 'tempo_core': (4, 24),   'ratio_core': (0.5, 1.0), 'solvents': ['DMF', 'H2O'], 'modulator_hint': 'high_eq_acid'},
+    'Y':   {'temp_core': (100, 120), 'tempo_core': (24, 36),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'H2O'], 'modulator_hint': 'high_eq_acid'},
+    'La':  {'temp_core': (105, 120), 'tempo_core': (24, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'H2O'], 'modulator_hint': 'high_eq_acid'},
+    'Ce':  {'temp_core': (25, 120),  'tempo_core': (1, 48),   'ratio_core': (1.0, 1.0), 'solvents': ['H2O', 'DMF'], 'modulator_hint': 'high_eq_acid'},
+    'Nd':  {'temp_core': (105, 120), 'tempo_core': (24, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'H2O'], 'modulator_hint': 'high_eq_acid'},
+    'Eu':  {'temp_core': (105, 120), 'tempo_core': (24, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'H2O'], 'modulator_hint': 'high_eq_acid'},
+    'Gd':  {'temp_core': (105, 120), 'tempo_core': (24, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'H2O'], 'modulator_hint': 'high_eq_acid'},
+    'Tb':  {'temp_core': (105, 120), 'tempo_core': (24, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'H2O'], 'modulator_hint': 'high_eq_acid'},
+    'Mg':  {'temp_core': (110, 125), 'tempo_core': (20, 24),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'EtOH'], 'modulator_hint': 'none'},
+    'Ca':  {'temp_core': (80, 150),  'tempo_core': (12, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'H2O'], 'modulator_hint': 'none'},
+    'Sr':  {'temp_core': (80, 150),  'tempo_core': (12, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'H2O'], 'modulator_hint': 'none'},
+    'Ba':  {'temp_core': (80, 150),  'tempo_core': (12, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'H2O'], 'modulator_hint': 'none'},
+    'Cu':  {'temp_core': (85, 120),  'tempo_core': (12, 24),  'ratio_core': (0.67, 1.0), 'solvents': ['DMF', 'EtOH'], 'modulator_hint': 'none'},
+    'Zn':  {'temp_core': (25, 120),  'tempo_core': (0.5, 24), 'ratio_core': (2.0, 4.0), 'solvents': ['MeOH', 'H2O', 'DMF'], 'modulator_hint': 'none'},
+    'Co':  {'temp_core': (25, 110),  'tempo_core': (1, 66),   'ratio_core': (1.0, 4.0), 'solvents': ['MeOH', 'DMF', 'H2O'], 'modulator_hint': 'none'},
+    'Ni':  {'temp_core': (100, 110), 'tempo_core': (24, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'H2O'], 'modulator_hint': 'none'},
+    'Mn':  {'temp_core': (100, 135), 'tempo_core': (24, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'EtOH'], 'modulator_hint': 'none'},
+    'Cd':  {'temp_core': (80, 120),  'tempo_core': (24, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'H2O'], 'modulator_hint': 'none'},
+    'V':   {'temp_core': (180, 220), 'tempo_core': (20, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['H2O', 'DMF'], 'modulator_hint': 'low_eq_acid'},
+    'Ga':  {'temp_core': (100, 150), 'tempo_core': (24, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'MeCN'], 'modulator_hint': 'high_eq_acid'},
+    'In':  {'temp_core': (100, 150), 'tempo_core': (24, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'MeCN'], 'modulator_hint': 'high_eq_acid'},
+    'Bi':  {'temp_core': (120, 120), 'tempo_core': (24, 48),  'ratio_core': (1.0, 1.0), 'solvents': ['MeOH', 'DMF'], 'modulator_hint': 'none'},
+    'Ag':  {'temp_core': (25, 25),   'tempo_core': (2, 48),   'ratio_core': (0.5, 1.0), 'solvents': ['H2O', 'EtOH', 'MeCN'], 'modulator_hint': 'none'},
+    'Ru':  {'temp_core': (150, 160), 'tempo_core': (24, 72),  'ratio_core': (1.33, 1.33), 'solvents': ['H2O', 'EtOH'], 'modulator_hint': 'low_eq_acid'},
+    'Pd':  {'temp_core': (25, 65),   'tempo_core': (24, 48),  'ratio_core': (1.0, 1.0), 'solvents': ['MeOH', 'H2O'], 'modulator_hint': 'special'},
+    'Au':  {'temp_core': (25, 25),   'tempo_core': (0.1, 0.5),'ratio_core': (1.0, 1.0), 'solvents': ['H2O', 'MeOH'], 'modulator_hint': 'special'},
+    'Sn':  {'temp_core': (100, 150), 'tempo_core': (24, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'H2O'], 'modulator_hint': 'high_eq_acid'},
+}
+
 # Pesi molecolari del SINGOLO anione monovalente (NO3-, CH3COO-, Cl-).
 # Il numero di anioni necessari a bilanciare la carica viene calcolato
 # moltiplicando per la valenza del metallo (metal_props[...]['Valence']),
@@ -1085,7 +1131,7 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v14-condition-stats-panel"
+MODEL_TRAINING_VERSION = "v16-literature-priors-optimizer"
 
 @st.cache_resource
 def load_or_train_model():
@@ -1341,6 +1387,76 @@ def load_or_train_model():
     except Exception:
         condition_stats = None
 
+    # Range storici (percentili) di temperatura/tempo/rapporto L/M PER
+    # CIASCUN METALLO, calcolati sui dati di training reali E fusi con i
+    # priori di letteratura (LITERATURE_CONDITION_PRIORS) quando i campioni
+    # locali sono pochi. Usati dall'ottimizzatore contestuale per costruire
+    # una griglia di ricerca realistica specifica per il metallo testato,
+    # invece di una griglia fissa identica per tutti (che portava a
+    # suggerire spesso 200°C anche per metalli che in pratica non lo usano
+    # quasi mai, es. Zr/Ag/Zn) o di fidarsi ciecamente di pochissimi
+    # campioni locali (es. Cr con solo 6 righe nel dataset).
+    #
+    # Regola di fusione:
+    #   >=15 campioni locali per il metallo -> mi fido solo dei dati (sono
+    #       già abbastanza rappresentativi)
+    #   1-14 campioni -> unisco i punti osservati con i punti letterari
+    #       (min/media/max del range "core" da letteratura), così la
+    #       griglia riflette sia la tua pratica reale sia la letteratura
+    #   0 campioni ma il metallo è coperto dalla letteratura -> uso solo i
+    #       punti letterari, invece del fallback generico su tutto il dataset
+    #       (che mischierebbe metalli chimicamente molto diversi tra loro)
+    try:
+        metalli_raw = raw_df['Metallo'].reset_index(drop=True)
+        X_reset_idx = X.reset_index(drop=True)
+        metal_condition_ranges = {}
+
+        def _percentile_set(series):
+            pts = sorted(set(round(float(series.quantile(q)), 2) for q in [0.1, 0.25, 0.5, 0.75, 0.9]))
+            if len(pts) < 2:  # troppo pochi campioni distinti: aggiungo un minimo di spread
+                base = pts[0] if pts else 0.0
+                pts = sorted(set([base * 0.8, base, base * 1.2])) if base > 0 else [base]
+            return pts
+
+        def _literature_points(metal_sym, dim_key):
+            prior = LITERATURE_CONDITION_PRIORS.get(metal_sym)
+            if not prior:
+                return None
+            lo, hi = prior[dim_key]
+            return sorted(set([lo, round((lo + hi) / 2, 2), hi]))
+
+        def _build_range(metal_sym, data_series, dim_key, n_local):
+            lit_pts = _literature_points(metal_sym, dim_key)
+            if n_local >= 15 or lit_pts is None:
+                return _percentile_set(data_series) if n_local > 0 else (lit_pts or [])
+            if n_local == 0:
+                return lit_pts
+            # Fusione: punti osservati + punti letterari, deduplicati
+            data_pts = _percentile_set(data_series)
+            return sorted(set(round(p, 2) for p in (data_pts + lit_pts)))
+
+        all_relevant_metals = set(metalli_raw.unique()) | set(LITERATURE_CONDITION_PRIORS.keys())
+        for metal_sym in all_relevant_metals:
+            mask = metalli_raw == metal_sym
+            n_local = int(mask.sum())
+            if n_local == 0 and metal_sym not in LITERATURE_CONDITION_PRIORS:
+                continue  # nessun dato locale né letterario: userà il fallback globale
+            metal_condition_ranges[metal_sym] = {
+                'temperature': _build_range(metal_sym, X_reset_idx.loc[mask, 'Temperatura_num'] if n_local else None, 'temp_core', n_local),
+                'tempo': _build_range(metal_sym, X_reset_idx.loc[mask, 'Tempo_ore_num'] if n_local else None, 'tempo_core', n_local),
+                'ratio': _build_range(metal_sym, X_reset_idx.loc[mask, 'Rapporto L/M'] if n_local else None, 'ratio_core', n_local),
+                'n_samples': n_local,
+                'used_literature': (metal_sym in LITERATURE_CONDITION_PRIORS) and (n_local < 15)
+            }
+        metal_condition_ranges['__GLOBAL__'] = {
+            'temperature': _percentile_set(X['Temperatura_num']),
+            'tempo': _percentile_set(X['Tempo_ore_num']),
+            'ratio': _percentile_set(X['Rapporto L/M']),
+            'n_samples': len(X)
+        }
+    except Exception:
+        metal_condition_ranges = None
+
     metrics = {
         'train_accuracy': cv_accuracy,  # nome mantenuto per compatibilità con .pkl esistenti; ora è CV accuracy
         'cv_f1_macro': cv_f1_macro,
@@ -1352,7 +1468,8 @@ def load_or_train_model():
         'n_samples': len(X),
         'n_features': len(feature_names),
         'n_missing_values_imputed': n_missing_pre_impute,
-        'condition_stats': condition_stats
+        'condition_stats': condition_stats,
+        'metal_condition_ranges': metal_condition_ranges
     }
     
     save_dict = {
@@ -1672,16 +1789,54 @@ def render_synthesis_optimizer(mol, metallo_sel, orig_temp, orig_tempo, orig_ani
     ligand_family = detect_ligand_family(mol, smarts_f['n_COOH'])
     metal_m = metal_props[metallo_sel]
 
-    # Griglia di ricerca: dimensionata per restare veloce (~5-6mila
-    # combinazioni, coerente con l'ordine di grandezza già gestito dal
-    # vecchio ottimizzatore multi-metallo) mantenendo comunque una copertura
-    # ampia dello spazio dei parametri.
-    temperatures = [70.0, 100.0, 130.0, 160.0, 200.0]
-    times = [12.0, 24.0, 48.0, 96.0]
+    # Griglia di ricerca COSTRUITA SUI DATI REALI per questo specifico
+    # metallo (percentili p10-p25-mediana-p75-p90 di temperatura/tempo/
+    # rapporto osservati storicamente), invece di una griglia fissa
+    # identica per ogni metallo. Prima la griglia arrivava sempre fino a
+    # 200°C indipendentemente dal metallo, portando a suggerire condizioni
+    # usate raramente nella pratica per molti sistemi (es. Zr/Ag/Zn, che
+    # storicamente non superano i 120-160°C). Ora un metallo che nel
+    # dataset non supera mai i 140°C non vedrà proposto 200°C.
+    metal_ranges_all = metrics.get('metal_condition_ranges') or {}
+    metal_ranges = metal_ranges_all.get(metallo_sel)
+    n_samples_metallo = (metal_ranges or {}).get('n_samples', 0)
+    used_literature = (metal_ranges or {}).get('used_literature', False)
+    used_fallback_range = metal_ranges is None
+    if metal_ranges is None:
+        metal_ranges = metal_ranges_all.get('__GLOBAL__', {})
+
+    temperatures = metal_ranges.get('temperature') or [70.0, 100.0, 130.0, 160.0, 200.0]
+    times = metal_ranges.get('tempo') or [12.0, 24.0, 48.0, 96.0]
+    rapporti_target = metal_ranges.get('ratio') or [0.5, 1.0, 1.5, 2.0, 3.0]
+
     anioni = ['Nitrato', 'Acetato', 'Cloruro', 'Altro']
-    solventi = ['DMF', 'DMSO', 'MeCN', 'H2O', 'MeOH', 'EtOH']
+    solventi = ['DMF', 'DEF', 'DMSO', 'MeCN', 'H2O', 'MeOH', 'EtOH']
     additivi = [('Nessuno', 0.0), ('Acido Acetico (AcOH)', 5.0), ('Acido Trifluoroacetico (TFA)', 5.0), ('Trietilammina (TEA)', 3.0)]
-    rapporti_target = [0.5, 1.0, 1.5, 2.0, 3.0]  # rapporto L/M, variando mmol legante a mmol sale fisso
+
+    # I solventi tipici da letteratura per questo metallo vengono messi in
+    # cima alla lista esplorata (non esclusi gli altri, solo prioritizzati),
+    # così le combinazioni chimicamente più plausibili vengono scoperte prima.
+    lit_prior = LITERATURE_CONDITION_PRIORS.get(metallo_sel)
+    if lit_prior and lit_prior.get('solvents'):
+        preferiti = [s for s in lit_prior['solvents'] if s in solventi]
+        solventi = preferiti + [s for s in solventi if s not in preferiti]
+
+    if lit_prior and lit_prior.get('modulator_hint') == 'special':
+        st.warning(
+            f"⚠️ Per il **{metallo_sel}**, la letteratura indica che la sintesi solvotermale diretta "
+            "**non è la via standard** per ottenere un MOF cristallino (richiede tipicamente metatesi "
+            "post-sintetica o networking di cluster pre-formati). I suggerimenti qui sotto vanno quindi "
+            "presi con particolare cautela per questo metallo specifico."
+        )
+
+    if n_samples_metallo == 0 and used_literature:
+        st.caption(f"ℹ️ Nessuna sintesi con metallo {metallo_sel} nel tuo dataset: griglia basata sui range tipici riportati in letteratura per questo metallo.")
+    elif used_literature:
+        st.caption(f"ℹ️ Griglia basata sulle {n_samples_metallo} sintesi storiche con metallo {metallo_sel} nel dataset, integrate con i range tipici di letteratura (dati locali ancora limitati).")
+    elif used_fallback_range:
+        st.caption(f"ℹ️ Pochi dati storici specifici per {metallo_sel} e nessun riferimento di letteratura disponibile: uso il range di condizioni osservato su tutto il dataset ({metal_ranges.get('n_samples', 0)} sintesi).")
+    else:
+        st.caption(f"ℹ️ Griglia di ricerca basata sulle {n_samples_metallo} sintesi storiche con metallo {metallo_sel} nel dataset (dati sufficienti, nessuna integrazione di letteratura necessaria).")
 
     ml_solv_fisso = 10.0  # volume standard, non è tra le dimensioni ottimizzate qui per contenere la griglia
 
