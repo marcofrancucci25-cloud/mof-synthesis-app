@@ -1015,6 +1015,25 @@ _ADDITIVE_ALIASES_PARSE = {
 # additivi/modulatori (es. sigle di leganti pirazolici o carbossilici).
 _NON_ADDITIVE_TOKENS = {'bdc', 'btc', 'pz', '4-brpz', '3,5-dimetilpz', '4-clpz', 'meoh', 'mesitilene'}
 
+def parse_primary_anion(raw_sale):
+    """Estrae l'anione principale dalla formula grezza del sale metallico
+    (es. 'ZrCl4' -> Cloruro, 'Co(NO3)2*6H2O' -> Nitrato, 'Cu(OAc)2*H2O' ->
+    Acetato). Controlla in ordine Nitrato/Acetato/Cloruro (in questo ordine
+    perché alcune formule potrebbero contenere più anioni misti); tutto il
+    resto (alcossidi, triflati, precursori organometallici come
+    '[Ru(p-cymene)Cl2]2' che pero' contiene comunque 'Cl2' quindi verrà
+    riconosciuto come Cloruro) ricade su 'Altro' se nessun pattern combacia."""
+    if not raw_sale or pd.isna(raw_sale):
+        return None
+    s = str(raw_sale)
+    if 'NO3' in s or 'NO₃' in s:
+        return 'Nitrato'
+    if 'OAc' in s or 'CH3COO' in s or 'CH₃COO' in s:
+        return 'Acetato'
+    if re.search(r'Cl(?:\d|\]|$|\W)', s) or 'Cloro' in s:
+        return 'Cloruro'
+    return 'Altro'
+
 def parse_primary_additive(raw_additivo):
     """Estrae (additivo_canonico, equivalenti_o_None) da una stringa grezza
     tipo 'Et3N 2 eq', 'Acido acetico glaciale', 'HCl 37%', scartando token
@@ -1260,7 +1279,7 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v19-additive-role-optimizer"
+MODEL_TRAINING_VERSION = "v20-anion-role-optimizer-complete"
 
 @st.cache_resource
 def load_or_train_model():
@@ -1641,6 +1660,29 @@ def load_or_train_model():
             combined = data_list + [opt for opt in lit_opts if opt[0] not in seen_names]
             return combined if combined else None
 
+        # Anioni/precursori storicamente usati CON SUCCESSO per ciascun
+        # metallo (parsing della formula grezza "Sale_Metallico", es.
+        # 'ZrCl4'->Cloruro, 'Co(NO3)2*6H2O'->Nitrato). Stessa logica di
+        # solvente/additivo: prima l'ottimizzatore testava sempre le stesse
+        # 4 opzioni per ogni metallo, indipendentemente da quale precursore
+        # sia realmente disponibile/usato in pratica per quel sistema.
+        sali_raw = raw_df['Sale_Metallico'].reset_index(drop=True)
+        _anioni_default_completo = ['Nitrato', 'Acetato', 'Cloruro', 'Altro']
+
+        def _build_anion_list(metal_sym, n_local):
+            if n_local == 0:
+                return None  # nessun dato locale: userà la lista completa di default più sotto
+            mask_success = (metalli_raw == metal_sym) & (y.reset_index(drop=True) == 2)
+            parsed = sali_raw[mask_success].apply(parse_primary_anion).dropna()
+            counts = parsed.value_counts()
+            data_anioni = list(counts.index)
+            if n_local >= 15 and data_anioni:
+                return data_anioni
+            # Fusione: anioni osservati + resto della lista completa (per
+            # non escludere del tutto opzioni mai provate ma potenzialmente valide)
+            combined = data_anioni + [a for a in _anioni_default_completo if a not in data_anioni]
+            return combined if combined else None
+
         for metal_sym in all_relevant_metals:
             mask = metalli_raw == metal_sym
             n_local = int(mask.sum())
@@ -1651,6 +1693,7 @@ def load_or_train_model():
                 'tempo': _build_range(metal_sym, X_reset_idx.loc[mask, 'Tempo_ore_num'] if n_local else None, 'tempo_core', n_local),
                 'ratio': _build_range(metal_sym, X_reset_idx.loc[mask, 'Rapporto L/M'] if n_local else None, 'ratio_core', n_local),
                 'solvents': _build_solvent_list(metal_sym, n_local),
+                'anions': _build_anion_list(metal_sym, n_local),
                 'additives': _build_additive_list(metal_sym, n_local),
                 'n_samples': n_local,
                 'used_literature': (metal_sym in LITERATURE_CONDITION_PRIORS) and (n_local < 15)
@@ -1660,6 +1703,7 @@ def load_or_train_model():
             'tempo': _percentile_set(X['Tempo_ore_num']),
             'ratio': _percentile_set(X['Rapporto L/M']),
             'solvents': None,
+            'anions': None,
             'additives': None,
             'n_samples': len(X)
         }
@@ -2026,7 +2070,8 @@ def render_synthesis_optimizer(mol, metallo_sel, orig_temp, orig_tempo, orig_ani
     times = metal_ranges.get('tempo') or [12.0, 24.0, 48.0, 96.0]
     rapporti_target = metal_ranges.get('ratio') or [0.5, 1.0, 1.5, 2.0, 3.0]
 
-    anioni = ['Nitrato', 'Acetato', 'Cloruro', 'Altro']
+    anioni_default = ['Nitrato', 'Acetato', 'Cloruro', 'Altro']
+    anioni = metal_ranges.get('anions') or anioni_default
     # Solventi: usiamo quelli storicamente usati con successo per QUESTO
     # metallo (dai tuoi dati) fusi con i solventi tipici di letteratura,
     # invece di una lista fissa identica per ogni metallo — così cambia
