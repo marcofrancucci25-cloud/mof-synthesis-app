@@ -77,14 +77,14 @@ try:
 except Exception:
     TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
 
-with st.sidebar.expander("🌐 Configurazione Agent Web (Tavily)", expanded=False):
+with st.sidebar.expander("🌐 Configurazione Ricerca Web", expanded=False):
     if TAVILY_API_KEY:
-        st.caption("✅ Chiave Tavily configurata tramite secrets/variabile d'ambiente.")
+        st.caption("✅ Chiave di ricerca configurata tramite secrets/variabile d'ambiente.")
     tavily_input_key = st.text_input(
-        "Tavily API Key (opzionale, sovrascrive quella di sistema):",
+        "Chiave API (opzionale, sovrascrive quella di sistema):",
         value="",
         type="password",
-        placeholder="tvly-..." if not TAVILY_API_KEY else "Lascia vuoto per usare la chiave configurata"
+        placeholder="Inserisci la chiave..." if not TAVILY_API_KEY else "Lascia vuoto per usare la chiave configurata"
     )
     if tavily_input_key:
         TAVILY_API_KEY = tavily_input_key
@@ -1519,7 +1519,7 @@ with st.sidebar.expander("🧪 Teoria HSAB di Pearson", expanded=False):
     """)
 
 # --- TAB INTERFACCIA MAIN ---
-tab1, tab2 = st.tabs(["🔮 Predizione Singola", "🌐 Ricerca Web (Tavily AI)"])
+tab1, tab2 = st.tabs(["🔮 Predizione Singola", "🌐 Ricerca Web"])
 
 def build_feature_row(mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmol_legante, mmol_sale, metallo_sel, anione_sel, solvente_p, ml_solv_p, cosolvente, ml_cosolv, additivo_sel, add_eq):
     add_info = ADDITIVES_DATABASE.get(additivo_sel, ADDITIVES_DATABASE['Nessuno'])
@@ -1894,7 +1894,7 @@ def render_condition_check(condition_stats, has_additive, tempo, rapporto_lm, hs
     st.markdown("#### 🧭 Confronto con le Condizioni Storicamente Favorevoli")
     st.caption(
         "Pattern statistici osservati su tutte le sintesi del dataset (non specifici per questa combinazione "
-        "metallo-legante) — un secondo punto di vista, complementare alla predizione del modello e al grafico SHAP sopra."
+        "metallo-legante) — un secondo punto di vista, complementare alla predizione del modello e al grafico dei contributi sopra."
     )
     for icon, text in checks:
         st.markdown(f"{icon} {text}")
@@ -1908,7 +1908,7 @@ def render_shap_explanation(df_single, key_prefix="shap", default_class=None):
     Estratta in una funzione a sé perché richiamata sia in Tab1 (subito dopo
     il risultato della predizione) sia potenzialmente altrove in futuro."""
     if not HAS_SHAP:
-        st.warning("⚠️ La libreria `shap` non è installata nell'ambiente Python. Installa SHAP (`pip install shap`) per abilitare le spiegazioni dettagliate.")
+        st.warning("⚠️ La libreria di analisi non è installata nell'ambiente Python. Contatta l'amministratore per abilitare le spiegazioni dettagliate.")
         return
 
     try:
@@ -1920,7 +1920,7 @@ def render_shap_explanation(df_single, key_prefix="shap", default_class=None):
             target_estimator = model.named_estimators_['lgb']
 
         if target_estimator is None:
-            st.error("Impossibile estrarre un sotto-modello basato su alberi per l'analisi TreeSHAP.")
+            st.error("Impossibile estrarre un sotto-modello basato su alberi per l'analisi dettagliata.")
             return
 
         explainer = shap.TreeExplainer(target_estimator)
@@ -1949,7 +1949,7 @@ def render_shap_explanation(df_single, key_prefix="shap", default_class=None):
             classes_list = list(model.classes_)
             class_names = [get_class_label(c) for c in classes_list]
             selected_class_idx = st.selectbox(
-                "Seleziona Esito per l'analisi SHAP:",
+                "Seleziona Esito da Analizzare:",
                 range(len(shap_values)), format_func=lambda x: class_names[x],
                 index=_default_index(classes_list),
                 key=f"{key_prefix}_class_sel"
@@ -1963,7 +1963,7 @@ def render_shap_explanation(df_single, key_prefix="shap", default_class=None):
             available_classes = list(model.classes_)[:n_classes_shap]
             class_names = [get_class_label(c) for c in available_classes]
             selected_class_idx = st.selectbox(
-                "Seleziona Esito per l'analisi SHAP:",
+                "Seleziona Esito da Analizzare:",
                 range(n_classes_shap), format_func=lambda x: class_names[x],
                 index=_default_index(available_classes),
                 key=f"{key_prefix}_class_sel"
@@ -2007,7 +2007,7 @@ def render_shap_explanation(df_single, key_prefix="shap", default_class=None):
                 marker=dict(color=colors, line=dict(width=0)),
                 text=[f"{v:+.3f}" for v in plot_vals],
                 textposition='outside',
-                hovertemplate='<b>%{y}</b><br>Contributo SHAP: %{x:.4f}<extra></extra>'
+                hovertemplate='<b>%{y}</b><br>Contributo: %{x:.4f}<extra></extra>'
             ))
             fig_shap.update_layout(
                 title=f"Principali contributi verso: {selected_label}",
@@ -2030,7 +2030,7 @@ def render_shap_explanation(df_single, key_prefix="shap", default_class=None):
             plt.tight_layout()
             st.pyplot(fig)
     except Exception as e:
-        st.error(f"Errore durante il calcolo dei valori SHAP: {e}")
+        st.error(f"Errore durante il calcolo dell'analisi: {e}")
 
 # --- TAB 1: PREDIZIONE SINGOLA ---
 with tab1:
@@ -2399,26 +2399,26 @@ with tab1:
                     else:
                         st.info("Le condizioni attuali sono già vicine all'ottimo trovato dal modello per questa combinazione.")
 
-# --- TAB 2: RICERCA WEB TAVILY AI ---
+# --- TAB 2: RICERCA WEB ---
 with tab2:
-    st.subheader("🌐 Agente Web Tavily per Sintesi & Letteratura MOF")
+    st.subheader("🌐 Ricerca Web per Sintesi & Letteratura MOF")
     st.markdown("Effettua ricerche live per verificare protocolli di sintesi, informazioni sui leganti o pubblicazioni scientifiche correlate.")
     
     if not TAVILY_API_KEY:
-        st.warning("⚠️ Per utilizzare l'Agente Tavily, inserisci la tua **Tavily API Key** nel menu laterale (Sidebar).")
+        st.warning("⚠️ Per utilizzare la ricerca web, inserisci la tua **chiave API** nel menu laterale (Sidebar).")
     
     query_tavily = st.text_input("Inserisci la query di ricerca chimica:", value="UiO-66 synthesis conditions modulator benzoic acid open access paper")
     num_res = st.slider("Numero di risultati:", min_value=1, max_value=5, value=3)
     
-    if st.button("🔎 Cerca sul Web con Tavily"):
+    if st.button("🔎 Cerca sul Web"):
         if not TAVILY_API_KEY:
-            st.error("API Key Tavily mancante.")
+            st.error("Chiave API mancante.")
         else:
             with st.spinner("Ricerca informazioni sul web in corso..."):
                 tavily_res = search_tavily_web(query_tavily, max_results=num_res, timeout=5)
                 if tavily_res:
                     if tavily_res.get("answer"):
-                        st.info(f"💡 **Sintesi Risposta AI Tavily:**\n\n{tavily_res['answer']}")
+                        st.info(f"💡 **Sintesi della Risposta:**\n\n{tavily_res['answer']}")
                     
                     st.markdown("### 📚 Risultati della Ricerca")
                     for r in tavily_res.get("results", []):
