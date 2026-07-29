@@ -2379,17 +2379,18 @@ with tab1:
         mode_legante = st.radio(
             "Modalità Input Legante:", 
             ["SMILES", "Nome / Formula / CAS", "Carica File (.mol / .sdf / .cif)"],
-            horizontal=True
+            horizontal=True,
+            key="tab1_mode_legante"
         )
         
         mol = None
         if mode_legante == "SMILES":
-            smiles_input = st.text_input("SMILES del Legante:", value="O=C(O)c1ccc(C(=O)O)cc1")
+            smiles_input = st.text_input("SMILES del Legante:", value="O=C(O)c1ccc(C(=O)O)cc1", key="tab1_smiles_input")
             if smiles_input:
                 mol = Chem.MolFromSmiles(smiles_input)
                 
         elif mode_legante == "Nome / Formula / CAS":
-            query_input = st.text_input("Nome, Formula o CAS:", value="Benzoic acid")
+            query_input = st.text_input("Nome, Formula o CAS:", value="Benzoic acid", key="tab1_query_input")
             if query_input:
                 with st.spinner("Ricerca molecola nei database e sul Web..."):
                     found_smiles = resolve_molecule_to_smiles(query_input, allow_web_search=True)
@@ -2400,7 +2401,7 @@ with tab1:
                         st.error("Nessuna molecola trovata.")
                         
         elif mode_legante == "Carica File (.mol / .sdf / .cif)":
-            uploaded_file = st.file_uploader("Carica file .mol, .sdf o .cif", type=['mol', 'sdf', 'cif'])
+            uploaded_file = st.file_uploader("Carica file .mol, .sdf o .cif", type=['mol', 'sdf', 'cif'], key="tab1_file_uploader")
             if uploaded_file is not None:
                 file_ext = uploaded_file.name.split('.')[-1].lower()
                 file_bytes = uploaded_file.getvalue().decode('utf-8', errors='ignore')
@@ -2436,11 +2437,11 @@ with tab1:
 
         input_mode_leg = st.radio("Inserisci Legante come:", ["MilliMoli (mmol)", "Massa (mg)"], key="rad_leg", horizontal=True)
         if input_mode_leg == "MilliMoli (mmol)":
-            mmol_legante = st.number_input("mmol Legante:", min_value=0.001, max_value=20.0, value=0.10, step=0.01)
+            mmol_legante = st.number_input("mmol Legante:", min_value=0.001, max_value=20.0, value=0.10, step=0.01, key="tab1_mmol_legante")
             mg_legante = mmol_legante * mw
             st.caption(f"⚖️ Corrispondono a **{mg_legante:.2f} mg** da pesare.")
         else:
-            mg_legante = st.number_input("Massa Legante (mg pesati):", min_value=0.1, max_value=5000.0, value=16.61, step=1.0)
+            mg_legante = st.number_input("Massa Legante (mg pesati):", min_value=0.1, max_value=5000.0, value=16.61, step=1.0, key="tab1_mg_legante")
             mmol_legante = mg_legante / mw if mw > 0 else 0.1
             st.caption(f"⚖️ Corrispondono a **{mmol_legante:.3f} mmol** di Legante.")
 
@@ -2449,7 +2450,7 @@ with tab1:
         
         metallo_sel = render_metal_dropdown_selector(key_prefix="tab1")
         
-        anione_sel = st.selectbox("Anione / Precursore:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'])
+        anione_sel = st.selectbox("Anione / Precursore:", ['Nitrato', 'Acetato', 'Cloruro', 'Altro'], key="tab1_anione_sel")
         
         idratazione = st.selectbox(
             "Stato di Idratazione (H₂O):",
@@ -2463,7 +2464,8 @@ with tab1:
                 "Esaidrato (6 H₂O)",
                 "Nonavidrato (9 H₂O)"
             ],
-            index=0
+            index=0,
+            key="tab1_idratazione"
         )
         
         n_h2o = int(idratazione.split('(')[1].split(' ')[0])
@@ -2480,52 +2482,77 @@ with tab1:
 
         input_mode_sale = st.radio("Inserisci Sale come:", ["MilliMoli (mmol)", "Massa (mg)"], key="rad_sale", horizontal=True)
         if input_mode_sale == "MilliMoli (mmol)":
-            mmol_sale = st.number_input("mmol Sale Metallico:", min_value=0.001, max_value=20.0, value=0.10, step=0.01)
+            mmol_sale = st.number_input("mmol Sale Metallico:", min_value=0.001, max_value=20.0, value=0.10, step=0.01, key="tab1_mmol_sale")
             mg_sale = mmol_sale * total_salt_mw
             st.caption(f"⚖️ Corrispondono a **{mg_sale:.2f} mg** da pesare.")
         else:
-            mg_sale = st.number_input("Massa Sale (mg pesati):", min_value=0.1, max_value=5000.0, value=24.16, step=1.0)
+            mg_sale = st.number_input("Massa Sale (mg pesati):", min_value=0.1, max_value=5000.0, value=24.16, step=1.0, key="tab1_mg_sale")
             mmol_sale = mg_sale / total_salt_mw
             st.caption(f"⚖️ Corrispondono a **{mmol_sale:.3f} mmol** di {metallo_sel}.")
 
     with col3:
         st.markdown("### 3. Miscela Solvente (mL) & Modulatori")
         
-        solvente_p = st.selectbox("Solvente Principale:", ['DMF', 'DEF', 'DMSO', 'MeCN', 'H2O', 'MeOH', 'EtOH'])
-        ml_solv_p = st.number_input(f"mL di {solvente_p}:", min_value=0.1, max_value=200.0, value=10.0, step=0.5)
+        solvente_p = st.selectbox("Solvente Principale:", ['DMF', 'DEF', 'DMSO', 'MeCN', 'H2O', 'MeOH', 'EtOH'], key="tab1_solvente_p")
+        ml_solv_p = st.number_input(f"mL di {solvente_p}:", min_value=0.1, max_value=200.0, value=10.0, step=0.5, key="tab1_ml_solv_p")
         
-        co_solvente = st.selectbox("Co-Solvente (Opzionale):", ['Nessuno', 'H2O', 'MeOH', 'EtOH', 'CH2Cl2', 'DEF', 'MeCN', 'DMSO'])
+        co_solvente = st.selectbox("Co-Solvente (Opzionale):", ['Nessuno', 'H2O', 'MeOH', 'EtOH', 'CH2Cl2', 'DEF', 'MeCN', 'DMSO'], key="tab1_co_solvente")
         
         ml_cosolv = 0.0
         if co_solvente != 'Nessuno':
-            ml_cosolv = st.number_input(f"mL di Co-solvente ({co_solvente}):", min_value=0.1, max_value=200.0, value=2.0, step=0.5)
+            ml_cosolv = st.number_input(f"mL di Co-solvente ({co_solvente}):", min_value=0.1, max_value=200.0, value=2.0, step=0.5, key="tab1_ml_cosolv")
 
         tot_vol = ml_solv_p + ml_cosolv
         cosolv_pct = (ml_cosolv / tot_vol * 100) if tot_vol > 0 else 0.0
         st.caption(f"🧪 **Volume Totale Miscela:** `{tot_vol:.1f} mL` | **Co-solvente:** `{cosolv_pct:.1f}% v/v`")
 
-        temp = st.number_input("Temperatura (°C):", min_value=20.0, max_value=250.0, value=120.0, step=5.0)
-        tempo = st.number_input("Tempo di Reazione (Ore):", min_value=1.0, max_value=168.0, value=48.0, step=6.0)
+        temp = st.number_input("Temperatura (°C):", min_value=20.0, max_value=250.0, value=120.0, step=5.0, key="tab1_temp")
+        tempo = st.number_input("Tempo di Reazione (Ore):", min_value=1.0, max_value=168.0, value=48.0, step=6.0, key="tab1_tempo")
 
         st.markdown("---")
-        use_add = st.checkbox("➕ Aggiungi Additivo / Modulatore (Base/Acido)")
+        use_add = st.checkbox("➕ Aggiungi Additivo / Modulatore (Base/Acido)", key="tab1_use_add")
         
         additivo_sel = 'Nessuno'
         add_eq = 0.0
         if use_add:
-            additivo_sel = st.selectbox("Seleziona Additivo:", list(ADDITIVES_DATABASE.keys())[1:])
-            add_mode = st.radio("Inserisci quantità additivo come:", ["Equivalenti (vs Legante)", "mmol Additivo"], horizontal=True)
+            additivo_sel = st.selectbox("Seleziona Additivo:", list(ADDITIVES_DATABASE.keys())[1:], key="tab1_additivo_sel")
+            add_mode = st.radio("Inserisci quantità additivo come:", ["Equivalenti (vs Legante)", "mmol Additivo"], horizontal=True, key="tab1_add_mode")
             
             if add_mode == "Equivalenti (vs Legante)":
-                add_eq = st.number_input("Equivalenti rispetto al Legante:", min_value=0.1, max_value=100.0, value=2.0, step=0.5)
+                add_eq = st.number_input("Equivalenti rispetto al Legante:", min_value=0.1, max_value=100.0, value=2.0, step=0.5, key="tab1_add_eq")
                 add_mmol = add_eq * mmol_legante
                 st.caption(f"🧪 Corrispondono a **{add_mmol:.3f} mmol** di additivo.")
             else:
-                add_mmol = st.number_input("mmol Additivo:", min_value=0.001, max_value=50.0, value=0.20, step=0.05)
+                add_mmol = st.number_input("mmol Additivo:", min_value=0.001, max_value=50.0, value=0.20, step=0.05, key="tab1_add_mmol")
                 add_eq = add_mmol / mmol_legante if mmol_legante > 0 else 0.0
                 st.caption(f"🧪 Corrispondono a **{add_eq:.2f} eq.** rispetto al Legante.")
 
-    if st.button("🚀 Calcola Probabilità di Successo", type="primary"):
+    st.markdown("---")
+    col_reset, col_calc = st.columns([1, 2])
+    with col_reset:
+        if st.button("🔄 Azzera Parametri", use_container_width=True):
+            _tab1_keys_to_clear = [
+                'tab1_mode_legante', 'tab1_smiles_input', 'tab1_query_input', 'tab1_file_uploader',
+                'rad_leg', 'tab1_mmol_legante', 'tab1_mg_legante',
+                'tab1_select_metal', 'tab1_anione_sel', 'tab1_idratazione',
+                'rad_sale', 'tab1_mmol_sale', 'tab1_mg_sale',
+                'tab1_solvente_p', 'tab1_ml_solv_p', 'tab1_co_solvente', 'tab1_ml_cosolv',
+                'tab1_temp', 'tab1_tempo', 'tab1_use_add', 'tab1_additivo_sel',
+                'tab1_add_mode', 'tab1_add_eq', 'tab1_add_mmol',
+                'tab1_result', 'tab1_pred_counter', 'tab1_last_balloons_counter'
+            ]
+            for _k in _tab1_keys_to_clear:
+                if _k in st.session_state:
+                    del st.session_state[_k]
+            # Chiavi dinamiche (una per predizione: risultati ottimizzatore, ecc.)
+            for _k in list(st.session_state.keys()):
+                if _k.startswith('opt_results_') or _k.startswith('opt_btn_') or _k.startswith('tab1_pred_') or _k.startswith('tab1_fi_'):
+                    del st.session_state[_k]
+            st.rerun()
+    with col_calc:
+        calcola_clicked = st.button("🚀 Calcola Probabilità di Successo", type="primary", use_container_width=True)
+
+    if calcola_clicked:
         if not mol:
             st.error("Inserisci una molecola valida prima di continuare.")
         else:
