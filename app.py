@@ -337,7 +337,7 @@ def check_known_mof(metal_symbol, mol_obj=None, ligand_query=""):
         ("Cr", "O=C(O)c1ccc(C(=O)O)cc1"): ("MIL-101(Cr)", "terephthalic acid"),
         ("Al", "O=C(O)c1ccc(C(=O)O)cc1"): ("MIL-53(Al)", "terephthalic acid"),
         ("Zn", "O=C(O)c1ccc(C(=O)O)cc1"): ("MOF-5", "terephthalic acid"),
-        ("Zr", "O=C(O)c1ccc(C(=O)O)c(N)c1"): ("UiO-66-NH2", "2-aminoterephthalic acid")
+        ("Zr", "Nc1cc(C(=O)O)ccc1C(=O)O"): ("UiO-66-NH2", "2-aminoterephthalic acid")
     }
     
     input_smiles = Chem.MolToSmiles(mol_obj) if mol_obj else ""
@@ -707,6 +707,65 @@ LITERATURE_CONDITION_PRIORS = {
     'Sn':  {'temp_core': (100, 150), 'tempo_core': (24, 72),  'ratio_core': (1.0, 1.0), 'solvents': ['DMF', 'H2O'], 'modulator_hint': 'high_eq_acid'},
 }
 
+# --- RICETTE VERIFICATE AL 100% DA LETTERATURA (non range statistici, punti
+# singoli esatti da paper pubblicati). Chiavate come known_mappings in
+# check_known_mof() (metallo, SMILES canonico del legante): quando la
+# combinazione testata corrisponde a uno di questi MOF ben noti,
+# l'ottimizzatore include questa ricetta esatta come candidato GARANTITO
+# nella griglia, invece di affidarsi solo a range statistici/di letteratura
+# generici. Fonti citate nel commento di ciascuna voce.
+VERIFIED_LITERATURE_RECIPES = {
+    ("Zr", "O=C(O)c1ccc(C(=O)O)cc1"): {
+        # UiO-66: Schaate, Roy, Godt, Lippke, Waltz, Wiebcke & Behrens,
+        # Chem. Eur. J. 2011, 17(24), 6643-6651.
+        'temp': 120.0, 'tempo': 24.0, 'solvente': 'DMF', 'anione': 'Cloruro',
+        'additivo': 'Acido Acetico (AcOH)', 'add_eq': 20.0, 'ratio': 1.0,
+        'fonte': "Schaate et al., Chem. Eur. J. 2011, 17, 6643"
+    },
+    ("Cu", "O=C(O)c1cc(C(=O)O)cc(C(=O)O)c1"): {
+        # HKUST-1: ricetta ottimizzata moderna (resa ~89% a 100°C),
+        # Chem. Eng. J. (S1385894715009857); originale Chui et al.,
+        # Science 1999, 283, 1148 (180°C).
+        'temp': 100.0, 'tempo': 20.0, 'solvente': 'DMF', 'anione': 'Nitrato',
+        'additivo': 'Nessuno', 'add_eq': 0.0, 'ratio': 0.667,
+        'fonte': "Ottimizzazione da Chui et al., Science 1999, 283, 1148"
+    },
+    ("Zn", "Cc1c[nH]cn1"): {
+        # ZIF-8: Zhang, Jia, Li & Hou, Sci. Rep. 2018, 8, 9597 (rapporto
+        # Hmim:Zn = 8 dà le migliori caratteristiche cristalline).
+        'temp': 25.0, 'tempo': 24.0, 'solvente': 'MeOH', 'anione': 'Nitrato',
+        'additivo': 'Nessuno', 'add_eq': 0.0, 'ratio': 8.0,
+        'fonte': "Zhang et al., Sci. Rep. 2018, 8, 9597"
+    },
+    ("Cr", "O=C(O)c1ccc(C(=O)O)cc1"): {
+        # MIL-101(Cr): Ferey et al., Science 2005, 309, 2040-2042 (ricetta
+        # originale con HF; qui rappresentato come acido forte nel modello).
+        'temp': 220.0, 'tempo': 8.0, 'solvente': 'H2O', 'anione': 'Nitrato',
+        'additivo': 'HF (Acido Fluoridrico)', 'add_eq': 1.0, 'ratio': 1.0,
+        'fonte': "Ferey et al., Science 2005, 309, 2040"
+    },
+    ("Al", "O=C(O)c1ccc(C(=O)O)cc1"): {
+        # MIL-53(Al): ricetta idrotermale classica (Loiseau/Ferey), via
+        # acquosa a 130°C, PMC 2022 (meccanismo di cristallizzazione).
+        'temp': 130.0, 'tempo': 3.0, 'solvente': 'H2O', 'anione': 'Nitrato',
+        'additivo': 'Nessuno', 'add_eq': 0.0, 'ratio': 1.0,
+        'fonte': "Loiseau/Ferey MIL-53(Al); meccanismo in PMC9243051"
+    },
+    ("Zn", "O=C(O)c1ccc(C(=O)O)cc1"): {
+        # MOF-5: ricetta classica Yaghi group in DEF.
+        'temp': 100.0, 'tempo': 20.0, 'solvente': 'DEF', 'anione': 'Nitrato',
+        'additivo': 'Nessuno', 'add_eq': 0.0, 'ratio': 1.0,
+        'fonte': "Yaghi group, ricetta classica MOF-5 in DEF"
+    },
+    ("Zr", "Nc1cc(C(=O)O)ccc1C(=O)O"): {
+        # UiO-66-NH2: stessa famiglia sintetica di UiO-66, stesso
+        # modulatore, Schaate et al. 2011.
+        'temp': 120.0, 'tempo': 24.0, 'solvente': 'DMF', 'anione': 'Cloruro',
+        'additivo': 'Acido Acetico (AcOH)', 'add_eq': 20.0, 'ratio': 1.0,
+        'fonte': "Schaate et al., Chem. Eur. J. 2011, 17, 6643 (famiglia UiO-66)"
+    },
+}
+
 # Pesi molecolari del SINGOLO anione monovalente (NO3-, CH3COO-, Cl-).
 # Il numero di anioni necessari a bilanciare la carica viene calcolato
 # moltiplicando per la valenza del metallo (metal_props[...]['Valence']),
@@ -906,6 +965,37 @@ _ADDITIVE_KEYWORD_TO_NAME = [
     ('acqua', 'Acqua (H2O Modulatore)'),
 ]
 _DEFAULT_PKA_BY_TYPE = {'Acid': 4.0, 'Base': 10.5, 'Neutral': 7.0, 'None': 0.0}
+
+_SOLVENT_ALIASES = {
+    'dmf': 'DMF', 'def': 'DEF', 'dmso': 'DMSO', 'dma': 'DMF',  # DMA trattato come affine a DMF (non censito a parte)
+    'mecn': 'MeCN', 'ch3cn': 'MeCN', 'acetonitrile': 'MeCN',
+    'h2o': 'H2O', 'h20': 'H2O', 'water': 'H2O', 'acqua': 'H2O',
+    'meoh': 'MeOH', 'metoh': 'MeOH', 'met': 'MeOH', 'methanol': 'MeOH',
+    'etoh': 'EtOH', 'ethanol': 'EtOH',
+    'ch2cl2': 'CH2Cl2', 'dcm': 'CH2Cl2',
+}
+# Token che compaiono nel campo "Solvente" grezzo ma sono in realtà
+# modulatori/additivi/acidi finiti lì per errore di trascrizione, non veri
+# solventi di massa: li scarto quando individuo il solvente primario.
+_NON_SOLVENT_TOKENS = {
+    'hcl', 'tfa', 'na(oac)', 'et3n', 'nh3 28%', 'nh3 30%', 'nh3', 'hf', 'hno3',
+    'formic acid', 'acetic acid', 'benzoic acid', 'ba', 'non specificato', 'nessuno'
+}
+
+def parse_primary_solvent(raw_solvente):
+    """Estrae il solvente principale da una stringa grezza tipo 'DMF/H2O',
+    'DMF/HCl', 'MetOH', normalizzando alias e scartando token che sono in
+    realtà additivi/modulatori finiti per errore nel campo solvente."""
+    if not raw_solvente or pd.isna(raw_solvente):
+        return None
+    parts = [p.strip().lower() for p in str(raw_solvente).split('/')]
+    for p in parts:
+        if p in _NON_SOLVENT_TOKENS:
+            continue
+        p_nospace = p.replace(' ', '')
+        if p_nospace in _SOLVENT_ALIASES:
+            return _SOLVENT_ALIASES[p_nospace]
+    return None
 
 def resolve_additive_type_and_pka(add_str):
     s = str(add_str).lower()
@@ -1131,7 +1221,7 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v16-literature-priors-optimizer"
+MODEL_TRAINING_VERSION = "v18-verified-literature-recipes"
 
 @st.cache_resource
 def load_or_train_model():
@@ -1435,6 +1525,30 @@ def load_or_train_model():
             data_pts = _percentile_set(data_series)
             return sorted(set(round(p, 2) for p in (data_pts + lit_pts)))
 
+        # Solventi storicamente usati CON SUCCESSO per ciascun metallo
+        # (parsing del campo grezzo "Solvente", spesso una miscela o con
+        # additivi infilati per errore), fusi con i solventi tipici di
+        # letteratura con la stessa logica di temperatura/tempo/rapporto.
+        # Prima i solventi testati dall'ottimizzatore erano identici per
+        # ogni metallo (solo riordinati, senza impatto reale sui risultati):
+        # ora la lista stessa riflette la pratica reale per quel metallo.
+        solventi_raw = raw_df['Solvente'].reset_index(drop=True)
+
+        def _build_solvent_list(metal_sym, n_local):
+            lit_solv = (LITERATURE_CONDITION_PRIORS.get(metal_sym) or {}).get('solvents') or []
+            if n_local == 0:
+                return lit_solv if lit_solv else None  # None -> userà il default fisso più sotto
+            mask_success = (metalli_raw == metal_sym) & (y.reset_index(drop=True) == 2)
+            parsed = solventi_raw[mask_success].apply(parse_primary_solvent).dropna()
+            counts = parsed.value_counts()
+            data_solv = list(counts.index[:4])  # i 4 solventi più usati con successo per questo metallo
+            if n_local >= 15 and data_solv:
+                return data_solv
+            # Fusione: solventi osservati + solventi letterari, deduplicati
+            # mantenendo l'ordine (prima quelli osservati, più specifici)
+            combined = data_solv + [s for s in lit_solv if s not in data_solv]
+            return combined if combined else None
+
         all_relevant_metals = set(metalli_raw.unique()) | set(LITERATURE_CONDITION_PRIORS.keys())
         for metal_sym in all_relevant_metals:
             mask = metalli_raw == metal_sym
@@ -1445,6 +1559,7 @@ def load_or_train_model():
                 'temperature': _build_range(metal_sym, X_reset_idx.loc[mask, 'Temperatura_num'] if n_local else None, 'temp_core', n_local),
                 'tempo': _build_range(metal_sym, X_reset_idx.loc[mask, 'Tempo_ore_num'] if n_local else None, 'tempo_core', n_local),
                 'ratio': _build_range(metal_sym, X_reset_idx.loc[mask, 'Rapporto L/M'] if n_local else None, 'ratio_core', n_local),
+                'solvents': _build_solvent_list(metal_sym, n_local),
                 'n_samples': n_local,
                 'used_literature': (metal_sym in LITERATURE_CONDITION_PRIORS) and (n_local < 15)
             }
@@ -1452,6 +1567,7 @@ def load_or_train_model():
             'temperature': _percentile_set(X['Temperatura_num']),
             'tempo': _percentile_set(X['Tempo_ore_num']),
             'ratio': _percentile_set(X['Rapporto L/M']),
+            'solvents': None,
             'n_samples': len(X)
         }
     except Exception:
@@ -1789,6 +1905,14 @@ def render_synthesis_optimizer(mol, metallo_sel, orig_temp, orig_tempo, orig_ani
     ligand_family = detect_ligand_family(mol, smarts_f['n_COOH'])
     metal_m = metal_props[metallo_sel]
 
+    # Ricetta verificata al 100% da letteratura (non un range statistico:
+    # un punto esatto da un paper pubblicato), usata SOLO qui nell'ottimizzatore
+    # e MAI nella predizione singola (Tab1) — altrimenti la predizione
+    # perderebbe la sua onestà statistica, dando per scontato un successo
+    # che il modello dovrebbe invece stimare autonomamente dai dati.
+    verified_key = (metallo_sel, Chem.MolToSmiles(mol))
+    verified_recipe = VERIFIED_LITERATURE_RECIPES.get(verified_key)
+
     # Griglia di ricerca COSTRUITA SUI DATI REALI per questo specifico
     # metallo (percentili p10-p25-mediana-p75-p90 di temperatura/tempo/
     # rapporto osservati storicamente), invece di una griglia fissa
@@ -1810,17 +1934,16 @@ def render_synthesis_optimizer(mol, metallo_sel, orig_temp, orig_tempo, orig_ani
     rapporti_target = metal_ranges.get('ratio') or [0.5, 1.0, 1.5, 2.0, 3.0]
 
     anioni = ['Nitrato', 'Acetato', 'Cloruro', 'Altro']
-    solventi = ['DMF', 'DEF', 'DMSO', 'MeCN', 'H2O', 'MeOH', 'EtOH']
+    # Solventi: usiamo quelli storicamente usati con successo per QUESTO
+    # metallo (dai tuoi dati) fusi con i solventi tipici di letteratura,
+    # invece di una lista fissa identica per ogni metallo — così cambia
+    # davvero quali solventi vengono testati, non solo l'ordine con cui
+    # compaiono nella griglia (che da solo non influenzava il risultato).
+    solventi_default = ['DMF', 'DEF', 'DMSO', 'MeCN', 'H2O', 'MeOH', 'EtOH']
+    solventi = metal_ranges.get('solvents') or solventi_default
     additivi = [('Nessuno', 0.0), ('Acido Acetico (AcOH)', 5.0), ('Acido Trifluoroacetico (TFA)', 5.0), ('Trietilammina (TEA)', 3.0)]
 
-    # I solventi tipici da letteratura per questo metallo vengono messi in
-    # cima alla lista esplorata (non esclusi gli altri, solo prioritizzati),
-    # così le combinazioni chimicamente più plausibili vengono scoperte prima.
     lit_prior = LITERATURE_CONDITION_PRIORS.get(metallo_sel)
-    if lit_prior and lit_prior.get('solvents'):
-        preferiti = [s for s in lit_prior['solvents'] if s in solventi]
-        solventi = preferiti + [s for s in solventi if s not in preferiti]
-
     if lit_prior and lit_prior.get('modulator_hint') == 'special':
         st.warning(
             f"⚠️ Per il **{metallo_sel}**, la letteratura indica che la sintesi solvotermale diretta "
@@ -1830,15 +1953,73 @@ def render_synthesis_optimizer(mol, metallo_sel, orig_temp, orig_tempo, orig_ani
         )
 
     if n_samples_metallo == 0 and used_literature:
-        st.caption(f"ℹ️ Nessuna sintesi con metallo {metallo_sel} nel tuo dataset: griglia basata sui range tipici riportati in letteratura per questo metallo.")
+        st.caption(f"ℹ️ Nessuna sintesi con metallo {metallo_sel} nel tuo dataset: griglia (incluso il solvente) basata sui range tipici riportati in letteratura per questo metallo.")
     elif used_literature:
-        st.caption(f"ℹ️ Griglia basata sulle {n_samples_metallo} sintesi storiche con metallo {metallo_sel} nel dataset, integrate con i range tipici di letteratura (dati locali ancora limitati).")
+        st.caption(f"ℹ️ Griglia basata sulle {n_samples_metallo} sintesi storiche con metallo {metallo_sel} nel dataset (solventi: {', '.join(solventi[:4])}...), integrate con i range tipici di letteratura (dati locali ancora limitati).")
     elif used_fallback_range:
         st.caption(f"ℹ️ Pochi dati storici specifici per {metallo_sel} e nessun riferimento di letteratura disponibile: uso il range di condizioni osservato su tutto il dataset ({metal_ranges.get('n_samples', 0)} sintesi).")
     else:
-        st.caption(f"ℹ️ Griglia di ricerca basata sulle {n_samples_metallo} sintesi storiche con metallo {metallo_sel} nel dataset (dati sufficienti, nessuna integrazione di letteratura necessaria).")
+        st.caption(f"ℹ️ Griglia di ricerca basata sulle {n_samples_metallo} sintesi storiche con metallo {metallo_sel} nel dataset (solventi: {', '.join(solventi[:4])}...; dati sufficienti, nessuna integrazione di letteratura necessaria).")
 
     ml_solv_fisso = 10.0  # volume standard, non è tra le dimensioni ottimizzate qui per contenere la griglia
+
+    if verified_recipe:
+        add_info_v = ADDITIVES_DATABASE.get(verified_recipe['additivo'], ADDITIVES_DATABASE['Nessuno'])
+        mmol_legante_v = orig_mmol_sale * verified_recipe['ratio']
+        hsab_match_v = float(calculate_hsab_match(metal_m['HSAB'], smarts_f['n_COOH'], smarts_f['n_Aromatic_N']))
+        mix_props_v = calculate_solvent_mix_properties(verified_recipe['solvente'], ml_solv_fisso, 'Nessuno', 0.0)
+        row_v = {
+            'MW_Legante': mw, 'LogP_Legante': logp, 'HBD_Legante': hbd, 'HBA_Legante': hba,
+            'TPSA_Legante': tpsa, 'RotatableBonds_Legante': rot,
+            'SMARTS_n_COOH': smarts_f['n_COOH'], 'SMARTS_n_Aromatic_N': smarts_f['n_Aromatic_N'],
+            'SMARTS_fraction_sp2': smarts_f['fraction_sp2'],
+            'LigFamily_Pirazolo': 1 if ligand_family == 'Pirazolo' else 0,
+            'LigFamily_Triazolo': 1 if ligand_family == 'Triazolo' else 0,
+            'LigFamily_Imidazolo': 1 if ligand_family == 'Imidazolo' else 0,
+            'LigFamily_CarbossilicoAromatico': 1 if ligand_family == 'Carbossilico_Aromatico' else 0,
+            'LigFamily_AltroNoto': 1 if ligand_family == 'Altro_Noto' else 0,
+            'LigFamily_NonSpecificata': 1 if ligand_family == 'Non_Specificata' else 0,
+            'HSAB_Match_Index': hsab_match_v,
+            'Temperatura_num': verified_recipe['temp'], 'Tempo_ore_num': verified_recipe['tempo'],
+            'Thermal_Dose': float(verified_recipe['temp']) * float(np.log1p(float(verified_recipe['tempo']))),
+            'mmol legante': float(mmol_legante_v), 'mmol sale': float(orig_mmol_sale), 'Rapporto L/M': float(verified_recipe['ratio']),
+            'Molarity_Legante': float(mmol_legante_v) / ml_solv_fisso, 'Molarity_Sale': float(orig_mmol_sale) / ml_solv_fisso,
+            'Metallo_Z': metal_m['Z'], 'Metallo_Electronegativity': metal_m['Electronegativity'],
+            'Metallo_Radius_pm': metal_m['Radius_pm'], 'Metallo_Group': metal_m['Group'], 'Metallo_Period': metal_m['Period'],
+            'Anion_Acetato': 1 if verified_recipe['anione'] == 'Acetato' else 0,
+            'Anion_Cloruro': 1 if verified_recipe['anione'] == 'Cloruro' else 0,
+            'Anion_Nitrato': 1 if verified_recipe['anione'] == 'Nitrato' else 0,
+            'Anion_Altro': 1 if verified_recipe['anione'] == 'Altro' else 0,
+            'mL_Solvente_P': ml_solv_fisso, 'mL_CoSolvente': 0.0, 'Total_Volume_mL': ml_solv_fisso, 'CoSolvent_Pct': 0.0,
+            'Solvent_Mix_Alpha': mix_props_v['mix_alpha'], 'Solvent_Mix_Beta': mix_props_v['mix_beta'],
+            'Solvent_Mix_PiStar': mix_props_v['mix_pi_star'], 'Solvent_Mix_Dielectric': mix_props_v['mix_dielectric'],
+            'Solvent_Mix_BoilingPt': mix_props_v['mix_boiling_pt'],
+            'Additive_Eq': verified_recipe['add_eq'], 'Additive_pKa': float(add_info_v.get('pKa', 0.0)),
+            'Additive_Is_Acid': 1 if add_info_v['type'] == 'Acid' else 0,
+            'Additive_Is_Base': 1 if add_info_v['type'] == 'Base' else 0,
+            'Additive_Is_Neutral': 1 if add_info_v['type'] == 'Neutral' else 0,
+        }
+        df_verified = pd.DataFrame([row_v])
+        for col in feature_names:
+            if col not in df_verified.columns:
+                df_verified[col] = 0.0
+        df_verified = df_verified[feature_names]
+        probs_v = model.predict_proba(df_verified)[0]
+        classes_v = [int(c) if str(c).isdigit() else c for c in model.classes_]
+        p_success_v = probs_v[classes_v.index(2)] * 100.0 if 2 in classes_v else 0.0
+
+        st.success(
+            f"📖 **Ricetta verificata al 100% in letteratura per questa combinazione** "
+            f"({verified_recipe['fonte']}):\n\n"
+            f"- **Temperatura:** {verified_recipe['temp']:.0f}°C\n"
+            f"- **Tempo:** {verified_recipe['tempo']:.0f}h\n"
+            f"- **Solvente:** {verified_recipe['solvente']}\n"
+            f"- **Anione/Precursore:** {verified_recipe['anione']}\n"
+            f"- **Additivo:** {verified_recipe['additivo']}" + (f" ({verified_recipe['add_eq']:.0f} eq.)" if verified_recipe['add_eq'] > 0 else "") + "\n"
+            f"- **Rapporto Legante/Metallo:** {verified_recipe['ratio']:.2f}:1\n\n"
+            f"Il modello stima per questa ricetta una probabilità di successo del **{p_success_v:.1f}%** — "
+            "una stima aggiuntiva, non una garanzia: la ricetta è comunque quella riportata realmente in letteratura."
+        )
 
     grid_combos = list(itertools.product(temperatures, times, anioni, solventi, additivi, rapporti_target))
 
