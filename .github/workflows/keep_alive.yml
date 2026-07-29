@@ -2,14 +2,26 @@ name: Keep Streamlit Alive
 
 on:
   schedule:
-    # Esegue il controllo ogni 4 ore
-    - cron: "0 */4 * * *"
-  workflow_dispatch: # Permette di avviarlo anche manualmente da GitHub
+    # Ogni 10 minuti, tutti i giorni — ben sotto qualunque soglia di sleep
+    # (prima era ogni 4 ore, troppo raro per evitare lo sleep notturno)
+    - cron: "*/10 * * * *"
+  workflow_dispatch: # Permette di avviarlo anche manualmente da GitHub, per testare
 
 jobs:
   ping-app:
     runs-on: ubuntu-latest
     steps:
-      - name: Invia richiesta HTTP all'app Streamlit
+      - name: Invia richiesta HTTP all'app Streamlit (con User-Agent da browser)
         run: |
-          curl -s -o /dev/null -w "Status code: %{http_code}\n" https://mof-synthesis.streamlit.app/
+          curl -s -o /dev/null -w "Status code: %{http_code}\n" \
+            -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+            --max-time 30 \
+            https://mof-synthesis.streamlit.app/
+          echo "Ping inviato: $(date -u)"
+
+      - name: Controllo aggiuntivo sull'health endpoint di Streamlit
+        run: |
+          curl -s -o /dev/null -w "Health check status: %{http_code}\n" \
+            -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+            --max-time 30 \
+            https://mof-synthesis.streamlit.app/_stcore/health
