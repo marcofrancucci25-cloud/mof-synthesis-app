@@ -616,7 +616,8 @@ ADDITIVES_DATABASE = {
     'N-Metilmorfolina': {'type': 'Base', 'MW': 101.15, 'pKa': 7.38},
     'Piridinetilammina / Piridina': {'type': 'Base', 'MW': 79.10, 'pKa': 5.25},
     'Acqua (H2O Modulatore)': {'type': 'Neutral', 'MW': 18.015, 'pKa': 14.0},
-    'HF (Acido Fluoridrico)': {'type': 'Acid', 'MW': 20.01, 'pKa': 3.17}
+    'HF (Acido Fluoridrico)': {'type': 'Acid', 'MW': 20.01, 'pKa': 3.17},
+    'Acido Nitrico (HNO3)': {'type': 'Acid', 'MW': 63.01, 'pKa': -1.4}
 }
 
 # --- DATABASE METALLI AMPLIATO (30 METALLI) E HSAB ---
@@ -997,6 +998,44 @@ def parse_primary_solvent(raw_solvente):
             return _SOLVENT_ALIASES[p_nospace]
     return None
 
+_ADDITIVE_ALIASES_PARSE = {
+    'nessuno': 'Nessuno', 'none': 'Nessuno',
+    'triethylamine': 'Trietilammina (TEA)', 'et3n': 'Trietilammina (TEA)', 'trietilammina(tea)': 'Trietilammina (TEA)',
+    'hcl': 'Acido Cloridrico (HCl)', 'hcl37%': 'Acido Cloridrico (HCl)',
+    'benzoicacid': 'Acido Benzoico', 'acidobenzoico': 'Acido Benzoico',
+    'aceticacid': 'Acido Acetico (AcOH)', 'acidoaceticoglaciale': 'Acido Acetico (AcOH)', 'acidoacetico(acoh)': 'Acido Acetico (AcOH)',
+    'hno3': 'Acido Nitrico (HNO3)',
+    'formicacid': 'Acido Formico (HCOOH)',
+    'tfa': 'Acido Trifluoroacetico (TFA)',
+    'hf': 'HF (Acido Fluoridrico)',
+    'h2o': 'Acqua (H2O Modulatore)',
+}
+# Token che compaiono nel campo "Additivo_Colinker" grezzo ma sono in realtà
+# frammenti di legante finiti lì per errore di trascrizione, non veri
+# additivi/modulatori (es. sigle di leganti pirazolici o carbossilici).
+_NON_ADDITIVE_TOKENS = {'bdc', 'btc', 'pz', '4-brpz', '3,5-dimetilpz', '4-clpz', 'meoh', 'mesitilene'}
+
+def parse_primary_additive(raw_additivo):
+    """Estrae (additivo_canonico, equivalenti_o_None) da una stringa grezza
+    tipo 'Et3N 2 eq', 'Acido acetico glaciale', 'HCl 37%', scartando token
+    che sono in realtà frammenti di legante finiti per errore nel campo
+    additivo (es. 'BDC', 'Pz')."""
+    if not raw_additivo or pd.isna(raw_additivo):
+        return None, None
+    raw = str(raw_additivo).strip()
+    # Estraggo eventuali equivalenti espliciti tipo "2 eq" o "2eq"
+    eq_match = re.search(r'(\d+(?:[.,]\d+)?)\s*eq', raw.lower())
+    eq_val = float(eq_match.group(1).replace(',', '.')) if eq_match else None
+    parts = [p.strip().lower() for p in raw.replace('-', '/').split('/')]
+    for p in parts:
+        if p in _NON_ADDITIVE_TOKENS:
+            continue
+        p_key = re.sub(r'\s*\d+(?:[.,]\d+)?\s*eq.*', '', p).replace(' ', '')
+        p_key = p_key.replace('%', '').replace('37', '').replace('28', '').replace('30', '')
+        if p_key in _ADDITIVE_ALIASES_PARSE:
+            return _ADDITIVE_ALIASES_PARSE[p_key], eq_val
+    return None, None
+
 def resolve_additive_type_and_pka(add_str):
     s = str(add_str).lower()
     if 'acid' in s or 'ac. ' in s or 'hcl' in s or 'hcooh' in s or 'acoh' in s or 'tfa' in s:
@@ -1221,7 +1260,7 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v18-verified-literature-recipes"
+MODEL_TRAINING_VERSION = "v19-additive-role-optimizer"
 
 @st.cache_resource
 def load_or_train_model():
@@ -1550,6 +1589,58 @@ def load_or_train_model():
             return combined if combined else None
 
         all_relevant_metals = set(metalli_raw.unique()) | set(LITERATURE_CONDITION_PRIORS.keys())
+
+        # Additivi/modulatori storicamente usati CON SUCCESSO per ciascun
+        # metallo (parsing del campo grezzo "Additivo_Colinker", spesso con
+        # equivalenti incorporati o frammenti di legante finiti per errore),
+        # fusi con le opzioni tipiche di letteratura derivate dalla categoria
+        # 'modulator_hint' già presente in LITERATURE_CONDITION_PRIORS.
+        # Stessa logica di solvente/temperatura: prima l'ottimizzatore usava
+        # sempre le stesse 4 opzioni fisse con equivalenti fissi per ogni
+        # metallo, indipendentemente da cosa funziona davvero per quel
+        # sistema specifico.
+        additivi_raw = raw_df['Additivo_Colinker'].reset_index(drop=True)
+        _MODULATOR_HINT_TO_OPTIONS = {
+            'high_eq_acid': [('Acido Acetico (AcOH)', 20.0), ('Acido Formico (HCOOH)', 20.0), ('Acido Benzoico', 15.0), ('Nessuno', 0.0)],
+            'low_eq_acid':  [('Acido Nitrico (HNO3)', 1.0), ('HF (Acido Fluoridrico)', 1.0), ('Nessuno', 0.0)],
+            'none':         [('Nessuno', 0.0)],
+            'special':      [('Nessuno', 0.0)],
+        }
+
+        def _build_additive_list(metal_sym, n_local):
+            hint = (LITERATURE_CONDITION_PRIORS.get(metal_sym) or {}).get('modulator_hint')
+            lit_opts = _MODULATOR_HINT_TO_OPTIONS.get(hint, [])
+            if n_local == 0:
+                return lit_opts if lit_opts else None
+            mask_success = (metalli_raw == metal_sym) & (y.reset_index(drop=True) == 2)
+            parsed = additivi_raw[mask_success].apply(parse_primary_additive)
+            # Per ogni additivo osservato, uso l'equivalente riportato quando
+            # disponibile, altrimenti un valore tipico ragionevole di default.
+            data_opts = {}
+            for name, eq in parsed:
+                if name is None:
+                    continue
+                if name not in data_opts:
+                    data_opts[name] = []
+                if eq is not None:
+                    data_opts[name].append(eq)
+            # Ordino per frequenza d'uso (quanti eq osservati/quante righe)
+            counts = parsed.apply(lambda t: t[0]).value_counts()
+            data_list = []
+            for name in counts.index[:4]:
+                if name is None:
+                    continue
+                eqs = data_opts.get(name, [])
+                default_eq = {'Nessuno': 0.0}.get(name, 5.0)
+                eq_val = float(np.mean(eqs)) if eqs else default_eq
+                data_list.append((name, round(eq_val, 1)))
+            if n_local >= 15 and data_list:
+                return data_list
+            # Fusione: additivi osservati + opzioni letterarie, deduplicati per nome
+            seen_names = {n for n, _ in data_list}
+            combined = data_list + [opt for opt in lit_opts if opt[0] not in seen_names]
+            return combined if combined else None
+
         for metal_sym in all_relevant_metals:
             mask = metalli_raw == metal_sym
             n_local = int(mask.sum())
@@ -1560,6 +1651,7 @@ def load_or_train_model():
                 'tempo': _build_range(metal_sym, X_reset_idx.loc[mask, 'Tempo_ore_num'] if n_local else None, 'tempo_core', n_local),
                 'ratio': _build_range(metal_sym, X_reset_idx.loc[mask, 'Rapporto L/M'] if n_local else None, 'ratio_core', n_local),
                 'solvents': _build_solvent_list(metal_sym, n_local),
+                'additives': _build_additive_list(metal_sym, n_local),
                 'n_samples': n_local,
                 'used_literature': (metal_sym in LITERATURE_CONDITION_PRIORS) and (n_local < 15)
             }
@@ -1568,6 +1660,7 @@ def load_or_train_model():
             'tempo': _percentile_set(X['Tempo_ore_num']),
             'ratio': _percentile_set(X['Rapporto L/M']),
             'solvents': None,
+            'additives': None,
             'n_samples': len(X)
         }
     except Exception:
@@ -1941,7 +2034,8 @@ def render_synthesis_optimizer(mol, metallo_sel, orig_temp, orig_tempo, orig_ani
     # compaiono nella griglia (che da solo non influenzava il risultato).
     solventi_default = ['DMF', 'DEF', 'DMSO', 'MeCN', 'H2O', 'MeOH', 'EtOH']
     solventi = metal_ranges.get('solvents') or solventi_default
-    additivi = [('Nessuno', 0.0), ('Acido Acetico (AcOH)', 5.0), ('Acido Trifluoroacetico (TFA)', 5.0), ('Trietilammina (TEA)', 3.0)]
+    additivi_default = [('Nessuno', 0.0), ('Acido Acetico (AcOH)', 5.0), ('Acido Trifluoroacetico (TFA)', 5.0), ('Trietilammina (TEA)', 3.0)]
+    additivi = metal_ranges.get('additives') or additivi_default
 
     lit_prior = LITERATURE_CONDITION_PRIORS.get(metallo_sel)
     if lit_prior and lit_prior.get('modulator_hint') == 'special':
@@ -1952,14 +2046,15 @@ def render_synthesis_optimizer(mol, metallo_sel, orig_temp, orig_tempo, orig_ani
             "presi con particolare cautela per questo metallo specifico."
         )
 
+    additivi_names = [a[0] for a in additivi[:3]]
     if n_samples_metallo == 0 and used_literature:
-        st.caption(f"ℹ️ Nessuna sintesi con metallo {metallo_sel} nel tuo dataset: griglia (incluso il solvente) basata sui range tipici riportati in letteratura per questo metallo.")
+        st.caption(f"ℹ️ Nessuna sintesi con metallo {metallo_sel} nel tuo dataset: griglia (incluso solvente e additivo) basata sui range tipici riportati in letteratura per questo metallo.")
     elif used_literature:
-        st.caption(f"ℹ️ Griglia basata sulle {n_samples_metallo} sintesi storiche con metallo {metallo_sel} nel dataset (solventi: {', '.join(solventi[:4])}...), integrate con i range tipici di letteratura (dati locali ancora limitati).")
+        st.caption(f"ℹ️ Griglia basata sulle {n_samples_metallo} sintesi storiche con metallo {metallo_sel} nel dataset (solventi: {', '.join(solventi[:4])}...; additivi: {', '.join(additivi_names)}...), integrate con i range tipici di letteratura (dati locali ancora limitati).")
     elif used_fallback_range:
         st.caption(f"ℹ️ Pochi dati storici specifici per {metallo_sel} e nessun riferimento di letteratura disponibile: uso il range di condizioni osservato su tutto il dataset ({metal_ranges.get('n_samples', 0)} sintesi).")
     else:
-        st.caption(f"ℹ️ Griglia di ricerca basata sulle {n_samples_metallo} sintesi storiche con metallo {metallo_sel} nel dataset (solventi: {', '.join(solventi[:4])}...; dati sufficienti, nessuna integrazione di letteratura necessaria).")
+        st.caption(f"ℹ️ Griglia di ricerca basata sulle {n_samples_metallo} sintesi storiche con metallo {metallo_sel} nel dataset (solventi: {', '.join(solventi[:4])}...; additivi: {', '.join(additivi_names)}...; dati sufficienti, nessuna integrazione di letteratura necessaria).")
 
     ml_solv_fisso = 10.0  # volume standard, non è tra le dimensioni ottimizzate qui per contenere la griglia
 
