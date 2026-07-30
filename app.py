@@ -1418,13 +1418,14 @@ def create_stacking_ensemble():
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
 MODEL_TRAINING_VERSION = "v5_1_authoritative_dataset"
+DATASET_VERSION = "v5.1"
+AUTHORITATIVE_DATASET_FILE = "Dataset_Sintesi_MOF_ML_Standardizzato_v5_1.csv"
 
 @st.cache_resource
 def load_or_train_model():
     pkl_file = "modello_sintesi_mof_ottimizzato.pkl"
-    DATASET_VERSION = "v5.1"
     csv_candidates = [
-        "Dataset_Sintesi_MOF_ML_Standardizzato_v5_1.csv",
+        AUTHORITATIVE_DATASET_FILE,
         "Dataset_Sintesi_MOF_ML_Standardizzato_v3.csv",
         "Dataset_Sintesi_MOF_ML_Standardizzato_v2.csv",
         "Dataset_Sintesi_Unificato_1000.csv",
@@ -1455,7 +1456,17 @@ def load_or_train_model():
             break
 
     if not csv_file:
-        st.error("⚠️ Nessun file CSV di dataset trovato nella directory di lavoro!")
+        st.error(
+            "⚠️ Dataset autorevole non trovato. Carica nella directory dell'app il file "
+            f"`{AUTHORITATIVE_DATASET_FILE}`."
+        )
+        st.stop()
+
+    if os.path.basename(csv_file) != AUTHORITATIVE_DATASET_FILE:
+        st.error(
+            "⚠️ È stato trovato soltanto un dataset precedente, ma questa versione "
+            f"dell'app richiede obbligatoriamente `{AUTHORITATIVE_DATASET_FILE}`."
+        )
         st.stop()
         
     raw_df = pd.read_csv(csv_file)
@@ -1927,7 +1938,7 @@ def load_or_train_model():
     return final_model, feature_names, metrics, importances
 
 with st.sidebar.expander("🛠️ Manutenzione Modello", expanded=False):
-    st.caption(f"Versione training: `{MODEL_TRAINING_VERSION}` · Dataset autorevole: `{DATASET_VERSION}`")
+    st.caption(f"Versione training: `{MODEL_TRAINING_VERSION}` · Dataset: `{DATASET_VERSION}` · File: `{AUTHORITATIVE_DATASET_FILE}`")
     if st.button("🔄 Forza ri-allenamento (ignora .pkl salvato)"):
         try:
             if os.path.exists("modello_sintesi_mof_ottimizzato.pkl"):
