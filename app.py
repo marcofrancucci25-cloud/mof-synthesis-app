@@ -1279,7 +1279,7 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v20-anion-role-optimizer-complete"
+MODEL_TRAINING_VERSION = "v21-optimizer-only-literature-data"
 
 @st.cache_resource
 def load_or_train_model():
@@ -1556,7 +1556,42 @@ def load_or_train_model():
     #       (che mischierebbe metalli chimicamente molto diversi tra loro)
     try:
         metalli_raw = raw_df['Metallo'].reset_index(drop=True)
+        sali_raw = raw_df['Sale_Metallico'].reset_index(drop=True)
+        solventi_raw = raw_df['Solvente'].reset_index(drop=True)
+        additivi_raw = raw_df['Additivo_Colinker'].reset_index(drop=True)
         X_reset_idx = X.reset_index(drop=True)
+        y_reset_idx = y.reset_index(drop=True)
+
+        # Dati aggiuntivi da letteratura SOLO per l'ottimizzatore — MAI usati
+        # per addestrare il classificatore (model.fit() usa esclusivamente X/y
+        # originali, definiti sopra e già non più modificabili da qui in poi).
+        # Sono tutte sintesi riuscite prese da paper pubblicati: se finissero
+        # nel training del classificatore reintrodurrebbero lo sbilanciamento
+        # verso il successo che abbiamo corretto in precedenza. Vengono quindi
+        # unite SOLO alle variabili _raw usate più sotto per calcolare le
+        # statistiche condizioni-per-metallo dell'ottimizzatore contestuale.
+        n_opt_extra_loaded = 0
+        try:
+            opt_extra_path = "Dataset_Letteratura_Ottimizzatore_Positivi.csv"
+            if os.path.exists(opt_extra_path):
+                raw_df_opt_extra = pd.read_csv(opt_extra_path)
+                df_opt_extra = process_unified_dataset(raw_df_opt_extra, is_training_phase=True)
+                for col in feature_names:
+                    if col not in df_opt_extra.columns:
+                        df_opt_extra[col] = 0.0
+                X_opt_extra = df_opt_extra[feature_names].reset_index(drop=True)
+                y_opt_extra = pd.Series([2] * len(X_opt_extra))  # tutte "successo" per costruzione (sintesi pubblicate riuscite)
+
+                metalli_raw = pd.concat([metalli_raw, raw_df_opt_extra['Metallo'].reset_index(drop=True)], ignore_index=True)
+                sali_raw = pd.concat([sali_raw, raw_df_opt_extra['Sale_Metallico'].reset_index(drop=True)], ignore_index=True)
+                solventi_raw = pd.concat([solventi_raw, raw_df_opt_extra['Solvente'].reset_index(drop=True)], ignore_index=True)
+                additivi_raw = pd.concat([additivi_raw, raw_df_opt_extra['Additivo_Colinker'].reset_index(drop=True)], ignore_index=True)
+                X_reset_idx = pd.concat([X_reset_idx, X_opt_extra], ignore_index=True)
+                y_reset_idx = pd.concat([y_reset_idx, y_opt_extra], ignore_index=True)
+                n_opt_extra_loaded = len(X_opt_extra)
+        except Exception:
+            pass
+
         metal_condition_ranges = {}
 
         def _percentile_set(series):
@@ -1590,13 +1625,12 @@ def load_or_train_model():
         # Prima i solventi testati dall'ottimizzatore erano identici per
         # ogni metallo (solo riordinati, senza impatto reale sui risultati):
         # ora la lista stessa riflette la pratica reale per quel metallo.
-        solventi_raw = raw_df['Solvente'].reset_index(drop=True)
 
         def _build_solvent_list(metal_sym, n_local):
             lit_solv = (LITERATURE_CONDITION_PRIORS.get(metal_sym) or {}).get('solvents') or []
             if n_local == 0:
                 return lit_solv if lit_solv else None  # None -> userà il default fisso più sotto
-            mask_success = (metalli_raw == metal_sym) & (y.reset_index(drop=True) == 2)
+            mask_success = (metalli_raw == metal_sym) & (y_reset_idx == 2)
             parsed = solventi_raw[mask_success].apply(parse_primary_solvent).dropna()
             counts = parsed.value_counts()
             data_solv = list(counts.index[:4])  # i 4 solventi più usati con successo per questo metallo
@@ -1618,7 +1652,6 @@ def load_or_train_model():
         # sempre le stesse 4 opzioni fisse con equivalenti fissi per ogni
         # metallo, indipendentemente da cosa funziona davvero per quel
         # sistema specifico.
-        additivi_raw = raw_df['Additivo_Colinker'].reset_index(drop=True)
         _MODULATOR_HINT_TO_OPTIONS = {
             'high_eq_acid': [('Acido Acetico (AcOH)', 20.0), ('Acido Formico (HCOOH)', 20.0), ('Acido Benzoico', 15.0), ('Nessuno', 0.0)],
             'low_eq_acid':  [('Acido Nitrico (HNO3)', 1.0), ('HF (Acido Fluoridrico)', 1.0), ('Nessuno', 0.0)],
@@ -1631,7 +1664,7 @@ def load_or_train_model():
             lit_opts = _MODULATOR_HINT_TO_OPTIONS.get(hint, [])
             if n_local == 0:
                 return lit_opts if lit_opts else None
-            mask_success = (metalli_raw == metal_sym) & (y.reset_index(drop=True) == 2)
+            mask_success = (metalli_raw == metal_sym) & (y_reset_idx == 2)
             parsed = additivi_raw[mask_success].apply(parse_primary_additive)
             # Per ogni additivo osservato, uso l'equivalente riportato quando
             # disponibile, altrimenti un valore tipico ragionevole di default.
@@ -1666,13 +1699,12 @@ def load_or_train_model():
         # solvente/additivo: prima l'ottimizzatore testava sempre le stesse
         # 4 opzioni per ogni metallo, indipendentemente da quale precursore
         # sia realmente disponibile/usato in pratica per quel sistema.
-        sali_raw = raw_df['Sale_Metallico'].reset_index(drop=True)
         _anioni_default_completo = ['Nitrato', 'Acetato', 'Cloruro', 'Altro']
 
         def _build_anion_list(metal_sym, n_local):
             if n_local == 0:
                 return None  # nessun dato locale: userà la lista completa di default più sotto
-            mask_success = (metalli_raw == metal_sym) & (y.reset_index(drop=True) == 2)
+            mask_success = (metalli_raw == metal_sym) & (y_reset_idx == 2)
             parsed = sali_raw[mask_success].apply(parse_primary_anion).dropna()
             counts = parsed.value_counts()
             data_anioni = list(counts.index)

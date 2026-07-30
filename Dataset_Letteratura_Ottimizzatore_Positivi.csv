@@ -1,0 +1,22 @@
+ID,Legante,Famiglia_Legante,Metallo,Sale_Metallico,Solvente,Additivo_Colinker,Temperatura_C,Tempo_ore,mmol_Legante,mmol_Sale,Rapporto_LM,Procedura_Sintetica,Esito_ML,Volume solvente
+OptLit_1,terephthalic acid,Carbossilati aromatici,V,VCl3,H2O,Nessuno,200,96.0,0.25,1.0,0.25,Solvothermal,2,10.0
+OptLit_2,terephthalic acid,Carbossilati aromatici,V,VCl3,EtOH,HCl,120,48.0,2.0,2.0,1.0,Solvothermal,2,10.0
+OptLit_3,terephthalic acid,Carbossilati aromatici,Ga,Ga(NO3)3,H2O,HF (Acido Fluoridrico),220,72.0,2.0,1.0,2.0,Solvothermal,2,10.0
+OptLit_4,terephthalic acid,Carbossilati aromatici,Ga,Ga(NO3)3,H2O,Nessuno,220,72.0,2.0,1.0,2.0,Solvothermal,2,10.0
+OptLit_5,terephthalic acid,Carbossilati aromatici,Ba,Ba(NO3)2,DMF,Nessuno,130,48.0,0.06,0.5,0.12,Solvothermal,2,5.0
+OptLit_6,"1,3,5-benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Y,YCl3,DMF,Nessuno,110,24.0,0.6,0.5,1.2,Solvothermal,2,12.0
+OptLit_7,"1,3,5-benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Tb,Tb(NO3)3,DMF,Nessuno,110,24.0,0.115,0.23,0.5,Solvothermal,2,10.0
+OptLit_8,"1,3,5-benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,La,LaCl3,DMF,Nessuno,110,24.0,0.6,0.5,1.2,Solvothermal,2,12.0
+OptLit_9,"1,3,5-benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Nd,NdCl3,DMF,Nessuno,110,24.0,0.6,0.5,1.2,Solvothermal,2,12.0
+OptLit_10,"1,3,5-benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Eu,EuCl3,DMF,Nessuno,110,24.0,0.6,0.5,1.2,Solvothermal,2,12.0
+OptLit_11,"1,3,5-benzenetricarboxylic acid (H3BTC)",Carbossilati aromatici,Gd,GdCl3,DMF,Nessuno,110,24.0,0.6,0.5,1.2,Solvothermal,2,12.0
+OptLit_12,"1,3,5-tris(4-carboxyphenyl)benzene (btb)",Carbossilati aromatici,Bi,Bi(NO3)3,MeOH,Nessuno,120,0.33,0.456,0.306,1.49,Solvothermal,2,20.0
+OptLit_13,terephthalic acid,Carbossilati aromatici,Ti,Ti(OiPr)4,DMF,Nessuno,100,72.0,7.6,5.1,1.49,Solvothermal,2,50.0
+OptLit_14,terephthalic acid,Carbossilati aromatici,Ti,Ti(OiPr)4,DMF,Nessuno,150,15.0,1.5,1.0,1.5,Solvothermal,2,5.0
+OptLit_15,terephthalic acid,Carbossilati aromatici,Cr,Cr(NO3)3,H2O,Acido Acetico (AcOH),220,20.0,15.89,15.99,0.99,Solvothermal,2,80.0
+OptLit_16,terephthalic acid,Carbossilati aromatici,Cr,Cr(NO3)3,H2O,HNO3,220,8.0,1.0,1.0,1.0,Solvothermal,2,10.0
+OptLit_17,terephthalic acid,Carbossilati aromatici,In,In(NO3)3,DMF,Nessuno,100,48.0,1.2,1.05,1.14,Solvothermal,2,5.0
+OptLit_18,2-aminoterephthalic acid,Carbossilati aromatici,In,In(NO3)3,DMF,Nessuno,125,5.0,1.29,3.84,0.336,Solvothermal,2,12.4
+OptLit_19,terephthalic acid,Carbossilati aromatici,Ce,Ce(NO3)3,H2O,Nessuno,25,1.0,14.92,11.62,1.28,Solvothermal,2,100.0
+OptLit_20,terephthalic acid,Carbossilati aromatici,Ce,(NH4)2Ce(NO3)6,DMF,Nessuno,100,0.25,0.5,0.5,1.0,Solvothermal,2,10.0
+OptLit_21,terephthalic acid,Carbossilati aromatici,Hf,HfCl4,DMF,Acido Formico (HCOOH),120,24.0,2.5,3.0,0.83,Solvothermal,2,40.0
