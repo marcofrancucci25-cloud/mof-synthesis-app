@@ -847,6 +847,29 @@ def calculate_hsab_match(metal_hsab, n_cooh, n_aro_n):
     else:
         return 0.5
 
+def calculate_solvent_compatibility(metal_symbol, solvente):
+    """Quanto il solvente scelto è tipico/atteso per questo metallo secondo
+    la letteratura (LITERATURE_CONDITION_PRIORS, già usata per l'ottimizzatore).
+    Le sole proprietà fisiche del solvente (polarità, costante dielettrica,
+    ecc.) si sono rivelate un segnale troppo debole perché il modello
+    imparasse da solo una vera sensibilità al solvente (rank #19-28 su 52
+    feature, 5-8 volte meno importanti di temperatura/tempo); questa feature
+    codifica direttamente la conoscenza chimica invece di sperare che il
+    modello la ricavi da sole 5 proprietà fisiche generiche.
+    1.0 = solvente primario noto per questo metallo, 0.75 = tra quelli tipici
+    ma non il primo, 0.25 = solvente non tipico secondo la letteratura,
+    0.5 = nessuna informazione di letteratura disponibile per questo metallo."""
+    prior = LITERATURE_CONDITION_PRIORS.get(metal_symbol)
+    if not prior or not prior.get('solvents'):
+        return 0.5
+    preferiti = prior['solvents']
+    if solvente == preferiti[0]:
+        return 1.0
+    elif solvente in preferiti:
+        return 0.75
+    else:
+        return 0.25
+
 @st.cache_data(ttl=3600, show_spinner=False)
 def resolve_molecule_to_smiles(query, allow_web_search=True):
     # NOTA: la cache è basata sugli argomenti (query, allow_web_search) e non
@@ -1154,6 +1177,8 @@ def process_unified_dataset(df, is_training_phase=False):
         cosolv_pct = (ml_cosolv / total_vol * 100) if total_vol > 0 else 0.0
         
         mix_props = calculate_solvent_mix_properties(solv_p, ml_solv_p, cosolv, ml_cosolv)
+        solv_p_normalized = parse_primary_solvent(solv_p) or solv_p
+        solvent_compat = calculate_solvent_compatibility(met, solv_p_normalized)
         
         add_str = str(row.get('Co-linker/Additivo', row.get('Additivo_Colinker', row.get('Additivo_Tipo', 'None'))))
         add_type, add_pka = resolve_additive_type_and_pka(add_str)
@@ -1211,6 +1236,7 @@ def process_unified_dataset(df, is_training_phase=False):
             'Solvent_Mix_PiStar': mix_props['mix_pi_star'],
             'Solvent_Mix_Dielectric': mix_props['mix_dielectric'],
             'Solvent_Mix_BoilingPt': mix_props['mix_boiling_pt'],
+            'Solvent_Compatibility_Score': float(solvent_compat),
             'Additive_Eq': float(add_eq),
             'Additive_pKa': float(add_pka),
             'Additive_Is_Acid': 1 if add_type == 'Acid' else 0,
@@ -1279,7 +1305,7 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v21-optimizer-only-literature-data"
+MODEL_TRAINING_VERSION = "v22-solvent-compatibility-feature"
 
 @st.cache_resource
 def load_or_train_model():
@@ -1935,6 +1961,7 @@ def build_feature_row(mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmo
     ligand_family = detect_ligand_family(mol, smarts_f['n_COOH'])
     metal_m = metal_props[metallo_sel]
     hsab_match = calculate_hsab_match(metal_m['HSAB'], smarts_f['n_COOH'], smarts_f['n_Aromatic_N'])
+    solvent_compat = calculate_solvent_compatibility(metallo_sel, solvente_p)
     
     input_dict = {
         'MW_Legante': float(mw),
@@ -1953,6 +1980,7 @@ def build_feature_row(mol, mw, logp, hbd, hba, tpsa, rot_bonds, temp, tempo, mmo
         'LigFamily_AltroNoto': 1 if ligand_family == 'Altro_Noto' else 0,
         'LigFamily_NonSpecificata': 1 if ligand_family == 'Non_Specificata' else 0,
         'HSAB_Match_Index': hsab_match,
+        'Solvent_Compatibility_Score': solvent_compat,
         'Temperatura_num': float(temp),
         'Tempo_ore_num': float(tempo),
         'Thermal_Dose': float(temp) * float(np.log1p(float(tempo))),
@@ -2139,6 +2167,7 @@ def render_synthesis_optimizer(mol, metallo_sel, orig_temp, orig_tempo, orig_ani
         add_info_v = ADDITIVES_DATABASE.get(verified_recipe['additivo'], ADDITIVES_DATABASE['Nessuno'])
         mmol_legante_v = orig_mmol_sale * verified_recipe['ratio']
         hsab_match_v = float(calculate_hsab_match(metal_m['HSAB'], smarts_f['n_COOH'], smarts_f['n_Aromatic_N']))
+        solvent_compat_v = calculate_solvent_compatibility(metallo_sel, verified_recipe['solvente'])
         mix_props_v = calculate_solvent_mix_properties(verified_recipe['solvente'], ml_solv_fisso, 'Nessuno', 0.0)
         row_v = {
             'MW_Legante': mw, 'LogP_Legante': logp, 'HBD_Legante': hbd, 'HBA_Legante': hba,
@@ -2152,6 +2181,7 @@ def render_synthesis_optimizer(mol, metallo_sel, orig_temp, orig_tempo, orig_ani
             'LigFamily_AltroNoto': 1 if ligand_family == 'Altro_Noto' else 0,
             'LigFamily_NonSpecificata': 1 if ligand_family == 'Non_Specificata' else 0,
             'HSAB_Match_Index': hsab_match_v,
+            'Solvent_Compatibility_Score': solvent_compat_v,
             'Temperatura_num': verified_recipe['temp'], 'Tempo_ore_num': verified_recipe['tempo'],
             'Thermal_Dose': float(verified_recipe['temp']) * float(np.log1p(float(verified_recipe['tempo']))),
             'mmol legante': float(mmol_legante_v), 'mmol sale': float(orig_mmol_sale), 'Rapporto L/M': float(verified_recipe['ratio']),
@@ -2202,6 +2232,7 @@ def render_synthesis_optimizer(mol, metallo_sel, orig_temp, orig_tempo, orig_ani
         mmol_sale = orig_mmol_sale
 
         hsab_match = float(calculate_hsab_match(metal_m['HSAB'], smarts_f['n_COOH'], smarts_f['n_Aromatic_N']))
+        solvent_compat = calculate_solvent_compatibility(metallo_sel, solv_p)
         add_info = ADDITIVES_DATABASE.get(add_name, ADDITIVES_DATABASE['Nessuno'])
         add_type = add_info['type']
         mix_props = calculate_solvent_mix_properties(solv_p, ml_solv_fisso, 'Nessuno', 0.0)
@@ -2218,6 +2249,7 @@ def render_synthesis_optimizer(mol, metallo_sel, orig_temp, orig_tempo, orig_ani
             'LigFamily_AltroNoto': 1 if ligand_family == 'Altro_Noto' else 0,
             'LigFamily_NonSpecificata': 1 if ligand_family == 'Non_Specificata' else 0,
             'HSAB_Match_Index': hsab_match,
+            'Solvent_Compatibility_Score': solvent_compat,
             'Temperatura_num': temp, 'Tempo_ore_num': tempo,
             'Thermal_Dose': float(temp) * float(np.log1p(float(tempo))),
             'mmol legante': float(mmol_legante), 'mmol sale': float(mmol_sale), 'Rapporto L/M': float(rapporto),
