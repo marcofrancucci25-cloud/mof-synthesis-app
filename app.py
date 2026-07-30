@@ -1417,13 +1417,14 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v5_step1_units"
+MODEL_TRAINING_VERSION = "v5_1_authoritative_dataset"
 
 @st.cache_resource
 def load_or_train_model():
     pkl_file = "modello_sintesi_mof_ottimizzato.pkl"
+    DATASET_VERSION = "v5.1"
     csv_candidates = [
-        "Dataset_Sintesi_MOF_ML_Standardizzato_v4.csv",
+        "Dataset_Sintesi_MOF_ML_Standardizzato_v5_1.csv",
         "Dataset_Sintesi_MOF_ML_Standardizzato_v3.csv",
         "Dataset_Sintesi_MOF_ML_Standardizzato_v2.csv",
         "Dataset_Sintesi_Unificato_1000.csv",
@@ -1438,6 +1439,7 @@ def load_or_train_model():
             if (
                 isinstance(saved_data, dict) and 'model' in saved_data
                 and saved_data.get('model_training_version') == MODEL_TRAINING_VERSION
+                and saved_data.get('dataset_version') == DATASET_VERSION
             ):
                 return saved_data['model'], saved_data['features'], saved_data.get('metrics', {}), saved_data.get('importances', [])
             # .pkl presente ma di una versione diversa (o senza il campo di
@@ -1457,6 +1459,18 @@ def load_or_train_model():
         st.stop()
         
     raw_df = pd.read_csv(csv_file)
+
+    # Dataset v5.1 è la fonte autorevole. Le colonne di audit non entrano nelle
+    # feature, ma restano disponibili per controlli di qualità e tracciabilità.
+    if "Outcome_Conflict_Flag" in raw_df.columns:
+        n_conflicts = int(pd.to_numeric(raw_df["Outcome_Conflict_Flag"], errors="coerce").fillna(0).sum())
+    else:
+        n_conflicts = 0
+    if "Exact_Duplicate_Group" in raw_df.columns:
+        n_duplicate_rows = int(raw_df["Exact_Duplicate_Group"].fillna("").astype(str).ne("").sum())
+    else:
+        n_duplicate_rows = 0
+
     df = process_unified_dataset(raw_df, is_training_phase=True)
     
     groups = df['SMILES_Group'].tolist()
@@ -1891,6 +1905,10 @@ def load_or_train_model():
         'n_samples': len(X),
         'n_features': len(feature_names),
         'n_missing_values_imputed': n_missing_pre_impute,
+        'dataset_version': DATASET_VERSION,
+        'dataset_file': os.path.basename(csv_file),
+        'n_quality_conflicts_flagged': n_conflicts,
+        'n_duplicate_rows_flagged': n_duplicate_rows,
         'condition_stats': condition_stats,
         'metal_condition_ranges': metal_condition_ranges
     }
@@ -1900,14 +1918,16 @@ def load_or_train_model():
         'features': feature_names,
         'importances': importances,
         'metrics': metrics,
-        'model_training_version': MODEL_TRAINING_VERSION
+        'model_training_version': MODEL_TRAINING_VERSION,
+        'dataset_version': DATASET_VERSION,
+        'dataset_file': os.path.basename(csv_file)
     }
     
     joblib.dump(save_dict, pkl_file)
     return final_model, feature_names, metrics, importances
 
 with st.sidebar.expander("🛠️ Manutenzione Modello", expanded=False):
-    st.caption(f"Versione logica di training corrente: `{MODEL_TRAINING_VERSION}`")
+    st.caption(f"Versione training: `{MODEL_TRAINING_VERSION}` · Dataset autorevole: `{DATASET_VERSION}`")
     if st.button("🔄 Forza ri-allenamento (ignora .pkl salvato)"):
         try:
             if os.path.exists("modello_sintesi_mof_ottimizzato.pkl"):
