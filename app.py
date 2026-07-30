@@ -52,19 +52,115 @@ st.set_page_config(page_title="MOF Synthesis Predictor & Optimizer", page_icon="
 st.title("🧪 Predictor & Optimizer per Sintesi di MOF")
 st.markdown("Strumento avanzato di Machine Learning per la predizione, ottimizzazione e **spiegabilità chimica** della sintesi di MOF con integrazione di letteratura **Open Access**.")
 
-# --- FUNZIONE DI PULIZIA E CONVERSIONE VALORI NUMERICI ---
+# --- FUNZIONI DI PULIZIA E CONVERSIONE DEI VALORI NUMERICI ---
+def _normalize_numeric_text(val):
+    """Normalizza separatori decimali e spazi senza perdere il segno."""
+    return str(val).strip().replace(",", ".")
+
+
 def clean_float_val(val, default_val=0.0):
-    """ Converte in float gestendo stringhe speciali come T.A., RT o formattazioni sporche """
+    """Converte un valore numerico generico in float.
+
+    Questa funzione resta disponibile per quantità e feature numeriche semplici.
+    Temperatura e tempo vengono invece gestiti da parser dedicati, perché possono
+    contenere unità, intervalli o termini come RT, overnight e reflux.
+    """
     if pd.isna(val):
         return float(default_val)
-    s_val = str(val).strip().upper()
-    if s_val in ['T.A.', 'TA', 'RT', 'ROOM TEMP', 'ROOM TEMPERATURA', 'AMBIENTE']:
-        return 25.0
-    s_clean = re.sub(r'[^0-9\.-]', '', str(val))
-    try:
-        return float(s_clean)
-    except Exception:
+
+    text = _normalize_numeric_text(val)
+    if not text:
         return float(default_val)
+
+    numbers = re.findall(r"[-+]?\d+(?:\.\d+)?", text)
+    if len(numbers) != 1:
+        return float(default_val)
+
+    try:
+        return float(numbers[0])
+    except (TypeError, ValueError):
+        return float(default_val)
+
+
+def parse_temperature_value(val, solvent=None, default_val=120.0):
+    """Converte la temperatura in °C e restituisce (valore, flag_imputato)."""
+    if pd.isna(val) or str(val).strip() == "":
+        return float(default_val), 1.0
+
+    text = _normalize_numeric_text(val).lower()
+    compact = re.sub(r"\s+", "", text)
+
+    room_temperature_tokens = {
+        "rt", "r.t.", "r.t", "ta", "t.a.", "t.a",
+        "roomtemp", "roomtemperature", "temperaturaambiente", "ambiente"
+    }
+    if compact in room_temperature_tokens:
+        return 25.0, 0.0
+
+    if "reflux" in text or "riflusso" in text:
+        solvent_name = str(solvent or "").strip()
+        primary = re.split(r"[/+:]", solvent_name)[0].strip()
+
+        try:
+            normalized = parse_primary_solvent(primary) or primary
+        except Exception:
+            normalized = primary
+
+        solvent_data = SOLVENT_PROPERTIES.get(normalized)
+        if solvent_data and solvent_data.get("boiling_pt", 0) > 0:
+            return float(solvent_data["boiling_pt"]), 1.0
+
+        return float(default_val), 1.0
+
+    range_match = re.search(
+        r"([-+]?\d+(?:\.\d+)?)\s*[-–—]\s*([-+]?\d+(?:\.\d+)?)",
+        text
+    )
+    if range_match:
+        lower = float(range_match.group(1))
+        upper = float(range_match.group(2))
+        return (lower + upper) / 2.0, 0.0
+
+    numbers = re.findall(r"[-+]?\d+(?:\.\d+)?", text)
+    if len(numbers) == 1:
+        return float(numbers[0]), 0.0
+
+    return float(default_val), 1.0
+
+
+def parse_time_hours_value(val, default_val=48.0):
+    """Converte la durata della sintesi in ore e restituisce (valore, flag_imputato)."""
+    if pd.isna(val) or str(val).strip() == "":
+        return float(default_val), 1.0
+
+    text = _normalize_numeric_text(val).lower().strip()
+    compact = re.sub(r"\s+", "", text)
+
+    if compact in {"overnight", "overnight.", "overnite", "o/n"}:
+        return 16.0, 1.0
+
+    unit_factor = 1.0
+    if re.search(r"\b(min|minuto|minuti|minute|minutes)\b", text):
+        unit_factor = 1.0 / 60.0
+    elif re.search(r"\b(giorno|giorni|day|days|d)\b", text):
+        unit_factor = 24.0
+    elif re.search(r"\b(ora|ore|hour|hours|hr|hrs|h)\b", text):
+        unit_factor = 1.0
+
+    range_match = re.search(
+        r"(\d+(?:\.\d+)?)\s*[-–—]\s*(\d+(?:\.\d+)?)",
+        text
+    )
+    if range_match:
+        lower = float(range_match.group(1))
+        upper = float(range_match.group(2))
+        return ((lower + upper) / 2.0) * unit_factor, 0.0
+
+    numbers = re.findall(r"\d+(?:\.\d+)?", text)
+    if len(numbers) == 1:
+        return float(numbers[0]) * unit_factor, 0.0
+
+    return float(default_val), 1.0
 
 # --- CONFIGURAZIONE TAVILY AI ---
 # IMPORTANTE: nessuna chiave hardcoded nel codice sorgente.
@@ -1185,8 +1281,24 @@ def process_unified_dataset(df, is_training_phase=False):
 
         add_eq = clean_float_val(row.get('Quantita additivo', row.get('Additivo_Eq', 0.0)), default_val=0.0)
         
-        temp, temp_missing = clean_float_with_missing_flag(row.get('Temperatura', row.get('Temperatura_C', row.get('Temperatura_num', np.nan))), default_val=120.0)
-        tempo, tempo_missing = clean_float_with_missing_flag(row.get('Tempo ore', row.get('Tempo_ore', row.get('Tempo_ore_num', np.nan))), default_val=48.0)
+        raw_temperature = row.get(
+            'Temperatura',
+            row.get('Temperatura_C', row.get('Temperatura_num', np.nan))
+        )
+        raw_time = row.get(
+            'Tempo ore',
+            row.get('Tempo_ore', row.get('Tempo_ore_num', np.nan))
+        )
+
+        temp, temp_missing = parse_temperature_value(
+            raw_temperature,
+            solvent=solv_raw,
+            default_val=120.0
+        )
+        tempo, tempo_missing = parse_time_hours_value(
+            raw_time,
+            default_val=48.0
+        )
         
         raw_target = row.get(target_col, 0) if target_col else 0
         try:
@@ -1305,7 +1417,7 @@ def create_stacking_ensemble():
 # correzioni fatte al codice: senza questo controllo, un .pkl "vecchio" con
 # metriche/errori obsoleti può continuare a essere mostrato all'utente anche
 # dopo aver corretto e ridistribuito il codice.
-MODEL_TRAINING_VERSION = "v22-solvent-compatibility-feature"
+MODEL_TRAINING_VERSION = "v5_step1_units"
 
 @st.cache_resource
 def load_or_train_model():
