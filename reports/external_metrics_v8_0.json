@@ -1,0 +1,11 @@
+{
+  "Accuracy": 0.7732342007434945,
+  "Balanced_Accuracy": 0.7758097615474872,
+  "Macro_F1": 0.7640429298021555,
+  "MCC": 0.6365467055615374,
+  "Log_Loss": 0.5281995931360022,
+  "Multiclass_Brier": 0.306511191172583,
+  "ECE_10_bins": 0.0769788501603594,
+  "N": 269,
+  "Selected_Model": "ChemAware ensemble: 0.70 Structured RF + 0.30 Ligand-text Logistic"
+}
