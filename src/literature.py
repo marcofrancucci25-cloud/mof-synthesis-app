@@ -50,7 +50,7 @@ def _doi(text: str) -> str | None:
 
 def _api_key(explicit_key: str | None = None) -> str:
     """Return the bundled Tavily key, unless an explicit override is supplied."""
-    return explicit_key or TAVILY_API_KEY= "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"
+    return explicit_key or TAVILY_API_KEY
 
 
 def search_literature(
