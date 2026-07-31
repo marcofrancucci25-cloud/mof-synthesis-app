@@ -151,5 +151,7 @@
       "sha256": "161db98dfeebe8bb0e566671bd4c41f89c6ceeb3333c1e341d753db3d47b9966",
       "bytes": 528
     }
-  ]
+  ],
+  "version": "9.4",
+  "release_notes": "Embedded temporary Tavily deployment key; removed API-key UI and secret checks."
 }

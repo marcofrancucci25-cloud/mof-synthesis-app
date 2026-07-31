@@ -136,12 +136,6 @@ elif page=="Literature search":
     st.write("Search recent articles from selected scholarly publishers and repositories using Tavily.")
     st.caption("Results are restricted to scientific domains, but relevance and bibliographic details should still be verified on the publisher page.")
 
-    configured_key = None
-    try:
-        configured_key = st.secrets.get("TAVILY_API_KEY")
-    except Exception:
-        configured_key = None
-
     with st.form("literature_search_form"):
         query = st.text_input(
             "Keyword or research question",
@@ -154,9 +148,7 @@ elif page=="Literature search":
         submitted = st.form_submit_button("Search literature", type="primary")
 
     if submitted:
-        if not configured_key:
-            st.error("Literature search is not configured on this deployment. Add TAVILY_API_KEY to Streamlit Secrets.")
-        elif not query.strip():
+        if not query.strip():
             st.warning("Enter a keyword or research question.")
         else:
             with st.spinner("Searching recent scholarly sources..."):
@@ -165,7 +157,6 @@ elif page=="Literature search":
                         query,
                         years_back=years_back,
                         max_results=max_results,
-                        api_key=configured_key or None,
                         mof_focus=mof_focus,
                     )
                     st.session_state["literature_results"] = results
@@ -196,10 +187,10 @@ elif page=="Literature search":
 elif page=="Model validation":
     root=Path(__file__).parent; metrics=json.loads((root/"reports/external_metrics_v8_0.json").read_text())
     st.subheader("Ligand-group external test of the current predictive core")
-    st.info("v9.2 updates the user workflow and adds a curated Tavily literature-search interface and local sensitivity display. The frozen predictive core and external validation remain v8.0.")
+    st.info("v9.4 updates the user workflow and adds a curated Tavily literature-search interface and local sensitivity display. The frozen predictive core and external validation remain v8.0.")
     st.json(metrics); st.dataframe(pd.read_csv(root/"reports/external_class_metrics_v8_0.csv"),use_container_width=True); st.dataframe(pd.read_csv(root/"reports/external_confusion_matrix_v8_0.csv",index_col=0),use_container_width=True)
 else:
     st.markdown("""### Scope and scientific limitations
-Version 9.2 integrates prediction and optimization into one workflow and replaces the default technical explanation with an intuitive local-sensitivity summary. The optimizer keeps the selected metal–ligand identity fixed and varies only experimental conditions.
+Version 9.4 integrates prediction and optimization into one workflow and replaces the default technical explanation with an intuitive local-sensitivity summary. The optimizer keeps the selected metal–ligand identity fixed and varies only experimental conditions.
 
 The explanation is **model-based and descriptive, not causal**. Optimized conditions are hypotheses for experimental prioritization, not guarantees of MOF formation. The predictive core remains the frozen v8.0 ensemble; the literature module is a retrieval aid and this interface update does not constitute a new external validation.""")

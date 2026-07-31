@@ -49,3 +49,8 @@ TAVILY_API_KEY = "tvly-your-key"
 ```
 
 The application does not store keys entered in the temporary local password field. Search results remain retrieval outputs and should be checked against the original publisher record.
+
+
+## Tavily configuration in v9.4
+
+The literature-search interface no longer displays an API-key field. The temporary deployment key is defined once in `src/literature.py` as `TAVILY_API_KEY`; replace that single value when rotating the key.
