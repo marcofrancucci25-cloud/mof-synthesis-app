@@ -49,8 +49,11 @@ def _doi(text: str) -> str | None:
 
 
 def _api_key(explicit_key: str | None = None) -> str:
-    """Return the bundled Tavily key, unless an explicit override is supplied."""
-    return explicit_key or TAVILY_API_KEY
+    """Return the app-bundled Tavily key; no user input or Streamlit secret is required."""
+    key = (explicit_key or TAVILY_API_KEY).strip()
+    if not key:
+        raise RuntimeError("The bundled Tavily deployment key is empty.")
+    return key
 
 
 def search_literature(
